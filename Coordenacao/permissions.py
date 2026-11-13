@@ -55,6 +55,18 @@ def perfil_requerido(*perfis):
     return decorator
 
 
+def superuser_requerido(view_func):
+    """Restringe a view ao superadministrador (ex.: cópias de segurança)."""
+
+    @wraps(view_func)
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied("Apenas o administrador do sistema pode aceder a esta página.")
+        return view_func(request, *args, **kwargs)
+
+    return login_required(_wrapped)
+
+
 def garantir_acesso_estudante(user, estudante):
     """Um estudante só acede aos seus próprios documentos; os restantes perfis acedem a todos."""
     if user.perfil == PERFIL_ESTUDANTE and not user.is_superuser and user.pk != estudante.pk:

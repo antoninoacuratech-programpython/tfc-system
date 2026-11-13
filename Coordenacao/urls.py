@@ -142,5 +142,7 @@ urlpatterns = [
    path('notificacoes/ler/<int:pk>/', views.marcar_notificacao_lida, name='marcar_notificacao_lida'),
    path('calendarios/gestao/', views.gerir_calendarios, name='gerir_calendarios'),
    path('estudante/<int:estudante_id>/dossie/', views.perfil_documental, name='dossie_estudante'),
+   path('backups/', views.backups, name='backups'),
+   path('backups/criar/', views.criar_backup, name='criar_backup'),
 ]
 

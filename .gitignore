@@ -31,3 +31,6 @@ Thumbs.db
 *.local.txt
 *.local.pdf
 SGTF-Apresentacao-do-Sistema.pdf
+
+# Cópias de segurança locais
+backups/

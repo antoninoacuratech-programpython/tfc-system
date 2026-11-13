@@ -124,3 +124,60 @@ class PermissoesTests(BaseTestCase):
             for nome in paginas:
                 with self.subTest(user=user.perfil, pagina=nome):
                     self.assertEqual(self.client.get(reverse(nome)).status_code, 200)
+
+
+class BackupTests(BaseTestCase):
+    def setUp(self):
+        self.admin = Usuario.objects.create_user(
+            email="admin@ispb.ao", password="SenhaForte#2026", nome="Admin", sobrenome="Sistema",
+            telefone="923000001", perfil="cordenacao", estado_user="activo",
+        )
+        self.admin.is_superuser = True
+        self.admin.save()
+
+    def test_so_o_superadministrador_acede(self):
+        for user in (self.coordenacao, self.presidente, self.estudante):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(reverse("backups")).status_code, 403)
+            self.assertEqual(self.client.post(reverse("criar_backup")).status_code, 403)
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("backups")).status_code, 302)
+
+    def test_pagina_e_download_do_zip(self):
+        import io, json, zipfile
+        from .models import RegistoBackup
+
+        self.client.force_login(self.admin)
+        self.assertContains(self.client.get(reverse("backups")), "Descarregar cópia agora")
+        self.assertEqual(self.client.get(reverse("criar_backup")).status_code, 405)
+
+        resposta = self.client.post(reverse("criar_backup"), {"incluir_media": "1"})
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(resposta["Content-Type"], "application/zip")
+        self.assertIn("sgtf-backup-", resposta["Content-Disposition"])
+
+        zf = zipfile.ZipFile(io.BytesIO(resposta.content))
+        self.assertIn("dados.json", zf.namelist())
+        self.assertIn("LEIAME.txt", zf.namelist())
+        dados = json.loads(zf.read("dados.json"))
+        emails = {o["fields"].get("email") for o in dados if o["model"] == "Coordenacao.usuario"}
+        self.assertIn("estudante@ispb.ao", emails)
+        registo = RegistoBackup.objects.get()
+        self.assertEqual(registo.utilizador, self.admin)
+        self.assertTrue(registo.incluiu_media)
+
+    def test_copia_pode_ser_reposta(self):
+        import io, json, os, tempfile, zipfile
+        from django.core.management import call_command
+
+        self.client.force_login(self.admin)
+        zf = zipfile.ZipFile(io.BytesIO(self.client.post(reverse("criar_backup")).content))
+        total = len(json.loads(zf.read("dados.json")))
+        Usuario.objects.filter(email="outro@ispb.ao").delete()
+        with tempfile.TemporaryDirectory() as pasta:
+            caminho = os.path.join(pasta, "dados.json")
+            with open(caminho, "wb") as f:
+                f.write(zf.read("dados.json"))
+            call_command("loaddata", caminho, verbosity=0)
+        self.assertTrue(Usuario.objects.filter(email="outro@ispb.ao").exists())
+        self.assertGreater(total, 0)

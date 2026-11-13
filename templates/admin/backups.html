@@ -1,0 +1,81 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Cópias de segurança{% endblock %}
+{% block titulo_pagina %}Cópias de segurança{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Cópias de segurança</h2>
+    <p class="mt-1 text-sm text-slate-500">Descarregue uma cópia completa dos dados do sistema para guardar em local seguro.</p>
+  </div>
+
+  <!-- O que vai na cópia -->
+  <div class="grid grid-cols-2 gap-3 md:grid-cols-5">
+    <div class="sgtf-card p-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Utilizadores</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.utilizadores }}</p></div>
+    <div class="sgtf-card p-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Temas</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.temas }}</p></div>
+    <div class="sgtf-card p-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Inscrições</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.inscricoes }}</p></div>
+    <div class="sgtf-card p-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Pré-defesas</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.predefesas }}</p></div>
+    <div class="sgtf-card col-span-2 p-4 md:col-span-1"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Ficheiros</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.ficheiros }}</p><p class="text-xs text-slate-500">{{ resumo.tamanho_media }}</p></div>
+  </div>
+
+  <!-- Criar cópia -->
+  <form method="post" action="{% url 'criar_backup' %}" class="sgtf-card p-5 md:p-6">
+    {% csrf_token %}
+    <div class="flex items-start gap-4">
+      <span class="material-icons-sharp rounded-xl bg-primary-50 p-3 text-[26px] text-primary">backup</span>
+      <div class="min-w-0 flex-1">
+        <h3 class="text-base font-bold text-slate-900">Criar e descarregar cópia</h3>
+        <p class="mt-1 text-sm text-slate-500">É gerado um ficheiro ZIP com todos os dados (utilizadores, temas, inscrições, pré-defesas, despachos, actas, comunicados e notificações) e um ficheiro LEIAME com as instruções para repor.</p>
+
+        <label class="mt-4 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
+          <input type="checkbox" name="incluir_media" value="1" class="mt-0.5 h-5 w-5 rounded border-slate-300 text-primary">
+          <span>
+            <span class="block text-sm font-semibold text-slate-800">Incluir ficheiros carregados</span>
+            <span class="block text-xs text-slate-500">PDFs, requerimentos e fotografias ({{ resumo.ficheiros }} ficheiro{{ resumo.ficheiros|pluralize }}, {{ resumo.tamanho_media }}). O ZIP fica maior.</span>
+          </span>
+        </label>
+
+        <div class="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <span class="material-icons-sharp text-[18px]">lock</span>
+          <span>A cópia contém dados pessoais e as senhas cifradas de todos os utilizadores. Guarde-a num local seguro e não a partilhe.</span>
+        </div>
+
+        <button type="submit" class="sgtf-btn sgtf-btn--primary mt-5 w-full md:w-auto" data-no-lock>
+          <span class="material-icons-sharp text-[20px]">download</span> Descarregar cópia agora
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Histórico -->
+  <div class="sgtf-card overflow-hidden">
+    <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+      <h3 class="text-base font-bold text-slate-900">Histórico de cópias</h3>
+      <span class="text-xs text-slate-400">Últimas 20</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <tr><th class="px-5 py-3">Data</th><th class="px-5 py-3">Ficheiro</th><th class="px-5 py-3">Feita por</th><th class="px-5 py-3">Registos</th><th class="px-5 py-3">Ficheiros</th><th class="px-5 py-3">Tamanho</th></tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100">
+          {% for r in historico %}
+            <tr>
+              <td class="px-5 py-3 whitespace-nowrap">{{ r.criado_em|date:"d/m/Y H:i" }}</td>
+              <td class="px-5 py-3 font-mono text-xs">{{ r.nome_ficheiro }}</td>
+              <td class="px-5 py-3">{% if r.utilizador %}{{ r.utilizador.nome }} {{ r.utilizador.sobrenome }}{% else %}Consola{% endif %}</td>
+              <td class="px-5 py-3">{{ r.registos }}</td>
+              <td class="px-5 py-3">{% if r.incluiu_media %}{{ r.ficheiros }}{% else %}—{% endif %}</td>
+              <td class="px-5 py-3">{{ r.tamanho_legivel }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6" class="px-5 py-10 text-center text-sm text-slate-400">Ainda não foi feita nenhuma cópia.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

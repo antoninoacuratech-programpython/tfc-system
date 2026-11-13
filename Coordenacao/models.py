@@ -985,3 +985,24 @@ class CalendarioAprovacao(models.Model):
 
     def __str__(self):
         return f"{self.titulo} - {self.get_periodo_display()} ({self.data_aprovacao.strftime('%d/%m/%Y %H:%M')})"
+
+class RegistoBackup(models.Model):
+    """Histórico das cópias de segurança feitas pelo administrador."""
+
+    utilizador = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="backups_feitos"
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+    nome_ficheiro = models.CharField(max_length=120)
+    registos = models.PositiveIntegerField(default=0)
+    ficheiros = models.PositiveIntegerField(default=0)
+    tamanho = models.PositiveBigIntegerField(default=0, help_text="Tamanho do ZIP em bytes")
+    incluiu_media = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-criado_em"]
+        verbose_name = "Registo de cópia de segurança"
+        verbose_name_plural = "Registos de cópias de segurança"
+
+    def __str__(self):
+        return f"{self.nome_ficheiro} ({self.criado_em:%d/%m/%Y %H:%M})"

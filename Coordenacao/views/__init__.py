@@ -129,3 +129,7 @@ from .notificacoes import (  # noqa: F401
     listar_notificacoes,
     marcar_notificacao_lida,
 )
+from .backups import (  # noqa: F401
+    backups,
+    criar_backup,
+)
