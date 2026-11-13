@@ -1,0 +1,29 @@
+# Mantém o site da Render acordado: visita /saude/ a cada 10 minutos.
+# O endereço vem da variável do repositório SITE_URL
+# (GitHub → Settings → Secrets and variables → Actions → Variables),
+# por exemplo: https://o-seu-servico.onrender.com
+name: Manter site acordado
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Visitar /saude/
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::warning::Defina a variável SITE_URL do repositório com o endereço do site na Render."
+            exit 0
+          fi
+          URL="${SITE_URL%/}/saude/"
+          echo "A visitar $URL"
+          # A primeira visita pode demorar se o site estava a dormir: tenta até 3 vezes.
+          curl -fsS --retry 3 --retry-delay 20 --retry-all-errors --max-time 120 "$URL"
+          echo
