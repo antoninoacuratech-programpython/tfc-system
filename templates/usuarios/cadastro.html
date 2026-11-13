@@ -3,40 +3,41 @@
 {% block titulo %}Criar conta{% endblock %}
 
 {% block conteudo %}
-  <a href="{% url 'login' %}" class="mb-6 inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-primary">
-    <span class="material-icons-sharp text-[18px]">arrow_back</span> Voltar ao login
-  </a>
-  <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Criar conta de estudante</h1>
-  <p class="mt-1.5 text-sm text-slate-500">Depois do registo, a coordenação valida e activa a sua conta.</p>
+  <h1 class="sgtf-auth__title">Criar conta</h1>
+  <p class="sgtf-auth__subtitle">Registo de estudante. A coordenação activa a sua conta.</p>
 
-  <div class="mt-6">{% include "partials/_mensagens.html" %}</div>
+  <div class="mt-5">{% include "partials/_mensagens.html" %}</div>
 
-  <form method="post" id="cadastroForm" class="space-y-4" data-lock>
+  <form method="post" id="cadastroForm" class="mt-5 space-y-3.5" data-lock>
     {% csrf_token %}
     <input type="hidden" name="perfil" value="estudante">
 
     <div>
-      <label for="nome_completo" class="sgtf-label">Nome completo</label>
-      <input type="text" name="nome_completo" id="nome_completo" required autocomplete="name"
-             placeholder="Ex.: Maria João Cassoma" class="sgtf-input">
-      <p id="nomeError" class="mt-1 hidden text-xs font-medium text-red-600">Indique pelo menos o primeiro e o último nome.</p>
+      <div class="sgtf-auth-field">
+        <label for="nome_completo" class="sr-only">Nome completo</label>
+        <input type="text" name="nome_completo" id="nome_completo" required autocomplete="name"
+               placeholder="Nome completo" class="sgtf-auth-input">
+        <span class="sgtf-auth-icon"><span class="material-icons-sharp">person_outline</span></span>
+      </div>
+      <p id="nomeError" class="mt-1.5 hidden pl-1 text-xs font-medium text-red-300">Indique pelo menos o primeiro e o último nome.</p>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label for="email" class="sgtf-label">E-mail</label>
-        <input type="email" id="email" name="email" required autocomplete="email" placeholder="nome@ispb.ao" class="sgtf-input">
-      </div>
-      <div>
-        <label for="telefone" class="sgtf-label">Telefone</label>
-        <input type="tel" id="telefone" name="telefone" required inputmode="numeric" pattern="[0-9]{9}" maxlength="9"
-               placeholder="9XXXXXXXX" class="sgtf-input">
-      </div>
+    <div class="sgtf-auth-field">
+      <label for="email" class="sr-only">E-mail</label>
+      <input type="email" id="email" name="email" required autocomplete="email" inputmode="email" placeholder="E-mail" class="sgtf-auth-input">
+      <span class="sgtf-auth-icon"><span class="material-icons-sharp">mail_outline</span></span>
     </div>
 
-    <div>
-      <label for="curso" class="sgtf-label">Curso</label>
-      <select name="curso" id="curso" required class="sgtf-input">
+    <div class="sgtf-auth-field">
+      <label for="telefone" class="sr-only">Telefone</label>
+      <input type="tel" id="telefone" name="telefone" required inputmode="numeric" pattern="[0-9]{9}" maxlength="9"
+             placeholder="Telefone (9 dígitos)" class="sgtf-auth-input">
+      <span class="sgtf-auth-icon"><span class="material-icons-sharp">phone_iphone</span></span>
+    </div>
+
+    <div class="sgtf-auth-field">
+      <label for="curso" class="sr-only">Curso</label>
+      <select name="curso" id="curso" required class="sgtf-auth-input">
         <option value="" disabled selected>Seleccione o seu curso</option>
         {% regroup cursos by departamento as por_departamento %}
         {% for grupo in por_departamento %}
@@ -47,34 +48,38 @@
           </optgroup>
         {% endfor %}
       </select>
+      <span class="sgtf-auth-icon"><span class="material-icons-sharp">expand_more</span></span>
     </div>
 
-    <div class="grid gap-4 sm:grid-cols-2">
-      <div>
-        <label for="senha1" class="sgtf-label">Senha</label>
-        <div class="relative">
-          <input type="password" id="senha1" name="password1" required minlength="8" autocomplete="new-password" class="sgtf-input pr-10">
-          <button type="button" data-toggle-senha="senha1" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-primary">
-            <span class="material-icons-sharp">visibility</span>
-          </button>
-        </div>
-      </div>
-      <div>
-        <label for="senha2" class="sgtf-label">Confirmar senha</label>
-        <div class="relative">
-          <input type="password" id="senha2" name="password2" required minlength="8" autocomplete="new-password" class="sgtf-input pr-10">
-          <button type="button" data-toggle-senha="senha2" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-primary">
-            <span class="material-icons-sharp">visibility</span>
-          </button>
-        </div>
-      </div>
+    <div class="sgtf-auth-field">
+      <label for="senha1" class="sr-only">Senha</label>
+      <input type="password" id="senha1" name="password1" required minlength="8" autocomplete="new-password"
+             placeholder="Senha (mín. 8 caracteres)" class="sgtf-auth-input">
+      <button type="button" class="sgtf-auth-icon" data-toggle-senha="senha1" aria-label="Mostrar senha">
+        <span class="material-icons-sharp">visibility</span>
+      </button>
     </div>
-    <p class="text-xs text-slate-500">Mínimo de 8 caracteres, não apenas números e diferente dos seus dados pessoais.</p>
 
-    <button type="submit" class="sgtf-btn sgtf-btn--primary w-full py-3 text-[15px]" data-loading="A criar conta...">
-      <span data-label>Criar conta</span>
-    </button>
+    <div class="sgtf-auth-field">
+      <label for="senha2" class="sr-only">Confirmar senha</label>
+      <input type="password" id="senha2" name="password2" required minlength="8" autocomplete="new-password"
+             placeholder="Confirmar senha" class="sgtf-auth-input">
+      <button type="button" class="sgtf-auth-icon" data-toggle-senha="senha2" aria-label="Mostrar senha">
+        <span class="material-icons-sharp">visibility</span>
+      </button>
+    </div>
+
+    <div class="pt-2">
+      <button type="submit" class="sgtf-auth-btn" data-loading="A criar conta...">
+        <span class="material-icons-sharp text-[20px]">person_add</span>
+        <span data-label>Criar conta</span>
+      </button>
+    </div>
   </form>
+
+  <p class="mt-6 text-center text-sm text-[#b9c6e8]">
+    Já tem conta? <a href="{% url 'login' %}" class="sgtf-auth-link">Entrar</a>
+  </p>
 {% endblock %}
 
 {% block extra_js %}

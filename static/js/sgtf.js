@@ -27,6 +27,14 @@
     if (abertos.includes(id)) group.classList.add("is-open");
     toggle?.setAttribute("aria-expanded", group.classList.contains("is-open"));
     toggle?.addEventListener("click", () => {
+      // No modo "rail" (tablet), tocar num grupo abre o menu completo com esse grupo expandido.
+      const emRail = window.matchMedia("(min-width: 768px) and (max-width: 1279px)").matches;
+      if (emRail && !sidebar.classList.contains("is-open")) {
+        group.classList.add("is-open");
+        toggle.setAttribute("aria-expanded", "true");
+        setSidebar(true);
+        return;
+      }
       const open = group.classList.toggle("is-open");
       toggle.setAttribute("aria-expanded", open);
       abertos = open ? [...new Set([...abertos, id])] : abertos.filter((x) => x !== id);
@@ -48,8 +56,24 @@
     melhor.classList.add("is-active");
     melhor.setAttribute("aria-current", "page");
     const grupo = melhor.closest("[data-nav-group]");
-    grupo?.classList.add("is-open");
+    grupo?.classList.add("is-open", "has-active");
   }
+
+  // ---------- Barra de navegação inferior: destino activo ----------
+  let melhorInferior = null;
+  document.querySelectorAll("[data-bottom-nav] a.sgtf-bnav-item[href]").forEach((a) => {
+    const href = a.getAttribute("href");
+    if (path === href || (href.length > 1 && path.startsWith(href))) {
+      if (!melhorInferior || href.length > melhorInferior.getAttribute("href").length) melhorInferior = a;
+    }
+  });
+  if (melhorInferior) {
+    melhorInferior.classList.add("is-active");
+    melhorInferior.setAttribute("aria-current", "page");
+  }
+
+  // Fecha o menu deslizante ao passar para o ecrã largo (ex.: rodar o tablet).
+  window.matchMedia("(min-width: 1280px)").addEventListener("change", (e) => { if (e.matches) setSidebar(false); });
 
   // ---------- Dropdowns (notificações, utilizador) ----------
   function closeDropdowns(except) {
@@ -84,6 +108,59 @@
         setTimeout(() => alerta.remove(), 400);
       }, 6000);
     }
+  });
+
+  // ---------- Tabelas adaptativas (cartões no telemóvel) ----------
+  // Cada célula recebe o título da sua coluna; o CSS mostra-o como etiqueta no cartão.
+  // Para manter uma tabela tal como está: <table data-sem-cartoes>.
+  function prepararTabelas(raiz) {
+    // Idempotente: só acrescenta etiquetas às células que ainda não as têm.
+    (raiz || document).querySelectorAll(".sgtf-content table:not([data-sem-cartoes])").forEach((tabela) => {
+      const titulos = [...tabela.querySelectorAll("thead th")].map((th) => th.textContent.replace(/\s+/g, " ").trim());
+      if (!titulos.length) {
+        // Sem cabeçalho: apenas permitir rolagem horizontal.
+        if (!tabela.parentElement.classList.contains("sgtf-table-wrap") && !tabela.closest(".overflow-x-auto")) {
+          const wrap = document.createElement("div");
+          wrap.className = "sgtf-table-wrap";
+          tabela.parentNode.insertBefore(wrap, tabela);
+          wrap.appendChild(tabela);
+        }
+        return;
+      }
+      tabela.classList.add("sgtf-rtable");
+      tabela.querySelectorAll("tbody tr").forEach((tr) => {
+        let col = 0;
+        [...tr.children].forEach((td) => {
+          if (!td.hasAttribute("data-label")) td.setAttribute("data-label", td.hasAttribute("colspan") ? "" : (titulos[col] || ""));
+          col += parseInt(td.getAttribute("colspan") || "1", 10);
+        });
+      });
+    });
+  }
+  prepararTabelas();
+  // Tabelas preenchidas depois (AJAX) também são adaptadas.
+  const conteudo = document.querySelector(".sgtf-content");
+  if (conteudo && "MutationObserver" in window) {
+    let pendente = false;
+    new MutationObserver(() => {
+      if (pendente) return;
+      pendente = true;
+      requestAnimationFrame(() => { pendente = false; prepararTabelas(); });
+    }).observe(conteudo, { childList: true, subtree: true });
+  }
+
+  // ---------- Efeito de toque (ripple, estilo Material) ----------
+  document.addEventListener("pointerdown", (e) => {
+    const alvo = e.target.closest(".sgtf-btn, .sgtf-nav-link, .sgtf-bnav-item, .sgtf-auth-btn, .sgtf-dropdown__item");
+    if (!alvo) return;
+    alvo.classList.add("sgtf-ripple-host");
+    const r = alvo.getBoundingClientRect();
+    const d = Math.max(r.width, r.height);
+    const onda = document.createElement("span");
+    onda.className = "sgtf-ripple";
+    onda.style.cssText = `width:${d}px;height:${d}px;left:${e.clientX - r.left - d / 2}px;top:${e.clientY - r.top - d / 2}px`;
+    alvo.appendChild(onda);
+    setTimeout(() => onda.remove(), 550);
   });
 
   // ---------- Selects exclusivos (ex.: mesa de júri) ----------

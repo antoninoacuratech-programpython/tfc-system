@@ -21,8 +21,11 @@
           <span class="block truncate text-[11px] font-medium text-primary-200">{% block painel_subtitulo %}{{ INSTITUICAO_SIGLA }}{% endblock %}</span>
         </span>
       </a>
-      <button type="button" class="sgtf-icon-btn text-white/70 hover:text-white md:hidden" data-sidebar-close aria-label="Fechar menu">
+      <button type="button" class="sgtf-icon-btn sgtf-drawer-close text-white/70 hover:text-white" data-sidebar-close aria-label="Fechar menu">
         <span class="material-icons-sharp">close</span>
+      </button>
+      <button type="button" class="sgtf-rail-toggle" data-sidebar-open aria-label="Expandir menu">
+        <span class="material-icons-sharp">menu</span>
       </button>
     </div>
     <div class="sgtf-brand-strip" aria-hidden="true"></div>
@@ -45,9 +48,7 @@
   <div class="sgtf-main">
     <header class="sgtf-topbar">
       <div class="flex min-w-0 items-center gap-3">
-        <button type="button" class="sgtf-icon-btn md:hidden" data-sidebar-open aria-label="Abrir menu">
-          <span class="material-icons-sharp">menu</span>
-        </button>
+        <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="" class="sgtf-topbar-logo">
         <div class="min-w-0">
           <p class="hidden text-[11px] font-semibold uppercase tracking-wider text-slate-400 sm:block">{% block painel_secao %}{% block painel_nome_topo %}Painel{% endblock %}{% endblock %}</p>
           <h1 class="truncate text-base font-bold text-slate-800 sm:text-lg">{% block titulo_pagina %}Início{% endblock %}</h1>
@@ -134,6 +135,15 @@
       </footer>
     </main>
   </div>
+
+  <!-- ============ BARRA DE NAVEGAÇÃO INFERIOR (telemóvel) ============ -->
+  <nav class="sgtf-bottom-nav" aria-label="Navegação rápida" data-bottom-nav>
+    {% block bottom_nav %}{% endblock %}
+    <button type="button" class="sgtf-bnav-item" data-sidebar-open>
+      <span class="sgtf-bnav-icon"><span class="material-icons-sharp">menu</span></span>
+      <span class="sgtf-bnav-label">Menu</span>
+    </button>
+  </nav>
 
   <script src="{% static 'js/sgtf.js' %}"></script>
   {% block extra_js %}{% endblock %}

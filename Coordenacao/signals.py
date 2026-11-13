@@ -14,6 +14,9 @@ from .models import Tema, NotificacaoFinal, Usuario
 
 @receiver(post_save, sender=Tema)
 def notificar_mudanca_status_tema(sender, instance, created, **kwargs):
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if created:
         # Notificar Coordenador do curso
         coordenador = Usuario.objects.filter(perfil='cordenacao', curso=instance.estudante.curso).first()
@@ -66,6 +69,9 @@ def notificar_mudanca_status_tema(sender, instance, created, **kwargs):
             )
 @receiver(post_save, sender=Recomendacao)
 def notificar_nova_recomendacao(sender, instance, created, **kwargs):
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if created:
         NotificacaoFinal.objects.create(
             usuario=instance.tema.estudante,
@@ -135,6 +141,9 @@ def notificar_inscricao_tfc(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Despacho)
 def processar_assinatura_despacho(sender, instance, created, **kwargs):
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if not created and instance.status == 'aprovado' and instance.publicado:
         banca = [instance.predefesa.estudante, instance.predefesa.presidente, instance.predefesa.primeiro_vogal, instance.predefesa.segundo_vogal]
         for user in banca:
@@ -152,6 +161,9 @@ def processar_assinatura_despacho(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=SolicitacaoDefesa)
 def notificar_status_solicitacao_defesa(sender, instance, created, **kwargs):
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if not created and instance.status_solicitacao == 'autorizada':
         NotificacaoFinal.objects.create(
             usuario=instance.predefesa.estudante,
@@ -166,6 +178,9 @@ def notificar_status_solicitacao_defesa(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Comunicado)
 def disparar_comunicado_global(sender, instance, created, **kwargs):
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if instance.publicado and not created:
         estudantes = Usuario.objects.filter(estado_user='activo')
         for e in estudantes:
@@ -184,6 +199,9 @@ from .models import Predefesa, NotificacaoFinal
 
 @receiver(post_save, sender=Predefesa)
 def notificar_membros_banca_predefesa(sender, instance, created, **kwargs):
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if created:
         # Lista de todos os membros envolvidos
         membros_banca = [
@@ -334,6 +352,9 @@ from .models import CalendarioAprovacao, NotificacaoFinal, Usuario
 @receiver(post_save, sender=CalendarioAprovacao)
 def notificar_estudantes_data_aprovacao(sender, instance, created, **kwargs):
     # Verifica se a instância foi criada e se está ativa
+    # Ignora gravações feitas por importação de dados (loaddata).
+    if kwargs.get('raw', False):
+        return
     if created and instance.ativo:
         
         # O filtro abaixo busca todos os estudantes do curso relacionado ao calendário

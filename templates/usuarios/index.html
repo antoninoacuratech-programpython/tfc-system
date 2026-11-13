@@ -3,44 +3,41 @@
 {% block titulo %}Entrar{% endblock %}
 
 {% block conteudo %}
-  <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Bem-vindo de volta</h1>
-  <p class="mt-1.5 text-sm text-slate-500">Entre com o seu e-mail e senha.</p>
+  <h1 class="sgtf-auth__title">Bem-vindo!</h1>
+  <p class="sgtf-auth__subtitle">Entre para aceder ao sistema.</p>
 
-  <div class="mt-6">{% include "partials/_mensagens.html" %}</div>
+  <div class="mt-5">{% include "partials/_mensagens.html" %}</div>
 
-  <form method="post" class="space-y-5" autocomplete="on" data-lock novalidate>
+  <form method="post" class="mt-5 space-y-3.5" autocomplete="on" data-lock>
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ next }}">
 
-    <div>
-      <label for="email" class="sgtf-label">E-mail</label>
-      <div class="relative">
-        <span class="material-icons-sharp pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">mail</span>
-        <input id="email" name="username" type="email" required autofocus autocomplete="username"
-               value="{{ request.POST.username|default:'' }}" placeholder="nome@ispb.ao" class="sgtf-input pl-10">
-      </div>
+    <div class="sgtf-auth-field">
+      <label for="email" class="sr-only">E-mail</label>
+      <input id="email" name="username" type="email" required autocomplete="username" inputmode="email"
+             value="{{ request.POST.username|default:'' }}" placeholder="Introduza o seu e-mail" class="sgtf-auth-input">
+      <span class="sgtf-auth-icon"><span class="material-icons-sharp">mail_outline</span></span>
     </div>
 
-    <div>
-      <label for="senha" class="sgtf-label">Senha</label>
-      <div class="relative">
-        <span class="material-icons-sharp pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">lock</span>
-        <input id="senha" name="senha" type="password" required autocomplete="current-password" class="sgtf-input px-10">
-        <button type="button" data-toggle-senha="senha" aria-label="Mostrar senha"
-                class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 hover:text-primary">
-          <span class="material-icons-sharp">visibility</span>
-        </button>
-      </div>
+    <div class="sgtf-auth-field">
+      <label for="senha" class="sr-only">Senha</label>
+      <input id="senha" name="senha" type="password" required autocomplete="current-password"
+             placeholder="Introduza a sua senha" class="sgtf-auth-input">
+      <button type="button" class="sgtf-auth-icon" data-toggle-senha="senha" aria-label="Mostrar senha">
+        <span class="material-icons-sharp">visibility</span>
+      </button>
     </div>
 
-    <button type="submit" class="sgtf-btn sgtf-btn--primary w-full py-3 text-[15px]" data-loading="A entrar...">
-      <span data-label>Entrar</span>
-      <span class="material-icons-sharp text-[18px]">arrow_forward</span>
-    </button>
+    <div class="pt-2">
+      <button type="submit" class="sgtf-auth-btn" data-loading="A entrar...">
+        <span class="material-icons-sharp text-[20px]">lock_open</span>
+        <span data-label>Entrar no Sistema</span>
+      </button>
+    </div>
   </form>
 
-  <p class="mt-8 text-center text-sm text-slate-500">
-    Estudante sem conta?
-    <a href="{% url 'cadastro' %}" class="font-semibold text-primary hover:underline">Criar conta</a>
+  <p class="mt-6 text-center text-sm text-[#b9c6e8]">
+    Estudante sem conta? <a href="{% url 'cadastro' %}" class="sgtf-auth-link">Criar conta</a>
   </p>
+  <p class="mt-2 text-center text-xs text-[#8fa0c9]">Esqueceu-se da senha? Contacte a coordenação do seu curso.</p>
 {% endblock %}
