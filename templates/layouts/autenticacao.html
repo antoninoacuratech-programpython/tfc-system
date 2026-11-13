@@ -6,6 +6,13 @@
   <title>{% block titulo %}Entrar{% endblock %} · {{ SISTEMA_NOME }} {{ INSTITUICAO_SIGLA }}</title>
 </head>
 <body class="font-sans antialiased">
+  <div class="sgtf-auth-shell">
+  <!-- Fotografia (apenas em ecrãs largos). Para trocar, substitua static/imgs/login-foto.jpg.
+       Foto: Unsplash (licença Unsplash), unsplash.com/photos/I4cO1on7mE8 -->
+  <aside class="sgtf-auth-hero" aria-hidden="true">
+    <img src="{% static 'imgs/login-foto.jpg' %}" alt="">
+  </aside>
+
   <main class="sgtf-auth">
     <div class="sgtf-auth__panel">
       <div class="sgtf-auth__brand">
@@ -18,6 +25,7 @@
       <p class="sgtf-auth__footer">© {% now "Y" %} {{ INSTITUICAO_NOME }}</p>
     </div>
   </main>
+  </div>
 
   <script>
     // Mostrar/ocultar senha: <button data-toggle-senha="idDoCampo">
