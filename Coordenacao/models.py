@@ -913,3 +913,47 @@ class RegistoBackup(models.Model):
 
     def __str__(self):
         return f"{self.nome_ficheiro} ({self.criado_em:%d/%m/%Y %H:%M})"
+
+
+class TemaSugerido(models.Model):
+    ESTADOS = (
+        ("aberto", "Aberto"),
+        ("fechado", "Fechado"),
+    )
+
+    titulo = models.CharField(max_length=200)
+    descricao = models.TextField(help_text="Objetivos e o que se espera do trabalho")
+    curso = models.ForeignKey(Curso, on_delete=models.CASCADE, related_name="temas_sugeridos")
+    tutor_sugerido = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="temas_sugeridos_orientar", limit_choices_to={"perfil": "tutor"},
+    )
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="temas_sugeridos_criados",
+    )
+    estado = models.CharField(max_length=10, choices=ESTADOS, default="aberto")
+    # tema criado quando um estudante escolhe a sugestão
+    tema = models.OneToOneField(Tema, on_delete=models.SET_NULL, null=True, blank=True, related_name="sugestao")
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-criado_em"]
+        verbose_name = "Tema sugerido"
+        verbose_name_plural = "Temas sugeridos"
+
+    def __str__(self):
+        return self.titulo
+
+    @property
+    def escolhido(self):
+        # se a coordenação ou o tutor rejeitarem, a sugestão volta a ficar livre
+        return bool(
+            self.tema_id
+            and self.tema.status_coordenacao != "rejeitado"
+            and self.tema.status_tutor != "rejeitado"
+        )
+
+    @property
+    def disponivel(self):
+        return self.estado == "aberto" and not self.escolhido

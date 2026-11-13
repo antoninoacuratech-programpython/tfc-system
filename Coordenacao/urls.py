@@ -135,6 +135,12 @@ urlpatterns = [
    path('notificacoes/ler/<int:pk>/', views.marcar_notificacao_lida, name='marcar_notificacao_lida'),
    path('calendarios/gestao/', views.gerir_calendarios, name='gerir_calendarios'),
    path('estudante/<int:estudante_id>/dossie/', views.perfil_documental, name='dossie_estudante'),
+   path('sugestoes/', views.gerir_sugestoes, name='gerir_sugestoes'),
+   path('sugestoes/<int:pk>/editar/', views.editar_sugestao, name='editar_sugestao'),
+   path('sugestoes/<int:pk>/estado/', views.alternar_sugestao, name='alternar_sugestao'),
+   path('sugestoes/<int:pk>/eliminar/', views.eliminar_sugestao, name='eliminar_sugestao'),
+   path('estudante/sugestoes/', views.sugestoes_estudante, name='sugestoes_estudante'),
+   path('estudante/sugestoes/<int:pk>/escolher/', views.escolher_sugestao, name='escolher_sugestao'),
    path('backups/', views.backups, name='backups'),
    path('backups/criar/', views.criar_backup, name='criar_backup'),
 ]

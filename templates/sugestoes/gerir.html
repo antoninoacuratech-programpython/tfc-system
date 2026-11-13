@@ -1,0 +1,93 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Sugestões de temas{% endblock %}
+{% block titulo_pagina %}Sugestões de temas{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Sugestões de temas</h2>
+      <p class="mt-1 text-sm text-slate-500">Temas que o curso precisa que sejam desenvolvidos. Os estudantes vêem-nos na aba Sugestões e podem escolhê-los.</p>
+    </div>
+    <div class="flex gap-2 text-sm">
+      <span class="rounded-full bg-primary-50 px-3 py-1 font-semibold text-primary">{{ total_abertas }} disponíve{{ total_abertas|pluralize:"l,is" }}</span>
+      <span class="rounded-full bg-green-50 px-3 py-1 font-semibold text-green-700">{{ total_escolhidas }} escolhido{{ total_escolhidas|pluralize }}</span>
+    </div>
+  </div>
+
+  <form method="post" class="sgtf-card space-y-4 p-5 md:p-6">
+    {% csrf_token %}
+    <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">add_circle</span> Novo tema sugerido</h3>
+    <div>
+      <label class="sgtf-label" for="titulo">Título</label>
+      <input id="titulo" name="titulo" required maxlength="200" class="sgtf-input" placeholder="Ex.: Sistema de gestão de stock para a cantina do ISP-Bié">
+    </div>
+    <div>
+      <label class="sgtf-label" for="descricao">Descrição e objetivos</label>
+      <textarea id="descricao" name="descricao" required rows="4" class="sgtf-input" placeholder="O problema a resolver, o que se espera do trabalho e requisitos mínimos."></textarea>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="sgtf-label" for="curso">Curso</label>
+        <select id="curso" name="curso" required class="sgtf-input">
+          {% for c in cursos %}<option value="{{ c.pk }}" {% if c.pk == request.user.curso_id %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="sgtf-label" for="tutor_sugerido">Tutor sugerido <span class="font-normal text-slate-400">(opcional)</span></label>
+        <select id="tutor_sugerido" name="tutor_sugerido" class="sgtf-input">
+          <option value="">Sem tutor definido — o estudante escolhe</option>
+          {% for t in tutores %}<option value="{{ t.pk }}">{{ t.nome }} {{ t.sobrenome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <button type="submit" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[20px]">publish</span> Publicar sugestão</button>
+  </form>
+
+  <div class="space-y-3">
+    {% for s in sugestoes %}
+      <div class="sgtf-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              {% if s.escolhido %}
+                <span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700">Escolhido</span>
+              {% elif s.estado == "fechado" %}
+                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">Fechado</span>
+              {% else %}
+                <span class="rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-bold text-primary">Disponível</span>
+              {% endif %}
+              <span class="text-xs text-slate-400">{{ s.curso.nome }} · {{ s.criado_em|date:"d/m/Y" }}</span>
+            </div>
+            <h4 class="mt-2 text-base font-bold text-slate-900">{{ s.titulo }}</h4>
+            <p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ s.descricao }}</p>
+            <div class="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-500">
+              <span><b class="text-slate-700">Tutor sugerido:</b> {% if s.tutor_sugerido %}{{ s.tutor_sugerido.nome }} {{ s.tutor_sugerido.sobrenome }}{% else %}—{% endif %}</span>
+              {% if s.escolhido %}
+                <span><b class="text-slate-700">Escolhido por:</b> {{ s.tema.estudante.nome }} {{ s.tema.estudante.sobrenome }} ({{ s.tema.get_status_tutor_display|lower }})</span>
+              {% endif %}
+            </div>
+          </div>
+          <div class="flex shrink-0 gap-2">
+            <a href="{% url 'editar_sugestao' s.pk %}" class="sgtf-btn sgtf-btn--ghost px-3 py-2" title="Editar"><span class="material-icons-sharp text-[18px]">edit</span></a>
+            <form method="post" action="{% url 'alternar_sugestao' s.pk %}">{% csrf_token %}
+              <button class="sgtf-btn sgtf-btn--ghost px-3 py-2" title="{% if s.estado == 'aberto' %}Fechar{% else %}Reabrir{% endif %}"><span class="material-icons-sharp text-[18px]">{% if s.estado == 'aberto' %}lock{% else %}lock_open{% endif %}</span></button>
+            </form>
+            {% if not s.escolhido %}
+            <form method="post" action="{% url 'eliminar_sugestao' s.pk %}" data-confirm="Eliminar este tema sugerido?">{% csrf_token %}
+              <button class="sgtf-btn sgtf-btn--ghost px-3 py-2 text-red-600" title="Eliminar"><span class="material-icons-sharp text-[18px]">delete</span></button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+        <span class="material-icons-sharp text-4xl text-slate-300">lightbulb</span>
+        Ainda não há temas sugeridos.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

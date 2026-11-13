@@ -133,3 +133,11 @@ from .backups import (  # noqa: F401
     backups,
     criar_backup,
 )
+from .sugestoes import (  # noqa: F401
+    gerir_sugestoes,
+    editar_sugestao,
+    alternar_sugestao,
+    eliminar_sugestao,
+    sugestoes_estudante,
+    escolher_sugestao,
+)

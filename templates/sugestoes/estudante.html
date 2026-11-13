@@ -1,0 +1,69 @@
+{% extends "Estudante/base.html" %}
+
+{% block titulo %}Sugestões de temas{% endblock %}
+{% block titulo_pagina %}Sugestões de temas{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Temas sugeridos pela coordenação</h2>
+    <p class="mt-1 text-sm text-slate-500">Temas que o seu curso precisa que sejam desenvolvidos. Se algum lhe interessar, escolha-o e indique o tutor.</p>
+  </div>
+
+  {% if not processo %}
+    <div class="sgtf-alert sgtf-alert--warning"><span class="material-icons-sharp">event_busy</span><p>O período de submissão de temas do seu curso não está aberto. Pode ver as sugestões, mas só poderá escolher quando o processo abrir.</p></div>
+  {% elif not pode_escolher %}
+    <div class="sgtf-alert sgtf-alert--info"><span class="material-icons-sharp">info</span><p>Já tem o tema <b>"{{ tema_atual.titulo }}"</b> em avaliação. Só pode escolher outro se esse for rejeitado pela coordenação.</p></div>
+  {% endif %}
+
+  <div class="grid gap-4 lg:grid-cols-2">
+    {% for s in sugestoes %}
+      <article class="sgtf-card flex flex-col p-5">
+        <div class="flex items-start gap-3">
+          <span class="material-icons-sharp rounded-xl bg-orange-50 p-2.5 text-orange-500">lightbulb</span>
+          <div class="min-w-0">
+            <h3 class="text-base font-bold leading-snug text-slate-900">{{ s.titulo }}</h3>
+            <p class="mt-1 text-xs text-slate-400">Sugerido em {{ s.criado_em|date:"d/m/Y" }}</p>
+          </div>
+        </div>
+        <p class="mt-3 flex-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ s.descricao }}</p>
+        <p class="mt-3 text-sm text-slate-500"><b class="text-slate-700">Tutor sugerido:</b> {% if s.tutor_sugerido %}{{ s.tutor_sugerido.nome }} {{ s.tutor_sugerido.sobrenome }}{% else %}à sua escolha{% endif %}</p>
+
+        {% if processo and pode_escolher %}
+          <details class="group mt-4 rounded-xl border border-slate-200">
+            <summary class="flex cursor-pointer list-none items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700">
+              <span class="material-icons-sharp text-[18px]">check_circle</span> Escolher este tema
+            </summary>
+            <form method="post" action="{% url 'escolher_sugestao' s.pk %}" enctype="multipart/form-data" class="space-y-3 p-4"
+                  data-confirm="Confirma a escolha do tema &quot;{{ s.titulo }}&quot;? A proposta segue para o tutor.">
+              {% csrf_token %}
+              <div>
+                <label class="sgtf-label" for="tutor_{{ s.pk }}">Tutor que vai orientar</label>
+                <select id="tutor_{{ s.pk }}" name="tutor_indicado" required class="sgtf-input">
+                  {% for t in tutores %}<option value="{{ t.pk }}" {% if t.pk == s.tutor_sugerido_id %}selected{% endif %}>{{ t.nome }} {{ t.sobrenome }}{% if t.pk == s.tutor_sugerido_id %} (sugerido){% endif %}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label class="sgtf-label" for="resumo_{{ s.pk }}">Resumo <span class="font-normal text-slate-400">(opcional)</span></label>
+                  <input id="resumo_{{ s.pk }}" type="file" name="resumo" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary">
+                </div>
+                <div>
+                  <label class="sgtf-label" for="req_{{ s.pk }}">Requerimento <span class="font-normal text-slate-400">(opcional)</span></label>
+                  <input id="req_{{ s.pk }}" type="file" name="requerimento" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary">
+                </div>
+              </div>
+              <button type="submit" class="sgtf-btn sgtf-btn--primary w-full">Confirmar escolha</button>
+            </form>
+          </details>
+        {% endif %}
+      </article>
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400 lg:col-span-2">
+        <span class="material-icons-sharp text-4xl text-slate-300">lightbulb</span>
+        De momento não há temas sugeridos para o seu curso.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

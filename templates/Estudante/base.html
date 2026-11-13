@@ -14,6 +14,7 @@
       <span class="material-icons-sharp">note_add</span> Propor tema
     </a>
   {% endif %}
+  <a href="{% url 'sugestoes_estudante' %}" class="sgtf-nav-link"><span class="material-icons-sharp">lightbulb</span> Sugestões</a>
   <a href="{% url 'lista_geral_temas' %}" class="sgtf-nav-link"><span class="material-icons-sharp">library_books</span> Temas disponíveis</a>
 
   <div class="sgtf-nav-group" data-nav-group="est-inscricao">
@@ -45,7 +46,7 @@
 
 {% block bottom_nav %}
   <a href="{% url 'dashboard_estudante' %}" class="sgtf-bnav-item"><span class="sgtf-bnav-icon"><span class="material-icons-sharp">space_dashboard</span></span><span class="sgtf-bnav-label">Início</span></a>
-  <a href="{% url 'lista_geral_temas' %}" class="sgtf-bnav-item"><span class="sgtf-bnav-icon"><span class="material-icons-sharp">library_books</span></span><span class="sgtf-bnav-label">Temas</span></a>
+  <a href="{% url 'sugestoes_estudante' %}" class="sgtf-bnav-item"><span class="sgtf-bnav-icon"><span class="material-icons-sharp">lightbulb</span></span><span class="sgtf-bnav-label">Sugestões</span></a>
   <a href="{% url 'lista_inscricoes_tfc' %}" class="sgtf-bnav-item"><span class="sgtf-bnav-icon"><span class="material-icons-sharp">assignment_turned_in</span>{% if total_notificacoes_tfc > 0 %}<span class="sgtf-bnav-badge">{{ total_notificacoes_tfc }}</span>{% endif %}</span><span class="sgtf-bnav-label">Inscrição</span></a>
   <a href="{% url 'todas_recomendacoes' %}" class="sgtf-bnav-item"><span class="sgtf-bnav-icon"><span class="material-icons-sharp">rate_review</span>{% if total_recomendacoes > 0 %}<span class="sgtf-bnav-badge">{{ total_recomendacoes }}</span>{% endif %}</span><span class="sgtf-bnav-label">Recomend.</span></a>
 {% endblock %}

@@ -181,3 +181,79 @@ class BackupTests(BaseTestCase):
             call_command("loaddata", caminho, verbosity=0)
         self.assertTrue(Usuario.objects.filter(email="outro@ispb.ao").exists())
         self.assertGreater(total, 0)
+
+
+class SugestoesTests(BaseTestCase):
+    def setUp(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import ProcessoEtapa
+        hoje = timezone.now().date()
+        self.processo = ProcessoEtapa.objects.create(
+            titulo="TFC 2026", curso=self.curso, coordenador=self.coordenacao,
+            data_inicio=hoje - timedelta(days=1), data_termino=hoje + timedelta(days=30), ativo=True,
+        )
+
+    def _criar_sugestao(self, **extra):
+        self.client.force_login(self.coordenacao)
+        dados = {"titulo": "Gestão de stock da cantina", "descricao": "Controlar entradas e saídas.",
+                 "curso": self.curso.pk, "tutor_sugerido": self.tutor.pk}
+        dados.update(extra)
+        self.client.post(reverse("gerir_sugestoes"), dados)
+        from .models import TemaSugerido
+        return TemaSugerido.objects.latest("criado_em")
+
+    def test_permissoes(self):
+        for user, url in [(self.estudante, "gerir_sugestoes"), (self.tutor, "gerir_sugestoes"),
+                          (self.coordenacao, "sugestoes_estudante")]:
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(reverse(url)).status_code, 403)
+
+    def test_coordenacao_cria_e_estudante_ve(self):
+        s = self._criar_sugestao()
+        self.assertEqual(s.criado_por, self.coordenacao)
+        self.client.force_login(self.estudante)
+        self.assertContains(self.client.get(reverse("sugestoes_estudante")), "Gestão de stock da cantina")
+
+    def test_estudante_escolhe_e_tema_fica_reservado(self):
+        from .models import NotificacaoFinal, Tema
+        s = self._criar_sugestao()
+        self.client.force_login(self.estudante)
+        r = self.client.post(reverse("escolher_sugestao", args=[s.pk]), {"tutor_indicado": self.tutor.pk})
+        self.assertRedirects(r, reverse("dashboard_estudante"), fetch_redirect_response=False)
+        tema = Tema.objects.get(estudante=self.estudante)
+        self.assertEqual(tema.titulo, s.titulo)
+        self.assertEqual(tema.tutor_indicado, self.tutor)
+        self.assertEqual(tema.processo, self.processo)
+        s.refresh_from_db()
+        self.assertTrue(s.escolhido)
+        self.assertTrue(NotificacaoFinal.objects.filter(usuario=self.coordenacao, titulo="Tema sugerido escolhido").exists())
+
+        self.client.force_login(self.outro_estudante)
+        self.assertNotContains(self.client.get(reverse("sugestoes_estudante")), "Gestão de stock da cantina")
+        self.client.post(reverse("escolher_sugestao", args=[s.pk]), {"tutor_indicado": self.tutor.pk})
+        self.assertFalse(Tema.objects.filter(estudante=self.outro_estudante).exists())
+
+        # coordenação rejeita: a sugestão volta a ficar disponível
+        tema.status_coordenacao = "rejeitado"
+        tema.save()
+        s.refresh_from_db()
+        self.assertTrue(s.disponivel)
+
+    def test_sem_processo_aberto_nao_escolhe(self):
+        from .models import Tema
+        s = self._criar_sugestao()
+        self.processo.ativo = False
+        self.processo.save()
+        self.client.force_login(self.estudante)
+        self.client.post(reverse("escolher_sugestao", args=[s.pk]), {"tutor_indicado": self.tutor.pk})
+        self.assertFalse(Tema.objects.filter(estudante=self.estudante).exists())
+
+    def test_nao_elimina_tema_ja_escolhido(self):
+        from .models import TemaSugerido
+        s = self._criar_sugestao()
+        self.client.force_login(self.estudante)
+        self.client.post(reverse("escolher_sugestao", args=[s.pk]), {"tutor_indicado": self.tutor.pk})
+        self.client.force_login(self.coordenacao)
+        self.client.post(reverse("eliminar_sugestao", args=[s.pk]))
+        self.assertTrue(TemaSugerido.objects.filter(pk=s.pk).exists())

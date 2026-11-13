@@ -1,0 +1,46 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Editar tema sugerido{% endblock %}
+{% block titulo_pagina %}Sugestões de temas{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <a href="{% url 'gerir_sugestoes' %}" class="inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-primary">
+    <span class="material-icons-sharp text-[18px]">arrow_back</span> Voltar às sugestões
+  </a>
+  <form method="post" class="sgtf-card space-y-4 p-5 md:p-6">
+    {% csrf_token %}
+    <h2 class="text-xl font-extrabold text-slate-900">Editar tema sugerido</h2>
+    {% if s.escolhido %}
+      <p class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Este tema já foi escolhido por {{ s.tema.estudante.nome }} {{ s.tema.estudante.sobrenome }}. As alterações não mudam a proposta que o estudante já enviou.</p>
+    {% endif %}
+    <div>
+      <label class="sgtf-label" for="titulo">Título</label>
+      <input id="titulo" name="titulo" required maxlength="200" value="{{ s.titulo }}" class="sgtf-input">
+    </div>
+    <div>
+      <label class="sgtf-label" for="descricao">Descrição e objetivos</label>
+      <textarea id="descricao" name="descricao" required rows="6" class="sgtf-input">{{ s.descricao }}</textarea>
+    </div>
+    <div class="grid gap-4 md:grid-cols-2">
+      <div>
+        <label class="sgtf-label" for="curso">Curso</label>
+        <select id="curso" name="curso" required class="sgtf-input">
+          {% for c in cursos %}<option value="{{ c.pk }}" {% if c.pk == s.curso_id %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="sgtf-label" for="tutor_sugerido">Tutor sugerido</label>
+        <select id="tutor_sugerido" name="tutor_sugerido" class="sgtf-input">
+          <option value="">Sem tutor definido</option>
+          {% for t in tutores %}<option value="{{ t.pk }}" {% if t.pk == s.tutor_sugerido_id %}selected{% endif %}>{{ t.nome }} {{ t.sobrenome }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button type="submit" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[20px]">save</span> Guardar</button>
+      <a href="{% url 'gerir_sugestoes' %}" class="sgtf-btn sgtf-btn--ghost">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
