@@ -1,0 +1,44 @@
+{% extends "layouts/painel.html" %}
+
+{% block painel_nome %}Área do Estudante{% endblock %}
+{% block painel_subtitulo %}Área do Estudante{% endblock %}
+{% block painel_secao %}{{ INSTITUICAO_SIGLA }}{% endblock %}
+{% block titulo_pagina %}Painel do Estudante{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'dashboard_estudante' %}" class="sgtf-nav-link"><span class="material-icons-sharp">space_dashboard</span> Início</a>
+
+  <p class="sgtf-nav-section">Trabalho de fim de curso</p>
+  {% if not request.user.temas.exists %}
+    <a href="{% url 'dashboard_estudante' %}#propor" onclick="if (typeof showProposta === 'function') { showProposta(); return false; }" class="sgtf-nav-link">
+      <span class="material-icons-sharp">note_add</span> Propor tema
+    </a>
+  {% endif %}
+  <a href="{% url 'lista_geral_temas' %}" class="sgtf-nav-link"><span class="material-icons-sharp">library_books</span> Temas disponíveis</a>
+
+  <div class="sgtf-nav-group" data-nav-group="est-inscricao">
+    <button type="button" class="sgtf-nav-link" data-nav-toggle>
+      <span class="material-icons-sharp">assignment_turned_in</span> Inscrição TFC
+      {% if total_notificacoes_tfc > 0 %}<span class="sgtf-nav-count">{{ total_notificacoes_tfc }}</span>{% endif %}
+      <span class="material-icons-sharp sgtf-chevron">expand_more</span>
+    </button>
+    <div class="sgtf-nav-group__items">
+      {% if not inscricoes %}
+        <a href="{% url 'gerar_ficha_tfc' %}" class="sgtf-nav-link">Nova inscrição</a>
+      {% endif %}
+      <a href="{% url 'lista_inscricoes_tfc' %}" class="sgtf-nav-link">As minhas fichas</a>
+    </div>
+  </div>
+
+  <a href="{% url 'todas_recomendacoes' %}" class="sgtf-nav-link">
+    <span class="material-icons-sharp">rate_review</span> Recomendações
+    {% if total_recomendacoes > 0 %}<span class="sgtf-nav-count">{{ total_recomendacoes }}</span>{% endif %}
+  </a>
+
+  {% with tema=request.user.temas.last %}
+    {% if tema and tema.tutor_indicado %}
+      <p class="sgtf-nav-section">Comunicação</p>
+      <a href="{% url 'chat' tema.tutor_indicado.id %}" class="sgtf-nav-link"><span class="material-icons-sharp">forum</span> Conversa com o orientador</a>
+    {% endif %}
+  {% endwith %}
+{% endblock %}

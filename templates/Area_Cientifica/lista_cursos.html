@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="p-6 max-w-7xl mx-auto">
+    <header class="mb-8">
+        <h1 class="text-3xl font-black text-gray-800 tracking-tight">Pré-defesas Recebidas</h1>
+        <p class="text-gray-500 font-medium">Selecione o curso para validar os processos de TFC.</p>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for item in cursos_com_dados %}
+        <a href="{% url 'predefesas_por_curso' item.curso.id %}" class="group">
+            <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-100/50 transition-all duration-500 relative overflow-hidden h-full flex flex-col">
+                
+                <!-- Ícone de Pasta Decorativo -->
+                <div class="absolute -right-6 -bottom-6 text-blue-50/40 group-hover:text-blue-100/60 transition-colors">
+                    <span class="material-icons-sharp text-[150px]">folder</span>
+                </div>
+
+                <div class="relative z-10 flex-grow">
+                    <!-- Cabeçalho do Card -->
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="bg-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-100">
+                            <span class="material-icons-sharp">school</span>
+                        </div>
+                        <div class="bg-green-50 text-green-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                            {{ item.quantidade }} Processos
+                        </div>
+                    </div>
+
+                    <!-- Informações do Curso -->
+                    <h3 class="text-xl font-extrabold text-gray-800 uppercase mb-3 group-hover:text-blue-600 transition-colors">
+                        {{ item.curso.nome }}
+                    </h3>
+                    <p class="text-sm text-gray-400 leading-relaxed line-clamp-3">
+                        {{ item.curso.descricao|default:"Curso técnico superior do ISP-Bié especializado na formação de quadros qualificados." }}
+                    </p>
+                </div>
+
+                <!-- Rodapé do Card -->
+                <div class="mt-8 pt-6 border-t border-gray-50 relative z-10 flex items-center justify-between">
+                    <span class="text-xs font-bold text-gray-400 uppercase tracking-tighter">Entrar na Pasta</span>
+                    <div class="bg-gray-900 text-white p-2 rounded-xl group-hover:bg-blue-600 transition-colors shadow-md">
+                        <span class="material-icons-sharp text-sm">arrow_forward_ios</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="col-span-full text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
+            <span class="material-icons-sharp text-gray-200 text-6xl mb-4">inventory</span>
+            <p class="text-gray-400 font-bold">Nenhuma remessa foi enviada pela coordenação para os cursos.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

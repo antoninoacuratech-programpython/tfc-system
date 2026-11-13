@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="bg-white shadow-2xl rounded-2xl border p-12 md:p-20 relative overflow-hidden print:shadow-none print:border-none">
+        
+        <div class="flex flex-col items-center text-center mb-12 border-b-2 border-gray-800 pb-6">
+            <img src="{%  static 'imgs/icons/finalispbie.jpg' %}" alt="Logotipo ISP-BIÉ" class="h-24 w-auto mb-4">
+            <h1 class="text-lg font-bold uppercase">Instituto Superior Politécnico do Bié</h1>
+            <h2 class="text-md font-bold uppercase">Departamento de Engenharias</h2>
+        </div>
+
+        <div class="mb-10 italic">
+            <p class="font-bold uppercase underline">Assunto: {{ solicitacao.assunto }}</p>
+        </div>
+
+        <div class="space-y-6 text-gray-800 leading-relaxed text-justify">
+            <p><strong>Estudante:</strong> {{ solicitacao.predefesa.estudante.nome }} {{ solicitacao.predefesa.estudante.sobrenome }}</p>
+            <p><strong>Trabalho de Fim de Curso:</strong> {{ solicitacao.predefesa.tema.titulo }}</p>
+            <p><strong>Tutorado por:</strong> {{ solicitacao.predefesa.tema.tutor_indicado.nome }} {{ solicitacao.predefesa.tema.tutor_indicado.sobrenome }}</p>
+            <p><strong>Co-tutorado por:</strong> {{ solicitacao.co_tutor }}</p>
+
+            <p class="pt-6">
+                Após o parecer emitido pelo júri nomeado para a avaliação deste trabalho de fim do curso (TFC), 
+                consideramos que o mesmo reúne as condições requeridas para a sua apresentação e defesa pública.
+            </p>
+
+            <p>
+                Assim, solicitamos que a mesma seja marcada para dia <strong>{{ solicitacao.data_defesa|date:"d" }} de {{ solicitacao.data_defesa|date:"F" }} de {{ solicitacao.data_defesa|date:"Y" }}</strong> 
+                pelas <strong>{{ solicitacao.hora_defesa }} horas</strong> no {{ solicitacao.local_defesa }}.
+            </p>
+        </div>
+
+        <div class="mt-20 flex flex-col items-center text-center">
+            <p>Atentamente,</p>
+            <p class="mt-4 font-bold uppercase">O Chefe do Departamento</p> 
+            <div class="w-64 border-b border-gray-400 mt-12 mb-2"></div>
+            <p class="font-bold">{{ solicitacao.chefe_departamento.nome }} {{ solicitacao.chefe_departamento.sobrenome }}</p> 
+            <p class="text-xs text-gray-500 font-semibold italic">Coordenador do Curso</p>
+        </div>
+
+        <div class="mt-24 text-[9px] text-gray-400 text-center uppercase tracking-widest border-t pt-4">
+            Rua Padre Fidalgo entre Artur de Paiva e Francisco de Leite Cardoso S/N, Cidade do Cuito-Bié 
+        </div>
+    </div>
+
+    <div class="mt-8 flex gap-4 print:hidden">
+        <button onclick="window.print()" class="flex-1 bg-gray-800 text-white font-bold py-3 rounded-xl hover:bg-black transition flex items-center justify-center gap-2">
+            <span class="material-icons-sharp">print</span> Imprimir Ofício
+        </button>
+        <a href="{% url 'lista_solicitacoes' %}" class="flex-1 bg-white border border-gray-200 text-gray-600 font-bold py-3 rounded-xl text-center hover:bg-gray-50 transition flex items-center justify-center">
+            Voltar à Lista
+        </a>
+    </div>
+</div>
+{% endblock %}

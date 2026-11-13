@@ -1,0 +1,289 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-extrabold text-gray-800 mb-1">
+                Despachos de Júri
+            </h2>
+            <p class="text-sm text-gray-500 font-medium">
+                ISP-BIÉ • Gestão de Nomeações e Documentos Oficiais
+            </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            {% if despachos %}
+            <a href="{% url 'baixar_todos_despachos_zip' %}"
+               class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-amber-500 text-white text-sm font-bold hover:bg-amber-600 transition shadow-lg shadow-amber-100">
+                <span class="material-icons-sharp text-sm mr-2">inventory_2</span>
+                Baixar Tudo (ZIP)
+            </a>
+            {% endif %}
+            <a href="{% url 'criar_despacho' %}"
+               class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100">
+                <span class="material-icons-sharp text-sm mr-2">add</span>
+                Novo Despacho
+            </a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-6 px-4 py-3 rounded-xl text-sm font-bold shadow-sm flex items-center gap-2
+                {% if message.tags == 'success' %} bg-green-100 text-green-700 {% else %} bg-red-100 text-red-700 {% endif %}">
+                <span class="material-icons-sharp text-lg">{% if message.tags == 'success' %}check_circle{% else %}error{% endif %}</span>
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <!-- LAYOUT MOBILE -->
+    <div class="grid grid-cols-1 gap-4 sm:hidden">
+        {% for despacho in despachos %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+            <div class="flex justify-between items-start mb-4">
+                <span class="text-xs font-black text-blue-600 bg-blue-50 px-2 py-1 rounded">№ {{ despacho.numero_despacho }}</span>
+                <div>
+                    {% if despacho.status == 'aprovado' %}
+                        <span class="px-2 py-1 text-[10px] bg-green-100 text-green-700 rounded-lg font-bold uppercase">Aprovado</span>
+                    {% elif despacho.status == 'rejeitado' %}
+                        <span class="px-2 py-1 text-[10px] bg-red-100 text-red-700 rounded-lg font-bold uppercase">Rejeitado</span>
+                    {% elif despacho.status == 'enviado' %}
+                        <span class="px-2 py-1 text-[10px] bg-blue-100 text-blue-700 rounded-lg font-bold uppercase">Enviado</span>
+                    {% else %}
+                        <span class="px-2 py-1 text-[10px] bg-yellow-100 text-yellow-700 rounded-lg font-bold uppercase">Pendente</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <h3 class="text-base font-bold text-gray-800 leading-tight">
+                {{ despacho.predefesa.estudante.nome }} {{ despacho.predefesa.estudante.sobrenome }}
+            </h3>
+            <p class="text-[11px] text-gray-400 mt-1 uppercase font-semibold">
+                {{ despacho.predefesa.estudante.curso.nome }}
+            </p>
+
+            <div class="mt-5 flex flex-col gap-2">
+                
+                <!-- Ações de fluxo no Mobile -->
+                {% if request.user.perfil == 'presidente' and despacho.status == 'enviado' %}
+                    <a href="{% url 'assinar_despacho' despacho.id %}" onclick="desabilitarCliqueLink(this)"
+                       class="w-full flex items-center justify-center py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition shadow-md">
+                       Revisar e Assinar
+                    </a>
+                {% elif request.user.perfil == 'area_cientifica' and despacho.status == 'pendente' %}
+                    <form action="{% url 'enviar_despacho_presidencia' despacho.id %}" method="POST" class="w-full form-envio">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full flex items-center justify-center py-2 rounded-lg bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 transition shadow-md btn-submeter">
+                            Enviar para Presidência
+                        </button>
+                    </form>
+                {% endif %}
+
+                <div class="flex gap-2 w-full">
+                    <a href="{% url 'gerar_despacho_pdf' despacho.id %}"
+                       class="flex-1 flex items-center justify-center py-2 rounded-lg bg-emerald-50 text-emerald-600 text-xs font-bold hover:bg-emerald-600 hover:text-white transition">
+                        PDF
+                    </a>
+                    <button onclick="abrirModalEliminar('{{ despacho.id }}')"
+                       class="flex-1 flex items-center justify-center py-2 rounded-lg bg-red-50 text-red-600 text-xs font-bold hover:bg-red-600 hover:text-white transition">
+                        Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+            <div class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed text-gray-400 italic">Nenhum despacho encontrado.</div>
+        {% endfor %}
+    </div>
+
+    <!-- LAYOUT DESKTOP -->
+    <div class="hidden sm:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead class="bg-gray-50 border-b border-gray-100">
+                <tr class="text-gray-400 text-xs uppercase font-black">
+                    <th class="px-6 py-4">Nº Despacho</th>
+                    <th class="px-6 py-4">Estudante / Curso</th>
+                    <th class="px-6 py-4 text-center">Status</th>
+                    <th class="px-6 py-4 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for despacho in despachos %}
+                <tr class="hover:bg-gray-50/50 transition">
+                    <td class="px-6 py-4">
+                        <span class="font-black text-blue-600">№ {{ despacho.numero_despacho }}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-gray-700">{{ despacho.predefesa.estudante.nome }} {{ despacho.predefesa.estudante.sobrenome }}</div>
+                        <div class="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">{{ despacho.predefesa.estudante.curso.nome }}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        {% if despacho.status == 'aprovado' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-green-100 text-green-700 uppercase">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></span> Aprovado
+                            </span>
+                        {% elif despacho.status == 'rejeitado' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-700 uppercase">
+                                <span class="w-1.5 h-1.5 bg-red-500 rounded-full mr-2"></span> Rejeitado
+                            </span>
+                        {% elif despacho.status == 'enviado' %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-700 uppercase">
+                                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full mr-2"></span> Enviado
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-black bg-yellow-100 text-yellow-700 uppercase">
+                                <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span> Pendente
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex justify-center items-center gap-2">
+                            
+                            <!-- Botão de Enviar para a Presidência (Área Científica) -->
+                            {% if request.user.perfil == 'area_cientifica' and despacho.status == 'pendente' %}
+                            <form action="{% url 'enviar_despacho_presidencia' despacho.id %}" method="POST" style="display:inline;" class="form-envio">
+                                {% csrf_token %}
+                                <button type="submit" class="p-2 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition shadow-sm btn-submeter" title="Enviar para Presidência">
+                                    <span class="material-icons-sharp text-sm">send</span>
+                                </button>
+                            </form>
+                            {% endif %}
+
+                            <!-- Botão para o Presidente Revisar e Assinar (Apenas se estiver Enviado) -->
+                            {% if request.user.perfil == 'presidente' and despacho.status == 'enviado' %}
+                            <a href="{% url 'assinar_despacho' despacho.id %}" onclick="desabilitarCliqueLink(this)"
+                               class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition shadow-sm" title="Revisar e Assinar">
+                                <span class="material-icons-sharp text-sm">assignment_turned_in</span>
+                            </a>
+                            {% endif %}
+
+                            <a href="{% url 'gerar_despacho_pdf' despacho.id %}" 
+                               class="p-2 rounded-xl bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition shadow-sm" title="Baixar PDF">
+                                <span class="material-icons-sharp text-sm">picture_as_pdf</span>
+                            </a>
+                            <a href="#" class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition shadow-sm" title="Editar">
+                                <span class="material-icons-sharp text-sm">edit</span>
+                            </a>
+                            <button onclick="abrirModalEliminar('{{ despacho.id }}')" 
+                                    class="p-2 rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition shadow-sm" title="Eliminar">
+                                <span class="material-icons-sharp text-sm">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-400 italic">
+                        <span class="material-icons-sharp text-4xl block mb-2 opacity-20">find_in_page</span>
+                        Nenhum despacho cadastrado até o momento.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="bg-gray-50 px-6 py-3 border-t border-gray-100">
+            <p class="text-[10px] text-gray-400 font-bold uppercase">Total de documentos: {{ despachos.count }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ELIMINAR -->
+<div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <div class="bg-white px-6 pt-6 pb-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-red-50 sm:mx-0 sm:h-10 sm:w-10">
+                        <span class="material-icons-sharp text-red-600">warning</span>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg font-black text-gray-900" id="modal-title">Eliminar Despacho</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500 font-medium">Você está prestes a apagar este documento permanentemente. Confirma esta operação?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 sm:flex sm:flex-row-reverse gap-3">
+                <button type="button" id="btnConfirmarEliminar" class="w-full inline-flex justify-center rounded-xl px-4 py-2.5 bg-red-600 text-sm font-bold text-white hover:bg-red-700 transition-all sm:w-auto shadow-lg shadow-red-100">
+                    Eliminar Agora
+                </button>
+                <button type="button" onclick="fecharModal()" class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-200 px-4 py-2.5 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 transition-all sm:mt-0 sm:w-auto">
+                    Manter Documento
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let despachoIdParaEliminar = null;
+
+    // Monitora a submissão dos formulários de envio à presidência
+    document.querySelectorAll('.form-envio').forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const btn = this.querySelector('.btn-submeter');
+            if (btn) {
+                // Previne múltiplos envios desabilitando o botão
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                
+                // Se for o botão com texto (Mobile) altera a legenda
+                if(btn.innerText.trim() === "Enviar para Presidência") {
+                    btn.innerText = "Enviando despacho...";
+                }
+            }
+        });
+    });
+
+    // Função para evitar duplo clique em botões de link normais (Tag <a>)
+    function desabilitarCliqueLink(elemento) {
+        elemento.style.pointerEvents = 'none';
+        elemento.classList.add('opacity-50', 'cursor-not-allowed');
+        if(elemento.innerText.trim() === "Revisar e Assinar") {
+            elemento.innerText = "Processando...";
+        }
+    }
+
+    function abrirModalEliminar(id) {
+        despachoIdParaEliminar = id;
+        document.getElementById('modalEliminar').classList.remove('hidden');
+    }
+
+    function fecharModal() {
+        document.getElementById('modalEliminar').classList.add('hidden');
+        despachoIdParaEliminar = null;
+    }
+
+    document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+        if (despachoIdParaEliminar) {
+            // Desabilita o botão do modal também para evitar envio duplo ao excluir
+            this.disabled = true;
+            this.innerText = "Eliminando...";
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/despacho/eliminar/${despachoIdParaEliminar}/`;
+            
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = '{{ csrf_token }}';
+            
+            form.appendChild(csrfInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

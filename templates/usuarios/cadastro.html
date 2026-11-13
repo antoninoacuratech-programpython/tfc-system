@@ -1,0 +1,95 @@
+{% extends "layouts/autenticacao.html" %}
+
+{% block titulo %}Criar conta{% endblock %}
+
+{% block conteudo %}
+  <a href="{% url 'login' %}" class="mb-6 inline-flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-primary">
+    <span class="material-icons-sharp text-[18px]">arrow_back</span> Voltar ao login
+  </a>
+  <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Criar conta de estudante</h1>
+  <p class="mt-1.5 text-sm text-slate-500">Depois do registo, a coordenação valida e activa a sua conta.</p>
+
+  <div class="mt-6">{% include "partials/_mensagens.html" %}</div>
+
+  <form method="post" id="cadastroForm" class="space-y-4" data-lock>
+    {% csrf_token %}
+    <input type="hidden" name="perfil" value="estudante">
+
+    <div>
+      <label for="nome_completo" class="sgtf-label">Nome completo</label>
+      <input type="text" name="nome_completo" id="nome_completo" required autocomplete="name"
+             placeholder="Ex.: Maria João Cassoma" class="sgtf-input">
+      <p id="nomeError" class="mt-1 hidden text-xs font-medium text-red-600">Indique pelo menos o primeiro e o último nome.</p>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="email" class="sgtf-label">E-mail</label>
+        <input type="email" id="email" name="email" required autocomplete="email" placeholder="nome@ispb.ao" class="sgtf-input">
+      </div>
+      <div>
+        <label for="telefone" class="sgtf-label">Telefone</label>
+        <input type="tel" id="telefone" name="telefone" required inputmode="numeric" pattern="[0-9]{9}" maxlength="9"
+               placeholder="9XXXXXXXX" class="sgtf-input">
+      </div>
+    </div>
+
+    <div>
+      <label for="curso" class="sgtf-label">Curso</label>
+      <select name="curso" id="curso" required class="sgtf-input">
+        <option value="" disabled selected>Seleccione o seu curso</option>
+        {% regroup cursos by departamento as por_departamento %}
+        {% for grupo in por_departamento %}
+          <optgroup label="{{ grupo.grouper.nome|default:'Sem departamento' }}">
+            {% for curso in grupo.list %}
+              <option value="{{ curso.id }}">{{ curso.nome }}</option>
+            {% endfor %}
+          </optgroup>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="senha1" class="sgtf-label">Senha</label>
+        <div class="relative">
+          <input type="password" id="senha1" name="password1" required minlength="8" autocomplete="new-password" class="sgtf-input pr-10">
+          <button type="button" data-toggle-senha="senha1" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-primary">
+            <span class="material-icons-sharp">visibility</span>
+          </button>
+        </div>
+      </div>
+      <div>
+        <label for="senha2" class="sgtf-label">Confirmar senha</label>
+        <div class="relative">
+          <input type="password" id="senha2" name="password2" required minlength="8" autocomplete="new-password" class="sgtf-input pr-10">
+          <button type="button" data-toggle-senha="senha2" aria-label="Mostrar senha" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-primary">
+            <span class="material-icons-sharp">visibility</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <p class="text-xs text-slate-500">Mínimo de 8 caracteres, não apenas números e diferente dos seus dados pessoais.</p>
+
+    <button type="submit" class="sgtf-btn sgtf-btn--primary w-full py-3 text-[15px]" data-loading="A criar conta...">
+      <span data-label>Criar conta</span>
+    </button>
+  </form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const form = document.getElementById("cadastroForm");
+  const nome = document.getElementById("nome_completo");
+  const erroNome = document.getElementById("nomeError");
+  const s1 = document.getElementById("senha1");
+  const s2 = document.getElementById("senha2");
+  const nomeValido = (v) => v.trim().split(/\s+/).filter(Boolean).length >= 2;
+
+  nome.addEventListener("blur", () => erroNome.classList.toggle("hidden", !nome.value || nomeValido(nome.value)));
+  s2.addEventListener("input", () => s2.setCustomValidity(s2.value && s2.value !== s1.value ? "As senhas não coincidem." : ""));
+  form.addEventListener("submit", (e) => {
+    if (!nomeValido(nome.value)) { e.preventDefault(); erroNome.classList.remove("hidden"); nome.focus(); }
+  });
+</script>
+{% endblock %}

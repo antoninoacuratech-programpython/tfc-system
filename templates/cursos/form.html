@@ -1,0 +1,74 @@
+{% extends "admin/base.html" %}
+{% block content %}
+
+<div class="max-w-3xl mx-auto">
+
+  <div class="bg-white rounded-xl shadow-sm border p-6 sm:p-8">
+
+    <h2 class="text-xl font-bold text-gray-800 mb-1">
+      {% if curso %}Editar Curso{% else %}Novo Curso{% endif %}
+    </h2>
+    <p class="text-sm text-gray-500 mb-6">
+      Preencha corretamente os dados do curso
+    </p>
+
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <!-- NOME -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Nome do Curso
+        </label>
+        <input type="text" name="nome"
+               value="{{ curso.nome|default:'' }}"
+               required
+               class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none">
+      </div>
+
+      <!-- DEPARTAMENTO -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Departamento
+        </label>
+        <select name="departamento" required
+                class="w-full px-4 py-2 rounded-lg border bg-white focus:ring-2 focus:ring-primary focus:outline-none">
+          <option value="">Selecione o departamento</option>
+          {% for d in departamentos %}
+            <option value="{{ d.id }}"
+              {% if curso and curso.departamento.id == d.id %}selected{% endif %}>
+              {{ d.nome }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- DESCRIÇÃO -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Descrição
+        </label>
+        <textarea name="descricao" rows="4"
+                  class="w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-primary focus:outline-none">{{ curso.descricao|default:'' }}</textarea>
+      </div>
+
+      <!-- AÇÕES -->
+      <div class="flex flex-col sm:flex-row gap-3 pt-4">
+        <button type="submit"
+                class="flex-1 bg-primary text-white py-2 rounded-lg font-bold hover:bg-primary/90 transition">
+          Salvar
+        </button>
+
+        <a href="{% url 'lista_cursos' %}"
+           class="flex-1 text-center py-2 rounded-lg font-bold bg-gray-100 hover:bg-gray-200">
+          Cancelar
+        </a>
+      </div>
+
+    </form>
+
+  </div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,15 @@
+{% if messages %}
+<div class="sgtf-alerts" role="status" aria-live="polite">
+  {% for message in messages %}
+    {% with tag=message.tags|default:"info" %}
+    <div class="sgtf-alert sgtf-alert--{% if 'error' in tag %}error{% elif 'warning' in tag %}warning{% elif 'success' in tag %}success{% else %}info{% endif %}" data-alert>
+      <span class="material-icons-sharp" aria-hidden="true">{% if 'error' in tag %}error{% elif 'warning' in tag %}warning{% elif 'success' in tag %}check_circle{% else %}info{% endif %}</span>
+      <p>{{ message }}</p>
+      <button type="button" class="sgtf-alert__close" data-alert-close aria-label="Fechar">
+        <span class="material-icons-sharp">close</span>
+      </button>
+    </div>
+    {% endwith %}
+  {% endfor %}
+</div>
+{% endif %}

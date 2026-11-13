@@ -1,0 +1,97 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 p-4 md:p-8">
+    
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Área Científica</h1>
+            <p class="text-gray-500 text-sm md:text-base">Gestão de Comunicados, Pré-defesas e Despachos</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <a href="{% url 'criar_comunicado' %}" 
+               class="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-xl shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Novo Comunicado
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Comunicados</p>
+                <p class="text-2xl font-bold text-gray-800">{{ total_comunicados }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Insc. Pendentes</p>
+                <p class="text-2xl font-bold text-gray-800">{{ inscricoes_pendentes_count }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-indigo-100 rounded-lg mr-4">
+                <svg class="h-6 w-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Pré-defesas</p>
+                <p class="text-2xl font-bold text-gray-800">{{ total_predefesas }}</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-purple-100 rounded-lg mr-4">
+                <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500 font-medium">Desp. Pendentes</p>
+                <p class="text-2xl font-bold text-gray-800">{{ despachos_pendentes }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h2 class="text-lg font-bold text-gray-800">Comunicados Recentes</h2>
+            <button class="text-blue-600 hover:text-blue-800 text-sm font-semibold transition">Ver Todos</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-600">Título / Data Fim</th>
+                        <th class="px-6 py-4 text-sm font-semibold text-gray-600 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for comunicado in comunicados %}
+                    <tr class="hover:bg-gray-50 transition">
+                        <td class="px-6 py-4 text-sm">
+                            <span class="font-bold">TFC {{ comunicado.data_fim|date:"Y" }}</span>
+                            <span class="text-gray-400 block text-xs">Expira: {{ comunicado.data_fim }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <a href="#" class="text-blue-600 hover:underline">Ver Detalhes</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    
+</div>
+{% endblock %}

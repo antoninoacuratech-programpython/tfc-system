@@ -1,0 +1,112 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 p-4 md:p-8">
+    
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight">Área Ética</h1>
+            <p class="text-gray-500 text-sm md:text-base font-medium">ISP-BIÉ • Avaliação de Conduta e Participação Acadêmica</p>
+        </div>
+        
+        <div class="flex flex-wrap gap-3">
+            <a href="#" 
+               class="flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-lg shadow-emerald-100 transition duration-300 ease-in-out transform hover:-translate-y-1">
+                <span class="material-icons-sharp mr-2 text-sm">assignment_turned_in</span>
+                Nova Avaliação
+            </a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-emerald-100 p-6 mb-8 flex flex-col md:flex-row items-center gap-6">
+        <div class="p-4 bg-emerald-50 rounded-2xl text-emerald-600">
+            <span class="material-icons-sharp text-4xl">gavel</span>
+        </div>
+        <div class="flex-1">
+            <h2 class="text-lg font-bold text-gray-800 mb-1">Responsabilidade da Área Ética</h2>
+            <p class="text-gray-600 text-sm leading-relaxed">
+                Este setor é responsável por monitorar e avaliar o **comportamento ético-disciplinar** do estudante ao longo de todo o percurso curricular. Validamos as participações em eventos, conduta social e acadêmica, servindo como um requisito crucial para a autorização da defesa final do Trabalho de Fim de Curso (TFC).
+            </p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-blue-50 rounded-xl mr-4 text-blue-600">
+                <span class="material-icons-sharp">verified_user</span>
+            </div>
+            <div>
+                <p class="text-[11px] text-gray-400 font-black uppercase tracking-wider">Avaliações Feitas</p>
+                <p class="text-2xl font-black text-gray-800">124</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-amber-50 rounded-xl mr-4 text-amber-600">
+                <span class="material-icons-sharp">pending_actions</span>
+            </div>
+            <div>
+                <p class="text-[11px] text-gray-400 font-black uppercase tracking-wider">Pendentes de Revisão</p>
+                <p class="text-2xl font-black text-gray-800">12</p>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center">
+            <div class="p-3 bg-red-50 rounded-xl mr-4 text-red-600">
+                <span class="material-icons-sharp">report_problem</span>
+            </div>
+            <div>
+                <p class="text-[11px] text-gray-400 font-black uppercase tracking-wider">Alertas de Conduta</p>
+                <p class="text-2xl font-black text-gray-800">3</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
+        <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/30">
+            <h2 class="text-lg font-black text-gray-800">Estudantes em Processo de Avaliação</h2>
+            <button class="text-emerald-600 hover:text-emerald-800 text-xs font-black uppercase tracking-tighter transition">Ver Fila Completa</button>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50/50">
+                    <tr class="text-gray-400 text-[10px] uppercase font-black">
+                        <th class="px-6 py-4">Estudante</th>
+                        <th class="px-6 py-4">Curso</th>
+                        <th class="px-6 py-4 text-center">Parecer Ético</th>
+                        <th class="px-6 py-4 text-right">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    <tr class="hover:bg-gray-50/50 transition">
+                        <td class="px-6 py-4">
+                            <div class="font-bold text-gray-800 text-sm">Domingos José</div>
+                            <div class="text-[10px] text-gray-400 font-medium">ID: 2026-ISP-042</div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-[10px] font-bold text-gray-500 uppercase">Engenharia Informática</span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black bg-green-100 text-green-700 uppercase">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5"></span> Favorável
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <a href="#" class="inline-flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-800">
+                                Avaliar <span class="material-icons-sharp text-sm ml-1">arrow_forward</span>
+                            </a>
+                        </td>
+                    </tr>
+                    {% if not estudantes_avaliar %}
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center text-gray-400 italic text-sm">
+                            Nenhum processo aguardando parecer no momento.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

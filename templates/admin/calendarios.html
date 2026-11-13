@@ -1,0 +1,92 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="p-6 max-w-6xl mx-auto">
+
+    <!-- Bloco de Mensagens -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg shadow-sm border {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-800{% elif message.tags == 'warning' %}bg-yellow-50 border-yellow-200 text-yellow-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Cabeçalho de Gestão -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-gray-800">Gestão de Calendários de Aprovação</h1>
+        <p class="text-gray-600">Defina as datas e notifique automaticamente os estudantes.</p>
+    </div>
+
+    <!-- Formulário de Criação -->
+    <form method="post" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        {% csrf_token %}
+        <input type="hidden" name="criar" value="true">
+        
+        <div class="md:col-span-1">
+            <label class="block text-xs font-bold text-gray-500 uppercase">Título</label>
+            <input type="text" name="titulo" required class="w-full mt-1 border-gray-300 rounded-lg text-sm focus:ring-blue-500">
+        </div>
+        <div class="md:col-span-1">
+            <label class="block text-xs font-bold text-gray-500 uppercase">Data/Hora</label>
+            <input type="datetime-local" name="data_aprovacao" required class="w-full mt-1 border-gray-300 rounded-lg text-sm focus:ring-blue-500">
+        </div>
+        <div class="md:col-span-1">
+            <label class="block text-xs font-bold text-gray-500 uppercase">Período</label>
+            <select name="periodo" class="w-full mt-1 border-gray-300 rounded-lg text-sm focus:ring-blue-500">
+                <option value="regular">Regular</option>
+                <option value="poslaboral">Pós-Laboral</option>
+            </select>
+        </div>
+        <div class="md:col-span-1">
+            <label class="block text-xs font-bold text-gray-500 uppercase">Curso</label>
+            <select name="curso_id" class="w-full mt-1 border-gray-300 rounded-lg text-sm focus:ring-blue-500">
+                {% for curso in cursos %}
+                <option value="{{ curso.id }}">{{ curso.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white py-2 rounded-lg font-bold hover:bg-blue-700 transition">
+            Criar Calendário
+        </button>
+    </form>
+
+    <!-- Tabela de Listagem -->
+    <div class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+        <table class="w-full text-sm text-left">
+            <thead class="bg-gray-50 text-gray-700 uppercase font-bold border-b">
+                <tr>
+                    <th class="px-6 py-4">Título</th>
+                    <th class="px-6 py-4">Data e Hora</th>
+                    <th class="px-6 py-4">Período</th>
+                    <th class="px-6 py-4">Curso</th>
+                    <th class="px-6 py-4 text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for c in calendarios %}
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 font-medium">{{ c.titulo }}</td>
+                    <td class="px-6 py-4">{{ c.data_aprovacao|date:"d/m/Y H:i" }}</td>
+                    <td class="px-6 py-4 capitalize">{{ c.periodo }}</td>
+                    <td class="px-6 py-4">{{ c.curso.nome }}</td>
+                    <td class="px-6 py-4 text-center">
+                        <form method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta data?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="excluir" value="true">
+                            <input type="hidden" name="calendario_id" value="{{ c.id }}">
+                            <button type="submit" class="text-red-600 hover:text-red-800 font-semibold">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

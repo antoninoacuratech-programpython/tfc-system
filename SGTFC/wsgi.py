@@ -1,0 +1,12 @@
+"""Ponto de entrada WSGI (gunicorn, Render, Vercel)."""
+
+import os
+
+from django.core.wsgi import get_wsgi_application
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "SGTFC.settings")
+
+application = get_wsgi_application()
+
+# Alias usado pela Vercel (@vercel/python procura "app").
+app = application

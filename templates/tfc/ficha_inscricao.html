@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .folha-a4 {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 25mm;
+            margin: auto;
+            background: white;
+            font-family: "Times New Roman", serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: black;
+        }
+        .header { text-align: center; font-weight: bold; margin-bottom: 30px; }
+        .assunto { margin-bottom: 30px; }
+        .corpo { text-align: justify; margin-bottom: 50px; }
+        .assinatura { margin-top: 60px; text-align: left; }
+        .rodape-info { 
+            margin-top: 80px; 
+            border-top: 1px solid black; 
+            font-size: 9pt; 
+            text-align: center; 
+        }
+        .destinatario { text-align: right; margin-top: 30px; font-weight: bold; }
+        @media print { .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align:center; padding: 20px;">
+        <button onclick="window.print()">Imprimir Ficha (PDF)</button>
+    </div>
+
+    <div class="folha-a4">
+        <div class="header">
+            INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ [cite: 1]<br>
+            DEPARTAMENTO DE ENGENHARIAS [cite: 1]
+        </div>
+
+        <div class="assunto">
+            <strong>ASSUNTO:</strong> Pedido de autorização para a apresentação e defesa pública de Trabalho de Fim de Curso. [cite: 1]
+        </div>
+
+        <div class="corpo">
+            Estudante: <strong>{{ estudante }}</strong> <br>
+            Trabalho de Fim de Curso: <strong>{{ titulo_tfc }}</strong>, 
+            tutorado por <strong>{{ tutor }}</strong> e co-tutorado por <strong>{{ co_tutor }}</strong>. <br><br>
+            
+            Após o parecer emitido pelo júri nomeado para a avaliação deste trabalho de fim do curso (TFC), 
+            consideramos que o mesmo reúne as condições requeridas para a sua apresentação e defesa pública. <br><br>
+
+            Assim, solicitamos que a mesma seja marcada para dia _______ de __________de {{ ano_atual }} 
+            pelas ____ horas no Auditório nº 1 do Instituto Superior Politécnico do Bié. [cite: 3]
+        </div>
+
+        <div class="assinatura">
+            Atentamente,<br>
+            O Chefe do Departamento<br><br>
+            _______________________________________ [cite: 4]<br>
+            Dinis Guilherme Jackson MSc. [cite: 4]
+        </div>
+
+        <div class="rodape-info">
+            Rua Padre Fidalgo entre Artur de Paiva e Francisco de Leite Cardoso S/N, Cidade do Cuito-Bié [cite: 4]<br>
+            E-mail: ispb.bie@gmail.com | NIF: 5000308765 | Telefone: 922408061 [cite: 4]
+        </div>
+
+        <div class="destinatario">
+            Ao<br>
+            Presidente do Instituto Superior Politécnico do Bié [cite: 4]<br>
+            =CUITO= [cite: 4]
+        </div>
+    </div>
+</body>
+</html>

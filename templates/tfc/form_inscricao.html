@@ -1,0 +1,132 @@
+{% extends "Estudante/base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+    <div class="bg-white rounded-t-2xl border-x border-t p-6 text-center">
+        <h1 class="text-xl font-bold text-gray-800 uppercase">Instituto Superior Politécnico do Bié</h1>
+        <h2 class="text-sm font-semibold text-gray-600 uppercase mt-1">
+            Departamento de Investigação Científica, Inovação, Empreendedorismo e Pós-Graduação
+        </h2>
+        <div class="mt-4 py-2 bg-gray-100 rounded-lg">
+            <h3 class="text-md font-bold text-primary uppercase">Ficha de Inscrição do Trabalho de Fim de Curso</h3>
+        </div>
+    </div>
+
+    <!-- Adicionado enctype="multipart/form-data" para permitir upload de arquivos -->
+    <form method="POST" enctype="multipart/form-data" class="bg-white shadow-lg rounded-b-2xl border p-6 md:p-10 space-y-8">
+        {% csrf_token %}
+
+        <!-- Informações do Aluno (Somente Leitura) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-100">
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase">Nome Completo</label>
+                <p class="text-gray-700 font-medium border-b border-dashed pb-1">{{ request.user.nome }} {{ request.user.sobrenome }}</p> 
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase">Curso</label>
+                <p class="text-gray-700 font-medium border-b border-dashed pb-1">{{ request.user.curso.nome }}</p> 
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase">Departamento</label>
+                <p class="text-gray-700 font-medium border-b border-dashed pb-1">{{ request.user.depart.nome }}</p> 
+            </div>
+            <div class="space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase">Nº Universitário</label>
+                <p class="text-gray-700 font-medium border-b border-dashed pb-1">{{ request.user.id }}</p> 
+            </div>
+            <div class="md:col-span-2 space-y-1">
+                <label class="text-xs font-bold text-gray-400 uppercase">Título do Trabalho (Tema Aprovado)</label>
+                <p class="text-gray-700 font-medium border-b border-dashed pb-1">{{ tema.titulo }}</p> 
+            </div>
+        </div>
+
+        <!-- Campos de Texto e Seleção -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+                <label for="periodo" class="block text-sm font-bold text-gray-700">Período</label> 
+                <select name="periodo" id="periodo" required 
+                    class="w-full rounded-xl border-gray-200 bg-gray-50 focus:ring-primary focus:border-primary transition">
+                    <option value="Regular">Regular</option> 
+                    <option value="Pós-Laboral">Pós-Laboral</option> 
+                </select>
+            </div>
+
+            <div class="space-y-2">
+                <label class="block text-sm font-bold text-gray-700">Ano de Conclusão do Plano Curricular</label>
+                <input type="text" value="{% now 'Y' %}" readonly 
+                    class="w-full rounded-xl border-gray-100 bg-gray-100 text-gray-500 cursor-not-allowed">
+            </div>
+
+            <div class="md:col-span-2 space-y-2">
+                <label for="endereco" class="block text-sm font-bold text-gray-700">Endereço de Residência</label>
+                <input type="text" name="endereco" id="endereco" required 
+                    placeholder="Cidade, Bairro, Rua..."
+                    class="w-full rounded-xl border-gray-200 bg-gray-50 focus:ring-primary focus:border-primary transition">
+            </div>
+
+            <div class="md:col-span-2 space-y-2">
+                <label for="local_desenvolvimento" class="block text-sm font-bold text-gray-700">Local onde o trabalho será desenvolvido</label> 
+                <input type="text" name="local_desenvolvimento" id="local_desenvolvimento" required 
+                    placeholder="Ex: Laboratórios do ISP-BIÉ, Instituição X, etc."
+                    class="w-full rounded-xl border-gray-200 bg-gray-50 focus:ring-primary focus:border-primary transition">
+            </div>
+        </div>
+
+        <!-- SEÇÃO DE DOCUMENTOS -->
+        <div class="pt-6 border-t border-gray-100">
+            <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Documentação Necessária (PDF/Imagem)</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <div class="space-y-2">
+                    <label for="requerimento" class="block text-sm font-bold text-gray-700">Requerimento</label>
+                    <input type="file" name="requerimento" id="requerimento" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100">
+                </div>
+
+                <div class="space-y-2">
+                    <label for="curriculum" class="block text-sm font-bold text-gray-700">Curriculum Académico</label>
+                    <input type="file" name="curriculum" id="curriculum" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100">
+                </div>
+
+                <div class="space-y-2">
+                    <label for="ficha_reconfirmacao" class="block text-sm font-bold text-gray-700">Ficha de Reconfirmação</label>
+                    <input type="file" name="ficha_reconfirmacao" id="ficha_reconfirmacao" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100">
+                </div>
+
+                <div class="space-y-2">
+                    <label for="comprovativo_pagamento" class="block text-sm font-bold text-gray-700">Comprovativo de Pagamento</label>
+                    <input type="file" name="comprovativo_pagamento" id="comprovativo_pagamento" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100">
+                </div>
+
+                <!-- CAMPO ADICIONADO: BILHETE DE IDENTIDADE -->
+                <div class="space-y-2">
+                    <label for="copia_bi" class="block text-sm font-bold text-gray-700">Cópia do Bilhete de Identidade (B.I.)</label>
+                    <input type="file" name="copia_bi" id="copia_bi" required
+                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100">
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="flex flex-col md:flex-row gap-4 pt-6">
+            <button type="submit" 
+                class="flex-1 bg-primary hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition duration-300 flex items-center justify-center gap-2">
+                <span class="material-icons-sharp">check_circle</span>
+                Finalizar Inscrição
+            </button>
+            <a href="{% url 'dashboard_estudante' %}" 
+                class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-4 rounded-2xl text-center transition duration-300">
+                Cancelar
+            </a>
+        </div>
+    </form>
+
+    <p class="mt-6 text-center text-xs text-gray-400">
+        Cuito, aos {% now "d/m/Y" %}. Esta ficha será validada pela secretaria após a submissão.
+    </p>
+</div>
+{% endblock %}

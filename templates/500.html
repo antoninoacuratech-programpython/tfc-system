@@ -1,0 +1,35 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Erro interno · SGTF</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;background:#f4f6fb;font-family:Inter,system-ui,sans-serif;color:#1e293b;padding:1rem}
+    .box{max-width:30rem;text-align:center}
+    .ico{display:inline-grid;place-items:center;width:4.5rem;height:4.5rem;border-radius:1.25rem;background:#eef2fb;color:#1f3a93}
+    .ico span{font-size:2.25rem}
+    .code{margin:1.25rem 0 0;font-size:.8rem;font-weight:800;letter-spacing:.15em;color:#1f3a93}
+    h1{margin:.35rem 0 .5rem;font-size:1.75rem;font-weight:800;letter-spacing:-.01em}
+    p{margin:0;color:#64748b;line-height:1.6}
+    .acoes{margin-top:1.75rem;display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+    a{display:inline-flex;align-items:center;gap:.4rem;padding:.65rem 1.1rem;border-radius:.65rem;font-weight:600;font-size:.9rem;text-decoration:none}
+    .p{background:#1f3a93;color:#fff}.p:hover{background:#162861}
+    .g{background:#fff;color:#334155;border:1px solid #e3e8f2}.g:hover{background:#f8fafc}
+  </style>
+</head>
+<body>
+  <main class="box">
+    <div class="ico"><span class="material-icons-sharp">build</span></div>
+    <p class="code">ERRO 500</p>
+    <h1>Erro interno</h1>
+    <p>Ocorreu um erro inesperado. A equipa técnica foi notificada; tente novamente dentro de instantes.</p>
+    <div class="acoes">
+      <a class="g" href="javascript:history.back()">Voltar</a>
+      <a class="p" href="/">Ir para o início</a>
+    </div>
+  </main>
+</body>
+</html>

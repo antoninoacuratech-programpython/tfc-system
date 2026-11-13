@@ -1,0 +1,120 @@
+{% extends "Estudante/base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-2 sm:px-4 py-8">
+    
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800 tracking-tight">Inscrições de TFC</h2>
+            <p class="text-gray-500 text-sm font-medium italic">Gerencie suas fichas de inscrição oficiais.</p>
+        </div>
+
+        {# LÓGICA DE CONTROLE: Só permite nova inscrição se não houver nenhuma #}
+        {% if not inscricoes %}
+            <a href="{% url 'gerar_ficha_tfc' %}" class="w-full md:w-auto bg-primary text-white px-8 py-4 rounded-2xl font-black hover:bg-blue-700 transition shadow-xl shadow-blue-200 text-center active:scale-95 flex items-center justify-center gap-2">
+                <span class="material-icons-sharp text-sm">add</span> Nova Inscrição
+            </a>
+        {% else %}
+            <div class="flex items-center gap-2 bg-amber-50 border border-amber-100 text-amber-700 px-4 py-3 rounded-2xl shadow-sm">
+                <span class="material-icons-sharp text-lg">info</span>
+                <span class="text-xs font-bold uppercase tracking-wider">Você já possui uma inscrição activada!!</span>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="hidden md:block bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+        <table class="w-full text-left">
+            <thead class="bg-gray-50/50 border-b border-gray-100">
+                <tr>
+                    <th class="p-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Tema / Detalhes</th>
+                    <th class="p-5 text-[11px] font-black text-gray-400 uppercase tracking-widest">Status de Validação</th>
+                    <th class="p-5 text-[11px] font-black text-gray-400 uppercase tracking-widest text-center">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for item in inscricoes %}
+                <tr class="hover:bg-blue-50/20 transition-all">
+                    <td class="p-5">
+                        <span class="block font-bold text-gray-800 leading-tight">{{ item.tema.titulo }}</span>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-[10px] font-bold bg-gray-100 text-gray-500 px-2 py-0.5 rounded uppercase">{{ item.periodo }}</span>
+                        </div>
+                    </td>
+                    <td class="p-5">
+                        {% if item.status == 'pendente' %}
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-yellow-50 text-yellow-700 border border-yellow-100">
+                                <span class="w-1.5 h-1.5 rounded-full bg-yellow-400 mr-2 animate-pulse"></span> Pendente
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-green-50 text-green-700 border border-green-100">
+                                <span class="material-icons-sharp text-sm mr-1">verified</span> Inscrição aprovada com sucesso
+                            </span>
+                            {% if item.aprovado_por %}
+                                <p class="text-[10px] text-gray-400 mt-1 pl-1 font-medium italic">
+                                    Por: {{ item.aprovado_por.nome }} {{ item.aprovado_por.sobrenome }}
+                                </p>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td class="p-5">
+                        <div class="flex justify-center gap-2">
+                            {% if item.status == 'pendente' %}
+                            <a href="{% url 'editar_inscricao_tfc' item.id %}" class="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition shadow-sm border border-transparent hover:border-blue-100" title="Editar">
+                                <span class="material-icons-sharp text-xl">edit_note</span>
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'baixar_pdf_tfc' item.id %}" class="p-2.5 text-red-500 hover:bg-red-50 rounded-xl transition shadow-sm border border-transparent hover:border-red-100" title="Baixar PDF">
+                                <span class="material-icons-sharp text-xl">picture_as_pdf</span>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="p-20 text-center text-gray-400 uppercase text-xs font-bold">Nenhuma ficha encontrada</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="md:hidden space-y-4">
+        {% for item in inscricoes %}
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 active:scale-[0.98] transition-transform">
+            <div class="flex justify-between items-start mb-3">
+                <span class="text-[10px] font-black bg-gray-100 text-gray-500 px-2 py-1 rounded uppercase tracking-widest">{{ item.periodo }}</span>
+                <span class="text-[10px] font-bold {% if item.status == 'pendente' %}text-yellow-600 bg-yellow-50{% else %}text-green-600 bg-green-50{% endif %} px-2 py-1 rounded-lg uppercase tracking-tighter">
+                    {{ item.status|upper }}
+                </span>
+            </div>
+
+            <h4 class="font-bold text-gray-800 leading-tight mb-4 italic">"{{ item.tema.titulo }}"</h4>
+
+            {% if item.status != 'pendente' %}
+            <div class="flex flex-col mb-5 p-3 bg-green-50/50 rounded-2xl border border-green-100">
+                <span class="text-[11px] font-bold text-green-700 flex items-center gap-1">
+                    <span class="material-icons-sharp text-sm">verified</span> Inscrição aprovada com sucesso
+                </span>
+                {% if item.aprovado_por %}
+                <span class="text-[10px] text-gray-400 mt-1 pl-5">
+                    Validado por: {{ item.aprovado_por.nome }} {{ item.aprovado_por.sobrenome }}
+                </span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-2 gap-3">
+                {% if item.status == 'pendente' %}
+                <a href="{% url 'editar_inscricao_tfc' item.id %}" class="flex items-center justify-center gap-2 bg-blue-50 text-blue-600 py-3 rounded-2xl text-xs font-bold">
+                    <span class="material-icons-sharp text-sm">edit</span> Editar
+                </a>
+                {% endif %}
+                <a href="{% url 'baixar_pdf_tfc' item.id %}" class="{% if item.status != 'pendente' %}col-span-2{% endif %} flex items-center justify-center gap-2 bg-red-50 text-red-500 py-3 rounded-2xl text-xs font-bold">
+                    <span class="material-icons-sharp text-sm">picture_as_pdf</span> Baixar PDF
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

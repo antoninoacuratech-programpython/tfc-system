@@ -1,0 +1,420 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <style>
+        #content { padding: 0 !important; }
+        .bg-primary { background-color: #2563eb; }
+        
+        /* Suavização de scroll estilo Flutter/Material */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
+
+        /* Animação para os Snackbars de notificação */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translate3d(0, -20px, 0); }
+            to { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
+        .animate-fade-in-down {
+            animation: fadeInDown 0.4s ease-out forwards;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen antialiased text-gray-900 font-sans">
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        
+        <!-- Alertas de Feedback (Snackbars estilo Flutter) -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded-2xl border flex items-center gap-3 shadow-sm animate-fade-in-down {% if message.tags == 'error' %}bg-red-50 border-red-100 text-red-700{% else %}bg-green-50 border-green-100 text-green-700{% endif %}">
+                    <span class="material-icons-sharp">{% if message.tags == 'error' %}error_outline{% else %}check_circle_outline{% endif %}</span>
+                    <span class="font-semibold text-sm">{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- FORMULÁRIO DE CADASTRO -->
+            <div class="lg:col-span-4">
+                <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 sticky top-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-icons-sharp text-blue-600 bg-blue-50 p-2 rounded-xl">person_add</span>
+                        <h2 class="text-xl font-black text-gray-800 tracking-tight">Novo Professor</h2>
+                    </div>
+                    
+                    <form action="{% url 'gerenciar_professores' %}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome</label>
+                                <input type="text" name="nome" required class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Sobrenome</label>
+                                <input type="text" name="sobrenome" required class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail Corporativo</label>
+                            <input type="email" name="email" required placeholder="professor@universidade.com" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Telefone</label>
+                            <input type="text" name="telefone" required maxlength="9" placeholder="9XXXXXXXX" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Senha de Acesso</label>
+                            <input type="password" name="password" required placeholder="••••••••" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Curso</label>
+                            <select name="curso" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm appearance-none cursor-pointer">
+                                <option value="">Nenhum / Geral</option>
+                                {% for c in cursos %}
+                                    <option value="{{ c.id }}">{{ c.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Departamento</label>
+                            <select name="depart" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none transition-all text-sm appearance-none cursor-pointer">
+                                <option value="">Nenhum / Geral</option>
+                                {% for d in departamentos %}
+                                    <option value="{{ d.id }}">{{ d.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Foto de Perfil</label>
+                            <input type="file" name="imagem" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        </div>
+
+                        <button type="submit" class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-[0.99] flex justify-center items-center gap-2 text-sm mt-4">
+                            <span class="material-icons-sharp text-sm">save</span>
+                            Salvar Professor
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- LISTAGEM DE PROFESSORES -->
+            <div class="lg:col-span-8 space-y-4">
+                <div class="flex items-center justify-between px-2">
+                    <div>
+                        <h2 class="text-xl font-black text-gray-800 tracking-tight">Corpo Docente</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">Gerenciamento ativo de credenciais e permissões</p>
+                    </div>
+                    <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">{{ professores|length }} Cadastrados</span>
+                </div>
+                
+                <!-- CONTAINER DA TABELA (ESTILO CARD ARREDONDADO FLUTTER) -->
+                <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+                    
+                    {% if professores %}
+                        <!-- 1. MODELO DESKTOP (Tabela Estruturada) -->
+                        <div class="hidden md:block overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50/70 border-b border-gray-100 text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                                        <th class="py-4 px-6">Professor</th>
+                                        <th class="py-4 px-4">Contato</th>
+                                        <th class="py-4 px-4">Alocação</th>
+                                        <th class="py-4 px-4 text-center">Status</th>
+                                        <th class="py-4 px-6 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    {% for prof in professores %}
+                                    <tr class="hover:bg-gray-50/50 transition-colors group">
+                                        <!-- Avatar + Nome -->
+                                        <td class="py-4 px-6 flex items-center gap-3">
+                                            {% if prof.imagem %}
+                                                <img src="{{ prof.imagem.url }}" alt="Foto" class="w-10 h-10 rounded-xl object-cover border border-gray-100 shadow-sm">
+                                            {% else %}
+                                                <div class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
+                                                    <span class="material-icons-sharp text-xl">account_circle</span>
+                                                </div>
+                                            {% endif %}
+                                            <div>
+                                                <span class="font-bold text-gray-800 block text-sm group-hover:text-blue-600 transition-colors">{{ prof.nome }} {{ prof.sobrenome }}</span>
+                                                <span class="text-[11px] text-gray-400 font-medium capitalize">{{ prof.perfil }}</span>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- Contatos -->
+                                        <td class="py-4 px-4">
+                                            <span class="text-xs text-gray-600 block font-medium">{{ prof.email }}</span>
+                                            <span class="text-[11px] text-gray-400 flex items-center gap-0.5 mt-0.5"><span class="material-icons-sharp text-xs">phone</span> {{ prof.telefone }}</span>
+                                        </td>
+                                        
+                                        <!-- Cursos / Dep -->
+                                        <td class="py-4 px-4">
+                                            {% if prof.curso %}
+                                                <span class="text-xs text-gray-700 font-semibold block">{{ prof.curso.nome }}</span>
+                                            {% else %}
+                                                <span class="text-xs text-gray-300 italic block">Sem curso</span>
+                                            {% endif %}
+                                            {% if prof.depart %}
+                                                <span class="text-[10px] text-gray-400 font-medium block">Dep: {{ prof.depart.nome }}</span>
+                                            {% endif %}
+                                        </td>
+
+                                        <!-- Status Switch -->
+                                        <td class="py-4 px-4 text-center">
+                                            <div class="flex items-center justify-center gap-2">
+                                                <form action="{% url 'alternar_status_professor' prof.id %}" method="POST" class="inline flex items-center">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="p-0.5 hover:bg-gray-100 rounded-lg transition-all text-gray-300 hover:text-blue-600" title="Alternar Status">
+                                                        <span class="material-icons-sharp text-3xl block">{% if prof.estado_user == 'activo' %}toggle_on{% else %}toggle_off{% endif %}</span>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+
+                                        <!-- Botões de Ação -->
+                                        <td class="py-4 px-6 text-right">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <button type="button" onclick="abrirModalEditar('{{ prof.id }}', '{{ prof.nome }}', '{{ prof.sobrenome }}', '{{ prof.email }}', '{{ prof.telefone }}', '{{ prof.curso.id|default:'' }}', '{{ prof.depart.id|default:'' }}')"
+                                                    class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-all">
+                                                    <span class="material-icons-sharp text-sm block">edit</span>
+                                                </button>
+                                                <button type="button" onclick="abrirModalEliminar('{{ prof.id }}', '{{ prof.nome }} {{ prof.sobrenome }}')"
+                                                    class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                                    <span class="material-icons-sharp text-sm block">delete</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 2. MODELO MOBILE (Cards Compactos estilo ListTile do Flutter) -->
+                        <div class="md:hidden divide-y divide-gray-100">
+                            {% for prof in professores %}
+                            <div class="p-4 flex flex-col gap-3 hover:bg-gray-50/50">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        {% if prof.imagem %}
+                                            <img src="{{ prof.imagem.url }}" alt="Foto" class="w-11 h-11 rounded-xl object-cover">
+                                        {% else %}
+                                            <div class="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400">
+                                                <span class="material-icons-sharp text-xl">account_circle</span>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <h4 class="font-bold text-gray-800 text-sm">{{ prof.nome }} {{ prof.sobrenome }}</h4>
+                                            <p class="text-[11px] text-gray-400">{{ prof.email }}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Toggle Status Mobile -->
+                                    <form action="{% url 'alternar_status_professor' prof.id %}" method="POST" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="text-gray-300 hover:text-blue-600">
+                                            <span class="material-icons-sharp text-3xl block">{% if prof.estado_user == 'activo' %}toggle_on{% else %}toggle_off{% endif %}</span>
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div class="bg-gray-50/70 rounded-xl p-2.5 text-[11px] space-y-1 text-gray-600">
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-gray-400">Curso:</span>
+                                        <span class="font-bold text-gray-700">{{ prof.curso.nome|default:"Geral" }}</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="font-medium text-gray-400">Telefone:</span>
+                                        <span class="font-mono font-medium">{{ prof.telefone }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex justify-end gap-2 border-t border-gray-50 pt-2">
+                                    <button type="button" onclick="abrirModalEditar('{{ prof.id }}', '{{ prof.nome }}', '{{ prof.sobrenome }}', '{{ prof.email }}', '{{ prof.telefone }}', '{{ prof.curso.id|default:'' }}', '{{ prof.depart.id|default:'' }}')"
+                                        class="flex-1 py-2 bg-gray-50 text-gray-600 font-bold text-xs rounded-xl flex justify-center items-center gap-1">
+                                        <span class="material-icons-sharp text-xs">edit</span> Editar
+                                    </button>
+                                    <button type="button" onclick="abrirModalEliminar('{{ prof.id }}', '{{ prof.nome }} {{ prof.sobrenome }}')"
+                                        class="px-3 py-2 bg-red-50 text-red-600 text-xs font-bold rounded-xl flex justify-center items-center">
+                                        <span class="material-icons-sharp text-xs">delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <!-- Estado Vazio -->
+                        <div class="py-20 text-center">
+                            <span class="material-icons-sharp text-5xl text-gray-200 p-4 bg-gray-50 rounded-full mb-3">badge</span>
+                            <p class="text-gray-400 text-sm font-medium">Nenhum docente mapeado nesta lista.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR PROFESSOR -->
+<div id="modalEditar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <div class="bg-white px-6 pt-6 pb-4">
+                <div class="flex items-center gap-3 mb-5">
+                    <span class="material-icons-sharp text-amber-500 bg-amber-50 p-2 rounded-xl">edit</span>
+                    <h3 class="text-xl font-black text-gray-900">Editar Professor</h3>
+                </div>
+                
+                <form id="formEditarProfessor" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nome</label>
+                            <input type="text" name="nome" id="edit_nome" required class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Sobrenome</label>
+                            <input type="text" name="sobrenome" id="edit_sobrenome" required class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail</label>
+                        <input type="email" name="email" id="edit_email" required class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Telefone</label>
+                        <input type="text" name="telefone" id="edit_telefone" required maxlength="9" class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Curso</label>
+                        <select name="curso" id="edit_curso" class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                            <option value="">Nenhum / Geral</option>
+                            {% for c in cursos %}
+                                <option value="{{ c.id }}">{{ c.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Departamento</label>
+                        <select name="depart" id="edit_depart" class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                            <option value="">Nenhum / Geral</option>
+                            {% for d in departamentos %}
+                                <option value="{{ d.id }}">{{ d.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nova Senha</label>
+                        <input type="password" name="password" placeholder="Mantenha em branco para não alterar" class="w-full px-4 py-2 rounded-xl bg-gray-50 border border-transparent focus:bg-white focus:border-blue-500 outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Nova Foto</label>
+                        <input type="file" name="imagem" accept="image/*" class="w-full text-xs text-gray-500">
+                    </div>
+                </form>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2">
+                <button type="submit" form="formEditarProfessor" class="inline-flex justify-center rounded-xl px-4 py-2 bg-blue-600 text-xs font-bold text-white hover:bg-blue-700 shadow-md">
+                    Salvar Alterações
+                </button>
+                <button type="button" onclick="fecharModalEditar()" class="inline-flex justify-center rounded-xl border border-gray-200 px-4 py-2 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ELIMINAR PROFESSOR -->
+<div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+            <div class="bg-white px-6 pt-6 pb-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-xl bg-red-50 text-red-600">
+                        <span class="material-icons-sharp">warning</span>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-black text-gray-900">Remover Docente</h3>
+                        <p class="text-xs text-gray-500 font-medium mt-1">
+                            Deseja mesmo remover o(a) professor(a) <span id="texto_professor_eliminar" class="font-bold text-gray-800"></span>? Todos os vínculos associados a este usuário serão desfeitos de maneira irreversível.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-2">
+                <form id="formEliminarProfessor" method="POST" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex justify-center rounded-xl px-4 py-2 bg-red-600 text-xs font-bold text-white hover:bg-red-700 shadow-sm">
+                        Confirmar Exclusão
+                    </button>
+                </form>
+                <button type="button" onclick="fecharModalEliminar()" class="inline-flex justify-center rounded-xl border border-gray-200 px-4 py-2 bg-white text-xs font-bold text-gray-600 hover:bg-gray-100">
+                    Manter Registro
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function abrirModalEditar(id, nome, sobrenome, email, telefone, cursoId, departId) {
+        const form = document.getElementById('formEditarProfessor');
+        form.action = `${window.location.origin}/professores/editar/${id}/`;
+        
+        document.getElementById('edit_nome').value = nome;
+        document.getElementById('edit_sobrenome').value = sobrenome;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_telefone').value = telefone;
+        document.getElementById('edit_curso').value = cursoId;
+        document.getElementById('edit_depart').value = departId;
+        
+        document.getElementById('modalEditar').classList.remove('hidden');
+    }
+
+    function fecharModalEditar() {
+        document.getElementById('modalEditar').classList.add('hidden');
+    }
+
+    // Gerencia o modal de remoção
+    function abrirModalEliminar(id, nomeCompleto) {
+        const form = document.getElementById('formEliminarProfessor');
+        form.action = `${window.location.origin}/professores/eliminar/${id}/`;
+        
+        document.getElementById('texto_professor_eliminar').innerText = nomeCompleto;
+        document.getElementById('modalEliminar').classList.remove('hidden');
+    }
+
+    function fecharModalEliminar() {
+        document.getElementById('modalEliminar').classList.add('hidden');
+    }
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

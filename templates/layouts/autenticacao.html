@@ -1,0 +1,53 @@
+{% load static %}<!DOCTYPE html>
+<html lang="pt">
+<head>
+  {% include "partials/_head.html" %}
+  <title>{% block titulo %}Entrar{% endblock %} · {{ SISTEMA_NOME }} {{ INSTITUICAO_SIGLA }}</title>
+</head>
+<body class="font-sans text-slate-800 antialiased">
+  <div class="sgtf-auth">
+    <!-- Painel institucional (desktop) -->
+    <aside class="sgtf-auth__aside">
+      <div class="flex flex-1 flex-col items-center justify-center text-center">
+        <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="{{ INSTITUICAO_SIGLA }}" class="h-28 w-28 rounded-3xl bg-white object-cover shadow-2xl ring-4 ring-white/10">
+        <p class="mt-8 text-4xl font-extrabold tracking-tight">{{ SISTEMA_NOME }}</p>
+        <p class="mt-2 text-base text-primary-100">{{ SISTEMA_DESCRICAO }}</p>
+      </div>
+      <p class="text-center text-xs text-primary-200/80">© {% now "Y" %} {{ INSTITUICAO_NOME }}</p>
+    </aside>
+
+    <main class="sgtf-auth__main">
+      <div class="sgtf-auth__card">
+        <div class="mb-8 flex items-center gap-3 lg:hidden">
+          <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="" class="h-11 w-11 rounded-xl bg-white object-cover shadow-card">
+          <div class="leading-tight">
+            <p class="font-extrabold tracking-tight text-primary">{{ SISTEMA_NOME }}</p>
+            <p class="text-xs text-slate-500">{{ INSTITUICAO_NOME }}</p>
+          </div>
+        </div>
+
+        {% block conteudo %}{% endblock %}
+      </div>
+    </main>
+  </div>
+
+  <script>
+    // Mostrar/ocultar senha: <button data-toggle-senha="idDoCampo">
+    document.querySelectorAll("[data-toggle-senha]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const campo = document.getElementById(btn.dataset.toggleSenha);
+        const visivel = campo.type === "text";
+        campo.type = visivel ? "password" : "text";
+        btn.querySelector(".material-icons-sharp").textContent = visivel ? "visibility" : "visibility_off";
+        btn.setAttribute("aria-label", visivel ? "Mostrar senha" : "Ocultar senha");
+      });
+    });
+    document.querySelectorAll("[data-alert-close]").forEach((b) => b.addEventListener("click", () => b.closest("[data-alert]").remove()));
+    document.querySelectorAll("form[data-lock]").forEach((f) => f.addEventListener("submit", () => {
+      const btn = f.querySelector('[type="submit"]');
+      setTimeout(() => { btn.disabled = true; btn.querySelector("[data-label]").textContent = btn.dataset.loading || "Aguarde..."; }, 0);
+    }));
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,85 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Detalhes da Acta Nº {{ acta.numero_acta }}</h3>
+            <a href="{% url 'baixar_acta_pdf' acta.id %}" class="btn btn-light btn-sm">
+                <i class="fas fa-file-pdf"></i> Baixar PDF
+            </a>
+        </div>
+        
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-muted border-bottom pb-2">Informações da Sessão</h5>
+                    <p><strong>Data:</strong> {{ acta.data_sessao|date:"d/m/Y" }}</p>
+                    <p><strong>Local:</strong> {{ acta.local_sessao }}</p>
+                    <p><strong>Horário:</strong> {{ acta.hora_abertura }} às {{ acta.hora_encerramento }}</p>
+                </div>
+
+                <div class="col-md-6">
+                    <h5 class="text-muted border-bottom pb-2">Candidato e Tema</h5>
+                    <p><strong>Estudante:</strong> {{ acta.solicitacao.predefesa.estudante.nome }} {{ acta.solicitacao.predefesa.estudante.sobrenome }}</p>
+                    <p><strong>Curso:</strong> {{ acta.solicitacao.predefesa.estudante.curso.nome }}</p>
+                    <p><strong>Tema:</strong> {{ acta.solicitacao.predefesa.tema.titulo }}</p>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h5 class="text-muted border-bottom pb-2">Corpo de Júri</h5>
+                    <table class="table table-sm table-bordered">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Função</th>
+                                <th>Nome do Professor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Presidente</td><td>{{ acta.solicitacao.predefesa.presidente.nome }}</td></tr>
+                            <tr><td>1º Vogal</td><td>{{ acta.solicitacao.predefesa.primeiro_vogal.nome }}</td></tr>
+                            <tr><td>2º Vogal</td><td>{{ acta.solicitacao.predefesa.segundo_vogal.nome }}</td></tr>
+                            <tr><td>Secretário</td><td>{{ acta.solicitacao.predefesa.secretario.nome }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h5 class="text-success">Avaliação Final</h5>
+                    <div class="display-4">{{ acta.avaliacao_final }}</div>
+                    <p class="text-muted">(Sessão: {{ acta.avaliacao_sessao }})</p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="text-muted">Observações</h5>
+                    <p class="bg-light p-3 rounded">
+                        {{ acta.observacoes|default:"Nenhuma observação registada." }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <h6>Pontos Fortes:</h6>
+                    <div class="alert alert-success">{{ acta.pontos_fortes|linebreaks }}</div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Pontos Fracos:</h6>
+                    <div class="alert alert-danger">{{ acta.pontos_fracos|linebreaks }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-footer text-center">
+            <a href="{% url 'lista_actas' %}" class="btn btn-secondary">Voltar à Lista</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

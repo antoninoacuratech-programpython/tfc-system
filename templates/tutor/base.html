@@ -1,0 +1,14 @@
+{% extends "layouts/painel.html" %}
+
+{% block painel_nome %}Área do Tutor{% endblock %}
+{% block painel_subtitulo %}Área do Tutor{% endblock %}
+{% block painel_secao %}{{ INSTITUICAO_SIGLA }}{% endblock %}
+{% block titulo_pagina %}Painel do Tutor{% endblock %}
+
+{% block sidebar_nav %}
+  <a href="{% url 'dashboard_tutor' %}" class="sgtf-nav-link"><span class="material-icons-sharp">space_dashboard</span> Temas para avaliar</a>
+
+  <p class="sgtf-nav-section">Orientação</p>
+  <a href="{% url 'lista_estudantes_tutor' %}" class="sgtf-nav-link"><span class="material-icons-sharp">school</span> Os meus estudantes</a>
+  <a href="{% url 'tutor_chat_estudantes' %}" class="sgtf-nav-link"><span class="material-icons-sharp">forum</span> Conversas</a>
+{% endblock %}

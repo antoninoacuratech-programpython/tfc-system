@@ -1,0 +1,102 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block titulo %}Assinar Acta nº {{ acta.numero_acta }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+    
+    <!-- Cabeçalho -->
+    <div class="text-center mb-8">
+      <div class="p-4 bg-primary/10 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+        <span class="material-icons-sharp text-4xl text-primary">draw</span>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-800">Assinar Acta Digitalmente</h1>
+      <p class="text-sm text-gray-500 mt-2">Acta nº {{ acta.numero_acta }} - {{ acta.solicitacao_defesa.predefesa.estudante.nome }}</p>
+    </div>
+    
+    <!-- Informação da Acta -->
+    <div class="bg-gray-50 rounded-xl p-5 mb-6 border border-gray-200">
+      <div class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <p class="text-xs text-gray-500">Data da Defesa</p>
+          <p class="font-bold">{{ acta.data_defesa|date:"d/m/Y" }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500">Hora</p>
+          <p class="font-bold">{{ acta.hora_inicio|time:"H:i" }} - {{ acta.hora_fim|time:"H:i" }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500">Estudante</p>
+          <p class="font-bold">{{ acta.solicitacao_defesa.predefesa.estudante.nome }} {{ acta.solicitacao_defesa.predefesa.estudante.sobrenome }}</p>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500">Tema</p>
+          <p class="font-bold truncate">{{ acta.solicitacao_defesa.predefesa.tema.titulo|truncatechars:30 }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Formulário de Assinatura -->
+    <form method="POST" class="space-y-6">
+      {% csrf_token %}
+      
+      <div>
+        <label class="block text-sm font-bold text-gray-700 mb-2">Tipo de Assinatura</label>
+        <select name="tipo" class="w-full px-4 py-3 border border-gray-300 rounded-xl bg-white" required>
+          <option value="">-- Selecione o seu papel --</option>
+          {% for tipo in tipos_permitidos %}
+            <option value="{{ tipo }}">
+              {% if tipo == 'presidente' %}Presidente do Júri
+              {% elif tipo == 'primeiro_vogal' %}1º Vogal
+              {% elif tipo == 'segundo_vogal' %}2º Vogal
+              {% elif tipo == 'secretario' %}Secretário(a)
+              {% elif tipo == 'orientador' %}Orientador
+              {% elif tipo == 'estudante' %}Estudante
+              {% else %}{{ tipo|title }}
+              {% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+        <div class="flex items-start gap-3">
+          <span class="material-icons-sharp text-yellow-600">info</span>
+          <div>
+            <p class="text-sm font-bold text-yellow-800">Declaração de Assinatura Digital</p>
+            <p class="text-xs text-yellow-700 mt-1">
+              Ao assinar digitalmente esta acta, você confirma a veracidade das informações registadas 
+              e assume a responsabilidade pela avaliação atribuída, de acordo com o regulamento do 
+              Trabalho de Fim de Curso do ISPB.
+            </p>
+            <p class="text-xs font-bold text-yellow-800 mt-2">
+              IP da assinatura: {{ request.META.REMOTE_ADDR }}
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-4 pt-4">
+        <input type="checkbox" id="confirmacao" required class="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+        <label for="confirmacao" class="text-sm text-gray-700">
+          Confirmo que li e concordo com os termos da assinatura digital
+        </label>
+      </div>
+      
+      <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+        <a href="{% url 'detalhes_acta' acta.id %}" 
+           class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+          Cancelar
+        </a>
+        <button type="submit" 
+                class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold flex items-center gap-2 shadow-lg shadow-green-600/20">
+          <span class="material-icons-sharp">draw</span>
+          Assinar Acta
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

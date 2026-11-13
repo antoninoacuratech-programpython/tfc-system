@@ -1,0 +1,32 @@
+# Blueprint da Render: New → Blueprint → ligar este repositório.
+databases:
+  - name: sgtf-db
+    plan: free
+    databaseName: sgtf
+    user: sgtf
+
+services:
+  - type: web
+    name: sgtf
+    runtime: python
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn SGTFC.wsgi:application --workers 2 --timeout 120
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sgtf-db
+          property: connectionString
+      - key: DB_SSL
+        value: "False"
+      - key: SERVE_MEDIA
+        value: "True"
+      - key: WEB_CONCURRENCY
+        value: "2"

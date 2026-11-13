@@ -1,0 +1,223 @@
+{% extends "admin/base.html" %}
+
+
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+<style>
+    /* Estilização Snackbars */
+    #toast-container > .toast {
+        border-radius: 16px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        opacity: 1 !important;
+        font-family: inherit;
+    }
+    .search-input:focus {
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+    /* Estilo de botões flutuantes */
+    .action-btn {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+    <div class="mb-4 space-y-2" role="alert">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium border text-center
+          {% if message.tags == 'error' %}bg-red-500/10 text-red-400 border-red-500/30
+          {% elif message.tags == 'success' %}bg-green-500/10 text-green-400 border-green-500/30
+          {% else %}bg-gray-500/10 text-gray-300 border-gray-500/30{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+<div class="min-h-screen bg-gray-50 px-4 py-8">
+    <div class="max-w-7xl mx-auto">
+
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+            <div>
+                <h1 class="text-3xl font-extrabold text-gray-900 flex items-center gap-3">
+                    <span class="p-2 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-200">
+                        <span class="material-icons-sharp">campaign</span>
+                    </span>
+                    Comunicados
+                </h1>
+                <p class="text-gray-500 mt-2 font-medium">Gestão centralizada de prazos e editais.</p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 items-center">
+                <div class="relative w-full sm:w-80">
+                    <span class="material-icons-sharp absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">search</span>
+                    <input type="text" id="dynamic-search" placeholder="Filtrar comunicados..." 
+                           class="search-input w-full pl-12 pr-4 py-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm text-sm outline-none transition-all focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <a href="{% url 'criar_comunicado' %}"
+                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 active:scale-95">
+                    <span class="material-icons-sharp text-lg">add</span> Novo
+                </a>
+            </div>
+        </div>
+
+        <div id="comunicados-container">
+            {% if comunicados %}
+            <div class="hidden md:block bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-gray-50/50 text-gray-400 text-[11px] uppercase tracking-wider font-bold">
+                            <th class="px-8 py-5">ID</th>
+                            <th class="px-8 py-5">Período de Inscrição</th>
+                            <th class="px-8 py-5">Horário Atendimento</th>
+                            <th class="px-8 py-5 text-center">Status</th>
+                            <th class="px-8 py-5 text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-50">
+                        {% for c in comunicados %}
+                        <tr class="comunicado-item transition-colors hover:bg-blue-50/10" 
+                            data-search="{{ c.data_inicio }} {{ c.data_fim }} {{ c.id }}">
+                            <td class="px-8 py-6 text-sm font-bold text-gray-300">#{{ c.id }}</td>
+                            <td class="px-8 py-6">
+                                <div class="flex flex-col">
+                                    <span class="text-gray-900 font-semibold text-sm">{{ c.data_inicio }}</span>
+                                    <span class="text-gray-400 text-xs italic">até {{ c.data_fim }}</span>
+                                </div>
+                            </td>
+                            <td class="px-8 py-6">
+                                <span class="text-gray-600 text-xs font-medium bg-gray-100 px-3 py-1.5 rounded-lg">
+                                    {{ c.hora_inicio }} - {{ c.hora_fim }}
+                                </span>
+                            </td>
+                            <td class="px-8 py-6 text-center">
+                                {% if c.publicado %}
+                                    <span class="px-4 py-1.5 rounded-full bg-green-50 text-green-600 text-[10px] font-bold border border-green-100">PUBLICADO</span>
+                                {% else %}
+                                    <span class="px-4 py-1.5 rounded-full bg-amber-50 text-amber-600 text-[10px] font-bold border border-amber-100">RASCUNHO</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-8 py-6">
+                                <div class="flex items-center justify-end gap-2">
+                                    {% if not c.publicado %}
+                                    <a href="{% url 'publicar_comunicado' c.id %}" class="action-btn p-2.5 rounded-xl bg-green-50 text-green-600 hover:bg-green-600 hover:text-white shadow-sm" title="Publicar">
+                                        <span class="material-icons-sharp text-lg">send</span>
+                                    </a>
+                                    {% endif %}
+                                    
+                                    <a href="{% url 'atualizar_comunicado' c.id %}" class="action-btn p-2.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white shadow-sm" title="Editar">
+                                        <span class="material-icons-sharp text-lg">edit</span>
+                                    </a>
+                                    
+                                    <a href="{% url 'baixar_comunicado_pdf' c.id %}" class="action-btn p-2.5 rounded-xl bg-gray-50 text-gray-500 hover:bg-gray-800 hover:text-white shadow-sm" title="PDF">
+                                        <span class="material-icons-sharp text-lg">picture_as_pdf</span>
+                                    </a>
+
+                                    <form action="{% url 'eliminar_comunicado' c.id %}" method="POST" class="inline">
+                                        {% csrf_token %}
+                                        <button type="button" onclick="confirmDelete(this)" class="action-btn p-2.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-500 hover:text-white shadow-sm" title="Eliminar">
+                                            <span class="material-icons-sharp text-lg">delete</span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="md:hidden space-y-4">
+                {% for c in comunicados %}
+                <div class="comunicado-item bg-white rounded-[1.5rem] p-6 shadow-sm border border-gray-100" 
+                     data-search="{{ c.data_inicio }} {{ c.data_fim }} {{ c.id }}">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-xs font-bold text-gray-300">#{{ c.id }}</span>
+                        {% if c.publicado %}
+                            <span class="text-[10px] font-black text-green-500 uppercase">Publicado</span>
+                        {% else %}
+                            <span class="text-[10px] font-black text-amber-500 uppercase">Rascunho</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-800">{{ c.data_inicio }}</h3>
+                    <p class="text-gray-400 text-sm mb-4">Finaliza: {{ c.data_fim }}</p>
+                    
+                    <div class="flex gap-2 pt-4 border-t border-gray-50">
+                        {% if not c.publicado %}
+                        <a href="{% url 'publicar_comunicado' c.id %}" class="flex-1 py-3 rounded-xl bg-green-600 text-white text-center text-xs font-bold">PUBLICAR</a>
+                        {% endif %}
+                        <a href="{% url 'atualizar_comunicado' c.id %}" class="flex-1 py-3 rounded-xl bg-blue-50 text-blue-600 text-center text-xs font-bold">EDITAR</a>
+                        <form action="{% url 'eliminar_comunicado' c.id %}" method="POST" class="flex-none">
+                            {% csrf_token %}
+                            <button type="button" onclick="confirmDelete(this)" class="p-3 rounded-xl bg-red-50 text-red-500">
+                                <span class="material-icons-sharp text-sm">delete</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% else %}
+            <div class="bg-white rounded-[2rem] p-20 text-center border-2 border-dashed border-gray-100">
+                <span class="material-icons-sharp text-5xl text-gray-200 mb-4">inventory_2</span>
+                <p class="text-gray-500 font-medium">Nenhum comunicado disponível.</p>
+                <a href="{% url 'lista_comunicados' %}" class="text-blue-600 text-sm font-bold mt-2 inline-block">Limpar filtros</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    toastr.options = { 
+        "closeButton": true, 
+        "progressBar": true, 
+        "positionClass": "toast-top-right", 
+        "timeOut": "3000"
+    };
+
+    // Filtro Dinâmico
+    document.getElementById('dynamic-search').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        document.querySelectorAll('.comunicado-item').forEach(item => {
+            const searchableText = item.getAttribute('data-search').toLowerCase();
+            item.style.display = searchableText.includes(term) ? "" : "none";
+        });
+    });
+
+    // Modal de Confirmação
+    function confirmDelete(button) {
+        Swal.fire({
+            title: 'Eliminar comunicado?',
+            text: "Esta ação apagará os dados permanentemente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Sim, eliminar',
+            cancelButtonText: 'Cancelar',
+            customClass: {
+                popup: 'rounded-[1.5rem]',
+                confirmButton: 'rounded-xl font-bold px-6 py-3',
+                cancelButton: 'rounded-xl font-bold px-6 py-3 text-gray-500'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) button.closest('form').submit();
+        });
+    }
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block titulo %}Solicitar Revisão de Acta - {{ acta.numero_acta }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+  <div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+    
+    <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
+      <div class="p-3 bg-yellow-100 rounded-xl">
+        <span class="material-icons-sharp text-3xl text-yellow-600">refresh</span>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">Solicitar Revisão de Acta</h1>
+        <p class="text-sm text-gray-500">Acta nº {{ acta.numero_acta }} - {{ acta.solicitacao_defesa.predefesa.estudante.nome }}</p>
+      </div>
+    </div>
+    
+    <div class="bg-red-50 border border-red-200 rounded-xl p-5 mb-6">
+      <div class="flex items-start gap-3">
+        <span class="material-icons-sharp text-red-600">warning</span>
+        <div>
+          <p class="text-sm font-bold text-red-800">Nota Final: {{ acta.avaliacao_final }} valores</p>
+          <p class="text-xs text-red-700 mt-1">
+            A nota atribuída é inferior a 10 valores. Tem até 15 dias após a criação da acta para solicitar revisão.
+          </p>
+          <p class="text-xs font-bold text-red-800 mt-2">
+            Prazo limite: {{ acta.criado_em|date:"d/m/Y" }} - {{ acta.criado_em|date:"d/m/Y"|add:"15 days" }}
+          </p>
+        </div>
+      </div>
+    </div>
+    
+    <form method="POST">
+      {% csrf_token %}
+      
+      <div class="mb-6">
+        <label class="block text-sm font-bold text-gray-700 mb-2">
+          Justificativa para Revisão
+        </label>
+        <textarea name="justificativa" rows="5" 
+                  class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition"
+                  placeholder="Descreva detalhadamente os motivos pelos quais solicita a revisão da acta..."
+                  required></textarea>
+        <p class="text-xs text-gray-500 mt-1">
+          A sua justificativa será analisada pela coordenação do curso.
+        </p>
+      </div>
+      
+      <div class="flex items-center justify-end gap-4 pt-6 border-t border-gray-200">
+        <a href="{% url 'detalhes_acta' acta.id %}" 
+           class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition font-medium">
+          Cancelar
+        </a>
+        <button type="submit" 
+                class="px-8 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition font-bold flex items-center gap-2 shadow-lg shadow-yellow-600/20">
+          <span class="material-icons-sharp">send</span>
+          Enviar Solicitação
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

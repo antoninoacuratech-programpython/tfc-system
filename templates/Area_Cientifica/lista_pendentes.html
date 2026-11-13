@@ -1,0 +1,245 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto pb-10 px-2 sm:px-4">
+    
+    {% if messages %}
+    <div id="django-messages-container" class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="django-message flex items-center p-4 rounded-xl shadow-md border-l-4 animate-in fade-in slide-in-from-top-4 duration-300
+            {% if message.tags == 'success' %} bg-green-50 border-green-500 text-green-800 
+            {% elif message.tags == 'error' %} bg-red-50 border-red-500 text-red-800 
+            {% else %} bg-blue-50 border-blue-500 text-blue-800 {% endif %}">
+            <span class="material-icons-sharp mr-3 text-xl">
+                {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}error{% else %}info{% endif %}
+            </span>
+            <p class="text-sm font-bold flex-1">{{ message }}</p>
+            <button onclick="this.parentElement.remove()" class="opacity-50 hover:opacity-100 transition-opacity">
+                <span class="material-icons-sharp">close</span>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 flex justify-between items-center">
+        <div>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-800">Inscrições de TFC</h3>
+            <p class="text-xs sm:text-sm text-gray-500 font-medium">
+                {{ inscricoes_pendentes_count }} solicitações aguardando validação
+            </p>
+        </div>
+        <div class="p-3 bg-primary/10 rounded-xl text-primary">
+            <span class="material-icons-sharp text-2xl sm:text-3xl">pending_actions</span>
+        </div>
+    </div>
+
+    <!-- TABELA DESKTOP -->
+    <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50/50 text-gray-600 text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">Estudante</th>
+                        <th class="px-6 py-4">Tema</th>
+                        <th class="px-6 py-4 text-center">Documentos</th>
+                        <th class="px-6 py-4 text-center">Período</th>
+                        <th class="px-6 py-4 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for inscricao in inscricoes %}
+                    <tr class="hover:bg-blue-50/20 transition-all group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shadow-inner">
+                                    {{ inscricao.estudante.nome|slice:":1" }}
+                                </div>
+                                <div>
+                                    <span class="font-bold text-gray-700 block">{{ inscricao.estudante.nome }}</span>
+                                    <span class="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">{{ inscricao.data_criacao|date:"d/m/Y H:i" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 max-w-xs">
+                            <p class="text-sm text-gray-800 font-semibold italic">"{{ inscricao.tema.titulo }}"</p>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center gap-1.5">
+                                {% if inscricao.requerimento %}
+                                    <button onclick="openDocModal('{{ inscricao.requerimento.url }}', 'Requerimento - {{ inscricao.estudante.nome }}')" class="p-2 bg-gray-50 hover:bg-primary/20 text-gray-500 hover:text-primary rounded-lg transition-all" title="Requerimento">
+                                        <span class="material-icons-sharp text-lg">description</span>
+                                    </button>
+                                {% endif %}
+                                {% if inscricao.curriculum_academico %}
+                                    <button onclick="openDocModal('{{ inscricao.curriculum_academico.url }}', 'Currículo - {{ inscricao.estudante.nome }}')" class="p-2 bg-gray-50 hover:bg-primary/20 text-gray-500 hover:text-primary rounded-lg transition-all" title="Currículo">
+                                        <span class="material-icons-sharp text-lg">history_edu</span>
+                                    </button>
+                                {% endif %}
+                                {% if inscricao.copia_bi %}
+                                    <button onclick="openDocModal('{{ inscricao.copia_bi.url }}', 'Cópia BI - {{ inscricao.estudante.nome }}')" class="p-2 bg-gray-50 hover:bg-primary/20 text-gray-500 hover:text-primary rounded-lg transition-all" title="Cópia BI">
+                                        <span class="material-icons-sharp text-lg">badge</span>
+                                    </button>
+                                {% endif %}
+                                {% if inscricao.comprovativo_pagamento %}
+                                    <button onclick="openDocModal('{{ inscricao.comprovativo_pagamento.url }}', 'Comprovativo - {{ inscricao.estudante.nome }}')" class="p-2 bg-gray-50 hover:bg-primary/20 text-gray-500 hover:text-primary rounded-lg transition-all" title="Comprovativo">
+                                        <span class="material-icons-sharp text-lg">payments</span>
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider
+                                {% if inscricao.periodo == 'Regular' %} bg-green-100 text-green-700 {% else %} bg-purple-100 text-purple-700 {% endif %}">
+                                {{ inscricao.periodo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{% url 'aprovar_inscricao_tfc' inscricao.id %}" 
+                                   class="inline-flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-xl text-[11px] font-black transition-all shadow-md shadow-green-100 active:scale-95">
+                                    <span class="material-icons-sharp text-sm">check_circle</span> APROVAR
+                                </a>
+                                <a href="{% url 'rejeitar_inscricao_tfc' inscricao.id %}" 
+                                   class="inline-flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-xl text-[11px] font-black transition-all shadow-md shadow-red-100 active:scale-95">
+                                    <span class="material-icons-sharp text-sm">cancel</span> REJEITAR
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="py-20 text-center opacity-30 italic text-sm font-bold uppercase tracking-widest">Nenhuma pendência</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- LISTA MOBILE -->
+    <div class="md:hidden space-y-4">
+        {% for inscricao in inscricoes %}
+        <div class="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 border-l-4 border-l-primary">
+            <div class="flex justify-between items-start mb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black">
+                        {{ inscricao.estudante.nome|slice:":1" }}
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-gray-900 leading-tight text-sm uppercase">{{ inscricao.estudante.nome }}</h4>
+                        <p class="text-[10px] text-gray-400 font-bold italic">{{ inscricao.data_criacao|date:"d M, H:i" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <div class="grid grid-cols-2 gap-2">
+                    {% if inscricao.requerimento %}
+                    <button onclick="openDocModal('{{ inscricao.requerimento.url }}', 'Requerimento')" class="flex items-center gap-2 p-2 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-600">
+                        <span class="material-icons-sharp text-sm text-primary">description</span> Requerimento
+                    </button>
+                    {% endif %}
+                    {% if inscricao.copia_bi %}
+                    <button onclick="openDocModal('{{ inscricao.copia_bi.url }}', 'BI')" class="flex items-center gap-2 p-2 bg-gray-50 rounded-xl text-[10px] font-bold text-gray-600">
+                        <span class="material-icons-sharp text-sm text-primary">badge</span> BI
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <a href="{% url 'rejeitar_inscricao_tfc' inscricao.id %}" class="flex items-center justify-center bg-red-50 text-red-600 py-3 rounded-2xl text-[10px] font-black border border-red-100">REJEITAR</a>
+                <a href="{% url 'aprovar_inscricao_tfc' inscricao.id %}" class="flex items-center justify-center bg-green-500 text-white py-3 rounded-2xl text-[10px] font-black">APROVAR</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ESTRUTURA DO MODAL DE DOCUMENTOS -->
+<div id="docModal" class="fixed inset-0 z-[999] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-5xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+        <!-- Header -->
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 id="docModalTitle" class="font-bold text-gray-800 flex items-center gap-2">
+                <span class="material-icons-sharp text-primary">visibility</span> Visualizar Documento
+            </h3>
+            <button onclick="closeDocModal()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-500">
+                <span class="material-icons-sharp">close</span>
+            </button>
+        </div>
+        <!-- Corpo (Visualizador Dinâmico) -->
+        <div class="flex-1 bg-gray-100 relative">
+            <div id="modalLoading" class="absolute inset-0 flex items-center justify-center bg-gray-100 hidden">
+                <div class="flex flex-col items-center">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-2"></div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Carregando...</p>
+                </div>
+            </div>
+            <div id="docContainer" class="w-full h-full">
+                <!-- O código de visualização é inserido aqui via JS -->
+            </div>
+        </div>
+        <!-- Footer -->
+        <div class="p-3 border-t bg-white flex justify-end">
+            <a id="docDownloadBtn" href="#" download class="flex items-center gap-2 px-6 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 transition-all">
+                <span class="material-icons-sharp text-sm">download</span> BAIXAR ARQUIVO
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    @keyframes fadeInSlide { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-in { animation: fadeInSlide 0.4s ease-out forwards; }
+    .fade-out { opacity: 0; transform: translateY(-10px); transition: all 0.5s ease-in-out; }
+</style>
+
+<script>
+    function openDocModal(url, title) {
+        const modal = document.getElementById('docModal');
+        const container = document.getElementById('docContainer');
+        const modalTitle = document.getElementById('docModalTitle');
+        const downloadBtn = document.getElementById('docDownloadBtn');
+        const loader = document.getElementById('modalLoading');
+
+        modalTitle.innerText = title;
+        downloadBtn.href = url;
+        
+        // Limpa e mostra loader
+        container.innerHTML = "";
+        loader.classList.remove('hidden');
+        
+        // Injeta EMBED (mais estável que iframe para evitar recusa de conexão)
+        container.innerHTML = `<embed src="${url}" type="application/pdf" width="100%" height="100%" style="border-radius: 0 0 1.5rem 1.5rem;">`;
+
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        setTimeout(() => { loader.classList.add('hidden'); }, 800);
+    }
+
+    function closeDocModal() {
+        const modal = document.getElementById('docModal');
+        document.getElementById('docContainer').innerHTML = "";
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('docModal')) { closeDocModal(); }
+    }
+
+    // Auto-remove mensagens Django
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.django-message').forEach(function(msg) {
+            setTimeout(function() {
+                msg.classList.add('fade-out');
+                setTimeout(() => { msg.remove(); }, 500); 
+            }, 3000); 
+        });
+    });
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'tutor/base.html' %}
+
+{% block content %}
+
+<h2 class="text-2xl font-bold mb-5 px-4 sm:px-0 animate-fadeSlide text-gray-800">
+    Estudantes sob minha Orientação
+</h2>
+
+<div class="bg-white shadow rounded p-4 overflow-x-auto animate-fade">
+
+    <!-- TABELA DESKTOP (Visível em telas médias e grandes) -->
+    <table class="hidden md:table w-full border-collapse animate-fadeSlow">
+        <thead>
+            <tr class="bg-gray-100 border-b border-gray-300">
+                <th class="p-3 text-left text-sm font-semibold text-gray-600">Nome do Estudante</th>
+                <th class="p-3 text-left text-sm font-semibold text-gray-600">Curso</th>
+                <th class="p-3 text-left text-sm font-semibold text-gray-600">Tema do TFC</th>
+                <th class="p-3 text-left text-sm font-semibold text-gray-600 text-center">Ação</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for estudante in estudantes %}
+            {% with tema=estudante.temas.all.0 %}
+            <tr class="border-b hover:bg-gray-50 transition duration-150">
+                
+                <!-- Nome -->
+                <td class="p-3 text-sm text-gray-800 font-medium">
+                    {{ estudante.nome }} {{ estudante.sobrenome }}
+                </td>
+
+                <!-- Curso -->
+                <td class="p-3 text-sm text-gray-600">
+                    {{ estudante.curso.nome|default:"—" }}
+                </td>
+
+                <!-- Título do Tema -->
+                <td class="p-3 text-sm text-gray-800">
+                    {% if tema %}
+                        {{ tema.titulo }}
+                    {% else %}
+                        <span class="text-gray-400 italic">Sem tema submetido</span>
+                    {% endif %}
+                </td>
+
+                <!-- Ação: Declaração -->
+                <td class="p-3 text-sm text-center">
+                    {% if tema and tema.status_tutor == 'aprovado' %}
+                        <a href="{% url 'gerar_pdf_declaracao' estudante.id %}" 
+                           target="_blank"
+                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition shadow-sm text-xs font-semibold">
+                           <i class="fas fa-file-pdf"></i> Gerar Declaração
+                        </a>
+                    {% else %}
+                        <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded-full text-xs italic">
+                            Indisponível (Aguardando Aprovação)
+                        </span>
+                    {% endif %}
+                </td>
+
+            </tr>
+            {% endwith %}
+            {% empty %}
+            <tr>
+                <td colspan="4" class="p-10 text-center text-gray-500 italic">
+                    Nenhum estudante vinculado para orientação no momento.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- VISUALIZAÇÃO MOBILE (Visível apenas em celulares) -->
+    <div class="md:hidden space-y-4 animate-fade">
+        {% for estudante in estudantes %}
+        {% with tema=estudante.temas.all.0 %}
+        <div class="border border-gray-200 rounded-lg p-4 shadow-sm bg-gray-50">
+            <div class="flex flex-col mb-3 border-b border-gray-200 pb-2">
+                <span class="text-lg font-bold text-gray-900">{{ estudante.nome }} {{ estudante.sobrenome }}</span>
+                <span class="text-xs font-medium text-blue-600">{{ estudante.curso.nome|default:"—" }}</span>
+            </div>
+
+            <div class="text-sm mb-4">
+                <strong class="text-gray-600 block text-xs uppercase tracking-wider mb-1">Tema:</strong>
+                <p class="text-gray-800 font-medium">{% if tema %}{{ tema.titulo }}{% else %}—{% endif %}</p>
+            </div>
+
+            {% if tema and tema.status_tutor == 'aprovado' %}
+                <a href="{% url 'gerar_pdf_declaracao' estudante.id %}" 
+                   target="_blank"
+                   class="block w-full text-center py-3 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 transition">
+                   <i class="fas fa-file-pdf mr-2"></i> Gerar Declaração de Responsabilidade
+                </a>
+            {% else %}
+                <div class="text-center py-2 bg-gray-200 text-gray-500 rounded text-xs italic">
+                    Aguardando aprovação do tema para gerar declaração
+                </div>
+            {% endif %}
+        </div>
+        {% endwith %}
+        {% empty %}
+        <div class="text-center py-10">
+            <p class="text-gray-500 italic">Nenhum estudante encontrado.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Estilos para Animação -->
+<style>
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.animate-fade { animation: fadeIn .5s ease-out; }
+.animate-fadeSlow { animation: fadeIn 0.8s ease-out; }
+.animate-fadeSlide { animation: fadeIn .4s ease-out, slideUp .4s ease-out; }
+</style>
+
+{% endblock %}

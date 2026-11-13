@@ -1,0 +1,234 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto py-8 px-4">
+    {% if messages %}
+    <div class="mb-6 space-y-4">
+        {% for message in messages %}
+        <div class="flex items-center p-4 rounded-2xl border shadow-sm {% if message.tags == 'success' %}bg-green-50 border-green-200 text-green-800{% elif message.tags == 'error' %}bg-red-50 border-red-200 text-red-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %} transition-all animate-in fade-in slide-in-from-top-4">
+            <span class="material-icons-sharp mr-3 text-2xl">
+                {% if message.tags == 'success' %}check_circle{% elif message.tags == 'error' %}report{% else %}info{% endif %}
+            </span>
+            <span class="font-medium">{{ message }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="bg-white rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100">
+        <div class="bg-gradient-to-r from-blue-600 to-primary p-8 text-white text-center">
+            <span class="material-icons-sharp text-5xl mb-2">assignment_ind</span>
+            <h2 class="text-3xl font-extrabold">Agendar Nova Pré-defesa</h2>
+            <p class="text-blue-100 opacity-90">Preencha os detalhes da Mesa dos Jurados</p>
+        </div>
+
+        <div id="js-error-alert" class="hidden mx-8 mt-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 font-medium rounded-r-lg">
+            <div class="flex items-center">
+                <span class="material-icons-sharp mr-2">error</span>
+                <span id="error-message"></span>
+            </div>
+        </div>
+
+        <form id="predefesa-form" action="{% url 'agendar_predefesa' %}" method="POST" class="p-8 md:p-12 space-y-8">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700 ml-1">Data da Defesa</label>
+                    <input type="date" name="data" id="id_data" required
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none bg-gray-50">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700 ml-1">Hora de Início</label>
+                    <input type="time" name="hora" id="id_hora" required
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none bg-gray-50">
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-bold text-gray-700 ml-1">Estudante</label>
+                    <select name="estudante" id="id_estudante" required
+                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all outline-none bg-gray-50 appearance-none">
+                        <option value="" disabled selected>Selecionar Aluno...</option>
+                        {% for e in estudantes %}
+                            <!-- Acessa o tutor_indicado através do relacionamento reverso 'temas' do seu Model Tema -->
+                            <option value="{{ e.id }}" 
+                                    data-tutor-id="{{ e.temas.first.tutor_indicado.id|default:'' }}"
+                                    data-tutor-nome="{% if e.temas.first.tutor_indicado %}{{ e.temas.first.tutor_indicado.nome }} {{ e.temas.first.tutor_indicado.sobrenome }}{% else %}Não Atribuído{% endif %}">
+                                {{ e.nome }} {{ e.sobrenome }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- PAINEL EXPOSITOR DINÂMICO DO TUTOR BLOQUEADO -->
+            <div id="tutor-info-container" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-5 transition-all animate-in fade-in slide-in-from-top-2">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <span class="material-icons-sharp text-amber-600 text-3xl mt-0.5">school</span>
+                        <div>
+                            <h3 class="text-xs font-black uppercase tracking-wider text-amber-800">Tutor / Orientador do Estudante</h3>
+                            <h1 id="tutor-nome-display" class="text-2xl font-black text-gray-900 mt-0.5">---</h1>
+                        </div>
+                    </div>
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-100 border border-red-200 text-red-700 font-bold text-xs uppercase tracking-wide shadow-sm self-start sm:self-center">
+                        <span class="material-icons-sharp text-sm">block</span>
+                        Bloqueado para a Banca
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Secretário -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-primary font-bold mb-1">
+                        <span class="material-icons-sharp text-sm">history_edu</span>
+                        <span>Secretário da Mesa do Jurado</span>
+                    </div>
+                    <input type="hidden" id="id_orientador_excluido" data-exclusivo-extra="juri" value="">
+                    <select name="secretario" id="id_secretario" required data-exclusivo="juri" class="juri-select w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none bg-gray-50">
+                        <option value="" disabled selected>Escolher secretario...</option>
+                        {% for t in tutores %}
+                            <option value="{{ t.id }}">{{ t.nome }} {{ t.sobrenome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Presidente -->
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2 text-primary font-bold mb-1">
+                        <span class="material-icons-sharp text-sm">gavel</span>
+                        <span>Presidente do Júri</span>
+                    </div>
+                    <select name="presidente" id="id_presidente" required data-exclusivo="juri" class="juri-select w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-primary outline-none bg-gray-50">
+                        <option value="" disabled selected>Escolher presidente</option>
+                        {% for t in tutores %}
+                            <option value="{{ t.id }}">{{ t.nome }} {{ t.sobrenome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-2xl border border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Primeiro Vogal (v1) -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Primeiro Vogal</label>
+                    <select name="v1" id="id_v1" required data-exclusivo="juri" class="juri-select w-full px-4 py-3 rounded-xl border border-white focus:border-primary outline-none bg-white shadow-sm">
+                        <option value="" disabled selected>Selecionar...</option>
+                        {% for t in tutores %}
+                            <option value="{{ t.id }}">{{ t.nome }} {{ t.sobrenome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Segundo Vogal (v2) -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Segundo Vogal</label>
+                    <select name="v2" id="id_v2" required data-exclusivo="juri" class="juri-select w-full px-4 py-3 rounded-xl border border-white focus:border-primary outline-none bg-white shadow-sm">
+                        <option value="" disabled selected>Selecionar...</option>
+                        {% for t in tutores %}
+                            <option value="{{ t.id }}">{{ t.nome }} {{ t.sobrenome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 pt-6">
+                <button type="submit" id="submit-btn" 
+                    class="flex-1 bg-primary hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Confirmar e Gerar Mesa do Jurado
+                </button>
+                <a href="{% url 'lista_predefesas' %}" 
+                    class="px-8 py-4 bg-gray-100 text-gray-500 font-bold rounded-2xl hover:bg-gray-200 transition-all text-center">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const juriSelects = document.querySelectorAll('.juri-select');
+        const btnSubmit = document.getElementById('submit-btn');
+        const errorAlert = document.getElementById('js-error-alert');
+        const errorMsg = document.getElementById('error-message');
+        
+        const estudanteSelect = document.getElementById('id_estudante');
+        const tutorInfoContainer = document.getElementById('tutor-info-container');
+        const tutorNomeDisplay = document.getElementById('tutor-nome-display');
+
+        let tutorIdAtual = null;
+        let tutorNomeAtual = "";
+
+        // Captura a troca de estudante e renderiza o painel do Tutor Orientador
+        estudanteSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            tutorIdAtual = selectedOption.getAttribute('data-tutor-id');
+            tutorNomeAtual = selectedOption.getAttribute('data-tutor-nome');
+
+            if (tutorIdAtual && tutorNomeAtual !== "Não Atribuído") {
+                tutorNomeDisplay.innerText = tutorNomeAtual;
+                tutorInfoContainer.classList.remove('hidden');
+            } else {
+                tutorInfoContainer.classList.add('hidden');
+                tutorIdAtual = null;
+                tutorNomeAtual = "";
+            }
+            // O orientador do estudante deixa de aparecer nas opções do júri.
+            const orientador = document.getElementById('id_orientador_excluido');
+            orientador.value = tutorIdAtual || '';
+            orientador.dispatchEvent(new Event('change', { bubbles: true }));
+            validarFormulario();
+        });
+
+        function validarFormulario() {
+            let idsSelecionados = [];
+            let temDuplicado = false;
+            let temTutorNaBanca = false;
+            let erroTexto = "";
+
+            juriSelects.forEach(select => {
+                select.classList.remove('border-red-500', 'ring-2', 'ring-red-100');
+
+                if (select.value) {
+                    // Validação 1: O Tutor indicado não pode fazer parte da banca
+                    if (tutorIdAtual && select.value === tutorIdAtual) {
+                        temTutorNaBanca = true;
+                        erroTexto = `Infração de Regras: O orientador (${tutorNomeAtual}) não pode compor a banca avaliadora deste estudante.`;
+                        select.classList.add('border-red-500', 'ring-2', 'ring-red-100');
+                    }
+
+                    // Validação 2: Verificar duplicados na mesma mesa
+                    if (idsSelecionados.includes(select.value)) {
+                        temDuplicado = true;
+                        if (!temTutorNaBanca) {
+                            erroTexto = "Inconsistência: Um professor não pode ocupar duas funções na mesma banca.";
+                        }
+                        select.classList.add('border-red-500', 'ring-2', 'ring-red-100');
+                    } else {
+                        idsSelecionados.push(select.value);
+                    }
+                }
+            });
+
+            if (temDuplicado || temTutorNaBanca) {
+                errorMsg.innerText = erroTexto;
+                errorAlert.classList.remove('hidden');
+                btnSubmit.disabled = true;
+            } else {
+                errorAlert.classList.add('hidden');
+                btnSubmit.disabled = false;
+            }
+        }
+
+        juriSelects.forEach(select => {
+            select.addEventListener('change', validarFormulario);
+        });
+    });
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

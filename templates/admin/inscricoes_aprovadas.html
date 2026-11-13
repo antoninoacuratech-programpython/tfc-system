@@ -1,0 +1,129 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto pb-10 px-2 sm:px-4">
+    
+    <!-- Cabeçalho Informativo -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 flex justify-between items-center">
+        <div>
+            <span class="text-xs font-black text-green-600 uppercase tracking-widest block mb-1">Coordenação: {{ curso.nome }}</span>
+            <h3 class="text-lg sm:text-xl font-bold text-gray-800">Inscrições de TFC Homologadas</h3>
+            <p class="text-xs sm:text-sm text-gray-500 font-medium">
+                {{ total_aprovados }} estudantes com processos validados pela Área Científica
+            </p>
+        </div>
+        <div class="p-3 bg-green-50 text-green-600 rounded-xl">
+            <span class="material-icons-sharp text-2xl sm:text-3xl">verified_user</span>
+        </div>
+    </div>
+
+    <!-- TABELA DESKTOP -->
+    <div class="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-gray-50/50 text-gray-600 text-xs uppercase font-bold tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">Estudante</th>
+                        <th class="px-6 py-4">Tema</th>
+                        <th class="px-6 py-4 text-center">Documentação</th>
+                        <th class="px-6 py-4 text-center">Ações</th>
+                        {% if user.perfil == 'coordenacao' %}
+                        <th class="px-6 py-4 text-center">Dossiê</th>
+                        {% endif %}
+                        <th class="px-6 py-4 text-center">Período</th>
+                        <th class="px-6 py-4 text-center">Validador</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for inscricao in inscricoes %}
+                    <tr class="hover:bg-green-50/10 transition-all group">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-green-50 text-green-600 flex items-center justify-center font-bold text-sm shadow-inner">
+                                    {{ inscricao.estudante.nome|slice:":1" }}{{ inscricao.estudante.sobrenome|slice:":1" }}
+                                </div>
+                                <div>
+                                    <span class="font-bold text-gray-700 block">{{ inscricao.estudante.nome }}</span>
+                                    <span class="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Aprovado em: {{ inscricao.data_criacao|date:"d/m/Y" }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 max-w-xs">
+                            <p class="text-sm text-gray-800 font-semibold italic">"{{ inscricao.tema.titulo }}"</p>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <div class="flex justify-center gap-1.5">
+                                {% if inscricao.requerimento %}<span class="material-icons-sharp text-xs text-blue-400" title="Requerimento">description</span>{% endif %}
+                                {% if inscricao.curriculum_academico %}<span class="material-icons-sharp text-xs text-blue-400" title="Currículo">history_edu</span>{% endif %}
+                                {% if inscricao.copia_bi %}<span class="material-icons-sharp text-xs text-blue-400" title="BI">badge</span>{% endif %}
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <button onclick="openMultipleDocsModal([
+                                {% if inscricao.requerimento %}'{{ inscricao.requerimento.url }}',{% endif %}
+                                {% if inscricao.curriculum_academico %}'{{ inscricao.curriculum_academico.url }}',{% endif %}
+                                {% if inscricao.copia_bi %}'{{ inscricao.copia_bi.url }}',{% endif %}
+                                {% if inscricao.comprovativo_pagamento %}'{{ inscricao.comprovativo_pagamento.url }}'{% endif %}
+                            ], 'Documentação Completa - {{ inscricao.estudante.nome }}')" 
+                            class="px-3 py-1 bg-green-600 text-white rounded-lg text-[10px] font-bold hover:bg-green-700 transition-all flex items-center gap-1 mx-auto">
+                                <span class="material-icons-sharp text-sm">library_books</span> VER TUDO
+                            </button>
+                        </td>
+                        
+                        
+
+                        <td class="px-6 py-4 text-center">
+                            <span class="px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider {% if inscricao.periodo == 'Regular' %} bg-green-100 text-green-700 {% else %} bg-purple-100 text-purple-700 {% endif %}">
+                                {{ inscricao.periodo }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-center">
+                            <span class="text-xs font-semibold text-gray-600">{{ inscricao.aprovado_por.nome }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- MODAL DE VISUALIZAÇÃO -->
+<div id="docModal" class="fixed inset-0 z-[999] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <div class="bg-white w-full max-w-5xl h-[90vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+            <h3 id="docModalTitle" class="font-bold text-gray-800">Visualizador de Documentos</h3>
+            <button onclick="closeDocModal()" class="w-10 h-10 rounded-full hover:bg-gray-200 flex items-center justify-center text-gray-500">
+                <span class="material-icons-sharp">close</span>
+            </button>
+        </div>
+        <div id="docContainer" class="flex-1 bg-gray-100 overflow-y-auto p-6"></div>
+    </div>
+</div>
+
+<script>
+    function openMultipleDocsModal(urls, title) {
+        const modal = document.getElementById('docModal');
+        const container = document.getElementById('docContainer');
+        document.getElementById('docModalTitle').innerText = title;
+        
+        container.innerHTML = "";
+        urls.forEach((url, index) => {
+            if(url) {
+                container.innerHTML += `
+                    <div class="mb-8">
+                        <p class="text-[10px] font-black text-gray-400 uppercase mb-2">Ficheiro ${index + 1}</p>
+                        <embed src="${url}" type="application/pdf" width="100%" height="700px" class="rounded-xl shadow-lg">
+                    </div>
+                `;
+            }
+        });
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDocModal() {
+        document.getElementById('docModal').classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    }
+</script>
+{% endblock %}

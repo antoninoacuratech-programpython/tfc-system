@@ -1,0 +1,218 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+    
+    <!-- Cabeçalho de Navegação -->
+    <div class="mb-6 flex items-center justify-between">
+        <a href="{% url 'listar_despachos' %}" class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-gray-700 transition">
+            <span class="material-icons-sharp text-base mr-1">arrow_back</span>
+            Voltar para a Lista
+        </a>
+        <span class="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase tracking-wider">
+            Fase de Revisão Presidencial
+        </span>
+    </div>
+
+    <!-- Bloco Principal do Despacho -->
+    <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        
+        <!-- Header do Card -->
+        <div class="border-b border-gray-100 bg-gray-50/50 px-6 py-5 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-extrabold text-gray-800">
+                    Revisar Despacho № {{ despacho.numero_despacho }}
+                </h2>
+                <p class="text-xs text-gray-400 font-semibold mt-0.5 uppercase tracking-tight">
+                    Criado em: {{ despacho.data_criacao|date:"d/m/Y - H:i" }}
+                </p>
+            </div>
+            <div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-black bg-yellow-100 text-yellow-700 uppercase">
+                    <span class="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-2"></span> Aguardando Assinatura
+                </span>
+            </div>
+        </div>
+
+        <!-- Conteúdo/Dados do Despacho -->
+        <div class="p-6 sm:p-8 space-y-6">
+            
+            <!-- Seção: Dados do Estudante -->
+            <div>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+                    <span class="material-icons-sharp text-sm">school</span> Dados do Candidato
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Nome Completo</label>
+                        <p class="text-sm font-bold text-gray-700">{{ despacho.predefesa.estudante.nome }} {{ despacho.predefesa.estudante.sobrenome }}</p>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-gray-400 uppercase">Curso Académico</label>
+                        <p class="text-sm font-bold text-gray-700 uppercase tracking-tight">{{ despacho.predefesa.estudante.curso.nome }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <!-- Seção: Informações do Júri / Pré-Defesa -->
+            <div>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+                    <span class="material-icons-sharp text-sm">groups</span> Estrutura do Júri Proposta
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center py-2 px-3 bg-white border border-gray-100 rounded-xl">
+                        <span class="text-xs font-semibold text-gray-500">Presidente do Júri</span>
+                        <span class="text-xs font-bold text-gray-800">{{ despacho.predefesa.presidente.nome }} {{ despacho.predefesa.presidente.sobrenome }}</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center py-2 px-3 bg-white border border-gray-100 rounded-xl">
+                        <span class="text-xs font-semibold text-gray-500">Primeiro Vogal</span>
+                        <span class="text-xs font-bold text-gray-800">{{ despacho.predefesa.primeiro_vogal.nome}} {{ despacho.predefesa.primeiro_vogal.sobrenome}}</span>
+                    </div>
+<div class="flex justify-between items-center py-2 px-3 bg-white border border-gray-100 rounded-xl">
+                        <span class="text-xs font-semibold text-gray-500">Segundo Vogal</span>
+                        <span class="text-xs font-bold text-gray-800">{{ despacho.predefesa.segundo_vogal.nome }} {{ despacho.predefesa.segundo_vogal.sobrenome}}</span>
+                    </div>
+                    <div class="flex justify-between items-center py-2 px-3 bg-white border border-gray-100 rounded-xl">
+                        <span class="text-xs font-semibold text-gray-500">Secretário </span>
+                        <span class="text-xs font-bold text-gray-800">{{ despacho.predefesa.secretario.nome }} {{ despacho.predefesa.secretario.sobrenome }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-100">
+
+            <!-- Seção: Texto ou Observações do Despacho -->
+            <div>
+                <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <span class="material-icons-sharp text-sm">description</span> Conteúdo do Documento
+                </h3>
+                <div class="prose prose-sm max-w-none text-gray-600 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 min-h-[100px] whitespace-pre-line">
+                    {{ despacho.descricao|default:"Sem observações ou descrição adicional informada pela Área Científica." }}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Rodapé com as Ações Decisórias -->
+        <div class="bg-gray-50 border-t border-gray-100 px-6 py-5 sm:px-8 flex flex-col sm:flex-row-reverse justify-between gap-4">
+            
+            <!-- Formulário Único Decisório direcionado à view correta -->
+            <form action="{% url 'assinar_despacho' despacho.id %}" method="POST" id="formAssinatura" class="w-full sm:w-auto">
+                {% csrf_token %}
+                <!-- Input oculto manipulado dinamicamente via JS -->
+                <input type="hidden" name="acao" id="inputAcao" value="">
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    
+                    <!-- Botão Rejeitar -->
+                    <button type="button" onclick="confirmarAcao('rejeitar', 'Rejeitar Nomeação', 'bg-red-600')"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-600 hover:text-white transition shadow-sm btn-decisao">
+                        <span class="material-icons-sharp text-sm mr-2">close</span>
+                        Rejeitar Nomeação
+                    </button>
+
+                    <!-- Botão Assinar / Aprovar -->
+                    <button type="button" onclick="confirmarAcao('aprovar', 'Aprovar e Assinar', 'bg-emerald-600')"
+                            class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100 btn-decisao">
+                        <span class="material-icons-sharp text-sm mr-2">draw</span>
+                        Assinar Documento
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Voltar sem alterar nada -->
+            <a href="{% url 'listar_despachos' %}" 
+               class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition text-center align-middle">
+                Decidir mais tarde
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE CONFIRMAÇÃO FLUTUANTE -->
+<div id="modalConfirmacao" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-100">
+            <div class="bg-white px-6 pt-6 pb-4">
+                <div class="sm:flex sm:items-start">
+                    <div id="modalIconContainer" class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl sm:mx-0 sm:h-10 sm:w-10">
+                        <span class="material-icons-sharp text-white" id="modalIcon">gavel</span>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg font-black text-gray-900" id="modalTitulo">Confirmar Ação</h3>
+                        <p class="text-sm text-gray-500 font-medium mt-1" id="modalMensagem">Tem certeza de que deseja aplicar esta decisão ao Despacho?</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3">
+                <button type="button" id="btnModalConfirmar" class="inline-flex justify-center rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all shadow-lg">
+                    Confirmar
+                </button>
+                <button type="button" onclick="fecharModalConfirmacao()" class="inline-flex justify-center rounded-xl border border-gray-200 px-4 py-2.5 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 transition-all">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let acaoSelecionada = null;
+
+    function confirmarAcao(acao, acaoTexto, corClasse) {
+        acaoSelecionada = acao;
+        
+        const modal = document.getElementById('modalConfirmacao');
+        const btnConfirmar = document.getElementById('btnModalConfirmar');
+        const iconContainer = document.getElementById('modalIconContainer');
+        const icon = document.getElementById('modalIcon');
+
+        // Configura o modal de forma personalizada de acordo com o clique do Presidente
+        document.getElementById('modalTitulo').innerText = `${acaoTexto}`;
+        document.getElementById('modalMensagem').innerText = `Deseja realmente prosseguir com a ação de "${acaoTexto.toLowerCase()}" para o despacho № {{ despacho.numero_despacho }}?`;
+        
+        btnConfirmar.className = `inline-flex justify-center rounded-xl px-5 py-2.5 text-sm font-bold text-white transition-all shadow-lg ${corClasse}`;
+        
+        if (corClasse.includes('red')) {
+            iconContainer.className = "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl sm:mx-0 sm:h-10 sm:w-10 bg-red-600";
+            icon.innerText = "gavel";
+        } else {
+            iconContainer.className = "mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl sm:mx-0 sm:h-10 sm:w-10 bg-emerald-600";
+            icon.innerText = "verified";
+        }
+
+        modal.classList.remove('hidden');
+    }
+
+    function fecharModalConfirmacao() {
+        document.getElementById('modalConfirmacao').classList.add('hidden');
+        acaoSelecionada = null;
+    }
+
+    // Intercepta e congela os botões após a confirmação para evitar duplo clique
+    document.getElementById('btnModalConfirmar').addEventListener('click', function() {
+        if (acaoSelecionada) {
+            // Atribui o valor ("aprovar" ou "rejeitar") ao input que a view espera receber
+            document.getElementById('inputAcao').value = acaoSelecionada;
+
+            // Bloqueio visual e lógico contra múltiplos disparos
+            this.disabled = true;
+            this.innerText = "Processando...";
+            
+            document.querySelectorAll('.btn-decisao').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+
+            // Dispara o formulário unificado
+            document.getElementById('formAssinatura').submit();
+        }
+    });
+</script>
+{% endblock %}

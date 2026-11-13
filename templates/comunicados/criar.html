@@ -1,0 +1,138 @@
+{% extends "admin/base.html" %}
+
+{% load static %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto bg-white shadow-lg p-6 rounded-lg">
+  <h2 class="text-2xl font-bold text-primary mb-6">Criar Novo Comunicado</h2>
+  
+  {% if messages %}
+    <div class="mb-4 space-y-2" role="alert">
+      {% for message in messages %}
+        <div class="px-4 py-3 rounded-lg text-sm font-medium border text-center
+          {% if message.tags == 'error' %}bg-red-500/10 text-red-400 border-red-500/30
+          {% elif message.tags == 'success' %}bg-green-500/10 text-green-400 border-green-500/30
+          {% else %}bg-gray-500/10 text-gray-300 border-gray-500/30{% endif %}">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="POST" id="formComunicado" class="space-y-4">
+    {% csrf_token %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Data Início</label>
+        <input type="date" name="data_inicio" id="data_inicio" required
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none transition-all">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Data Fim</label>
+        <input type="date" name="data_fim" id="data_fim" required
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none transition-all">
+        <p id="msg-data" class="text-red-500 text-[11px] mt-1 hidden font-bold uppercase tracking-tight">A data fim deve ser posterior à data início.</p>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Hora Início</label>
+        <input type="time" name="hora_inicio" id="hora_inicio" required
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none transition-all">
+        <p id="msg-hora-inicio" class="text-red-500 text-[11px] mt-1 hidden font-bold uppercase tracking-tight">Horário permitido: 08:00 às 16:00.</p>
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Hora Fim</label>
+        <input type="time" name="hora_fim" id="hora_fim" required
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none transition-all">
+        <p id="msg-hora-fim" class="text-red-500 text-[11px] mt-1 hidden font-bold uppercase tracking-tight">Horário permitido: 08:00 às 16:00.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Taxa Finalistas Antigos (AOA)</label>
+        <input type="number" name="taxa_finalistas_antigos" step="0.01" value="10000"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Taxa Pós Laboral TFC (AOA)</label>
+        <input type="number" name="taxa_pos_laboral_tfc" step="0.01" value="75000"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+      </div>
+
+      <div>
+        <label class="block text-gray-700 font-semibold mb-1">Taxa Pós Laboral Exame (AOA)</label>
+        <input type="number" name="taxa_pos_laboral_exame" step="0.01" value="30000"
+               class="w-full border border-gray-300 rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:outline-none">
+      </div>
+    </div>
+
+    <div class="flex justify-end mt-6">
+      <button type="submit" id="btnSubmit"
+              class="bg-primary text-white font-bold px-6 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed">
+        Criar Comunicado
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  const dInicio = document.getElementById('data_inicio');
+  const dFim = document.getElementById('data_fim');
+  const hInicio = document.getElementById('hora_inicio');
+  const hFim = document.getElementById('hora_fim');
+  const btn = document.getElementById('btnSubmit');
+
+  const msgData = document.getElementById('msg-data');
+  const msgHI = document.getElementById('msg-hora-inicio');
+  const msgHF = document.getElementById('msg-hora-fim');
+
+  function validarForm() {
+    let erroAtivo = false;
+
+    // 1. Validar Datas (Fim deve ser maior que Início)
+    if (dInicio.value && dFim.value) {
+      if (dFim.value <= dInicio.value) {
+        msgData.classList.remove('hidden');
+        dFim.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+        erroAtivo = true;
+      } else {
+        msgData.classList.add('hidden');
+        dFim.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+      }
+    }
+
+    const validarHora = (input, msgElement) => {
+      if (input.value) {
+        const [hora, min] = input.value.split(':').map(Number);
+        if (hora < 8 || hora > 16 || (hora === 16 && min > 0)) {
+          msgElement.classList.remove('hidden');
+          input.classList.add('border-red-500', 'ring-1', 'ring-red-500');
+          return true; 
+        }
+      }
+      msgElement.classList.add('hidden');
+      input.classList.remove('border-red-500', 'ring-1', 'ring-red-500');
+      return false; 
+    };
+
+    const erroHI = validarHora(hInicio, msgHI);
+    const erroHF = validarHora(hFim, msgHF);
+
+    if (erroHI || erroHF) erroAtivo = true;
+
+    btn.disabled = erroAtivo;
+  }
+  [dInicio, dFim, hInicio, hFim].forEach(field => {
+    field.addEventListener('input', validarForm);
+    field.addEventListener('change', validarForm);
+  });
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

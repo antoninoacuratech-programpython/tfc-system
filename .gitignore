@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Ambientes virtuais
+env/
+venv/
+.venv/
+
+# Configuração local e segredos
+.env
+
+# Base de dados local e cópias de segurança
+db.sqlite3
+*.sqlite3
+*.rar
+*.zip
+
+# Ficheiros gerados / carregados
+staticfiles/
+media/
+
+# Editores e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Credenciais locais
+*.local.txt

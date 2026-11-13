@@ -1,0 +1,42 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="p-6 max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-800 mb-6">Listas de Pré-defesas para Validação</h1>
+ <a href="{% url 'pdf_geral' %}" 
+               class="inline-flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-5 py-3 rounded-2xl font-bold transition-all border border-red-100 shadow-sm active:scale-95">
+                <span class="material-icons-sharp text-lg">picture_as_pdf</span>
+                Mapa Geral (PDF)
+            </a>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for lista in listas %}
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all">
+            <div class="flex justify-between items-start mb-4">
+                <div class="bg-blue-50 text-blue-600 p-3 rounded-2xl">
+                    <span class="material-icons-sharp">inventory_2</span>
+                </div>
+                <span class="bg-green-100 text-green-700 text-[10px] font-black px-3 py-1 rounded-full uppercase">
+                    Recebido
+                </span>
+            </div>
+            
+            <h3 class="font-bold text-gray-800">Remessa #{{ lista.id }}</h3>
+            <p class="text-xs text-gray-400 mb-4">Enviado em: {{ lista.data_criacao|date:"d/m/Y H:i" }}</p>
+            
+            <div class="space-y-2 mb-6">
+                <p class="text-sm text-gray-600">
+                    <span class="font-bold text-blue-600">{{ lista.predefesas.count }}</span> Pré-defesas incluídas
+                </p>
+            </div>
+
+            
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-20 bg-gray-50 rounded-[2rem] border-2 border-dashed border-gray-200">
+            <p class="text-gray-400 font-medium">Nenhuma lista foi enviada pela coordenação ainda.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

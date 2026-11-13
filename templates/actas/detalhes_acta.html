@@ -1,0 +1,70 @@
+<body class="bg-gray-100 p-6 md:p-12">
+    <div class="max-w-4xl mx-auto bg-white p-12 shadow-2xl border-t-8 border-blue-900 relative">
+        
+        <div class="absolute top-10 right-10 rotate-12 opacity-20">
+            <div class="border-4 border-green-600 text-green-600 px-4 py-2 text-2xl font-black rounded uppercase">
+                Aprovado
+            </div>
+        </div>
+
+        <div class="text-center mb-10">
+            <h1 class="text-2xl font-serif font-bold uppercase tracking-widest text-gray-800">República de Angola</h1>
+            <h2 class="text-lg font-serif font-semibold text-gray-700">Instituto Superior Politécnico do Bié</h2>
+            <div class="w-24 h-1 bg-blue-900 mx-auto my-4"></div>
+            <h3 class="text-xl font-bold underline">ACTA DE DEFESA PÚBLICA Nº {{ acta.numero_acta }}</h3>
+        </div>
+
+        <div class="prose max-w-none text-gray-800 leading-relaxed text-justify italic font-serif">
+            <p>
+                Aos {{ acta.data_sessao|date:"d" }} dias do mês de {{ acta.data_sessao|date:"F" }} do ano de {{ acta.data_sessao|date:"Y" }}, 
+                pelas {{ acta.hora_abertura }}, reuniu-se no {{ acta.local_sessao }}, o júri para proceder à avaliação 
+                da defesa pública do Trabalho de Fim de Curso do estudante <b>{{ acta.estudante.nome|upper }} {{ acta.estudante.sobrenome|upper }}</b>, 
+                versando sobre o tema: <b>"{{ acta.tema }}"</b>.
+            </p>
+        </div>
+
+        <div class="my-8 grid grid-cols-1 md:grid-cols-2 gap-8 border-y py-8">
+            <div>
+                <h4 class="font-bold text-blue-900 mb-2 uppercase text-xs">Observações do Júri</h4>
+                <p class="text-sm font-semibold">Pontos Fortes:</p>
+                <p class="text-sm text-gray-600 mb-2">{{ acta.pontos_fortes|default:"N/A" }}</p>
+                <p class="text-sm font-semibold">Pontos Fracos:</p>
+                <p class="text-sm text-gray-600">{{ acta.pontos_fracos|default:"N/A" }}</p>
+            </div>
+            <div class="bg-gray-50 p-6 rounded-lg border">
+                <div class="flex justify-between items-center mb-4 border-b pb-2">
+                    <span class="text-sm font-bold">Nota da Sessão:</span>
+                    <span class="text-lg font-mono">{{ acta.avaliacao_sessao }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm font-bold text-blue-900 uppercase">Média Final:</span>
+                    <span class="text-3xl font-black text-blue-900">{{ acta.avaliacao_final }}</span>
+                </div>
+                <p class="text-[10px] text-gray-400 mt-4 uppercase text-center italic">Escala de 0 a 20 valores</p>
+            </div>
+        </div>
+
+        <div class="mt-20 flex justify-around text-center border-t pt-10">
+            <div class="w-64">
+                <div class="border-b border-gray-400 mb-2"></div>
+                <p class="text-xs font-bold uppercase">O Presidente do Júri</p>
+                <p class="text-sm text-gray-600">{{ acta.presidente }}</p>
+            </div>
+            <div class="w-64">
+                <div class="border-b border-gray-400 mb-2"></div>
+                <p class="text-xs font-bold uppercase">O Secretário</p>
+                <p class="text-sm text-gray-600">{{ acta.solicitacao.predefesa.secretario }}</p>
+            </div>
+        </div>
+
+        <div class="mt-12 flex gap-4 print:hidden justify-center">
+            <button onclick="window.print()" class="bg-gray-800 text-white px-8 py-2 rounded-lg hover:bg-black transition">
+                <i class="fas fa-print"></i> Imprimir
+            </button>
+            <a href="{% url 'baixar_acta_pdf' acta.id %}" class="bg-red-600 text-white px-8 py-2 rounded-lg hover:bg-red-700 transition">
+                <i class="fas fa-file-pdf"></i> Baixar PDF
+            </a>
+            <a href="{% url 'lista_actas' %}" class="bg-gray-200 text-gray-700 px-8 py-2 rounded-lg hover:bg-gray-300 transition">Voltar</a>
+        </div>
+    </div>
+</body>

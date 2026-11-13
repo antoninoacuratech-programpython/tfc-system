@@ -1,0 +1,146 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # --- Rotas de Solicitação de Defesa ---
+    path('solicitacoes/', views.lista_solicitacoes_defesa, name='lista_solicitacoes'),
+    path('solicitacoes/<int:pk>/', views.detalhes_solicitacao_defesa, name='detalhes_solicitacao'),
+    path('defesa/solicitar/', views.criar_solicitacao_defesa, name='criar_solicitacao_defesa'),
+    path('lista/', views.lista_solicitacoes_defesa, name='lista_solicitacoes_defesa'),
+    
+    # NOVA ROTA PARA O PDF:
+    path('solicitacoes/pdf/<int:pk>/', views.gerar_pdf_solicitacao, name='gerar_pdf_solicitacao'),
+    # --------------------------------------
+    path('estudantes/processo/<int:processo_id>/', views.lista_estudantes, name='lista_estudantes_por_processo'),
+    path('', views.login_view, name='login'),
+    path('cadastro/', views.cadastro, name='cadastro'),
+    path('gestao/', views.admink, name='admink'),
+    path('estudante/', views.dashboard_estudante, name='dashboard_estudante'),
+    path('estudante/criar-tema/', views.criar_ou_editar_tema, name='criar_ou_editar_tema'),
+    path('sair/', views.sair, name='sair'),
+    path('estudantes/', views.lista_estudantes, name='lista_estudantes'),
+    path('estudantes/<int:tema_id>/status/<str:novo_status>/', 
+         views.alterar_status_tema, 
+         name='alterar_status_tema'),
+    path('aprovados/', views.temas_aprovados, name='lista_aprovados'),
+    path('reprovados/', views.temas_reprovados, name='lista_reprovados'),
+    path('dashboard_tutor/',views.dashboard_tutor, name='dashboard_tutor'),
+    path(
+        'tema/<int:tema_id>/status/<str:novo_status>/',
+        views.alterar_status_tema_tutor,
+        name='alterar_status_tema_tutor' 
+    ),
+   
+   path('alterar-status-multiplos-tutor/', views.alterar_status_multiplos_tutor, name='alterar_status_multiplos_tutor'),
+   path('add_estudante/',views.add_estudante,name='add_estudante'),
+   path("temas/alterar-multiplos/", views.alterar_status_multiplos, name="alterar_status_multiplos"),
+   path(
+    "usuarios/estado-multiplo/",
+    views.alterar_estado_multiplos_usuarios,
+    name="alterar_estado_multiplos_usuarios"
+),
+   path('tema/<int:tema_id>/recomendacoes/', views.adicionar_recomendacao, name='tutor_recomendacao'),
+   path('recomendacoes/', views.todas_recomendacoes, name='todas_recomendacoes'),
+   path('dashboard/', views.dashboard_presidencia, name='dashboard_presidencia'),
+   path('estudantes/temas/geral/', views.lista_todos_temas_geral, name='lista_geral_temas'),
+   path('estudante/<int:estudante_id>/baixar-recomendacoes/', views.baixar_recomendacoes_pdf, name='baixar_recomendacoes'),
+   path('tema/<int:tema_id>/adicionar-orientador/', views.adicionar_orientador, name='adicionar_orientador'),
+   path("perfil/atualizar/", views.atualizar_perfil, name="atualizar_perfil"),
+   path('buscar-predefesas-por-curso/', views.lista_predefesas, name='lista_predefesas'),
+    
+    # Rota para o formulário de agendamento
+   path('predefesas/agendar/', views.agendar_predefesa, name='agendar_predefesa'),
+    
+    # Rota para gerar o PDF da acta (recebe o ID da predefesa)
+   path('predefesas/pdf/<int:pk>/', views.gerar_pdf_predefesa, name='pdf_predefesa'),
+   path('predefesas/pdf/geral/', views.gerar_pdf_todas_predefesas, name='pdf_geral'),
+   path("departamentos/", views.lista_departamentos, name="lista_departamentos"),
+   path("departamentos/novo/", views.criar_departamento, name="criar_departamento"),
+   path("departamentos/<int:id>/editar/", views.editar_departamento, name="editar_departamento"),
+   path("departamentos/<int:id>/excluir/", views.excluir_departamento, name="excluir_departamento"),
+   path("cursos/", views.lista_cursos, name="lista_cursos"),
+   path("cursos/novo/", views.criar_curso, name="criar_curso"),
+   path("cursos/<int:id>/editar/", views.editar_curso, name="editar_curso"),
+   path("cursos/<int:id>/excluir/", views.excluir_curso, name="excluir_curso"),
+   path("comunicados/", views.lista_comunicados, name="lista_comunicados"),
+   path("comunicados/criar/", views.criar_comunicado, name="criar_comunicado"),
+   path("comunicados/publicar/<int:id>/", views.publicar_comunicado, name="publicar_comunicado"),
+   path("comunicados/pdf/<int:id>/", views.baixar_comunicado_pdf, name="baixar_comunicado_pdf"),
+   path('notificacao/<int:notif_id>/', views.ver_notificacao, name='ver_notificacao'),
+   path('area-cientifica/', views.index_area_cientifica, name='index_area_cientifica'),
+   path('comunicados/editar/<int:pk>/', views.atualizar_comunicado, name='atualizar_comunicado'),
+   path('comunicados/eliminar/<int:pk>/', views.eliminar_comunicado, name='eliminar_comunicado'),
+   path('tfc/minhas-inscricoes/', views.lista_inscricoes_tfc, name='lista_inscricoes_tfc'),
+   path('tfc/inscricao/nova/', views.gerar_ficha_tfc, name='gerar_ficha_tfc'),
+    
+    # Formulário para editar uma ficha existente (se ainda estiver pendente)
+   path('tfc/inscricao/editar/<int:pk>/', views.editar_inscricao_tfc, name='editar_inscricao_tfc'),
+    
+    # Rota para gerar e baixar o PDF oficial
+   path('tfc/inscricao/pdf/<int:pk>/', views.baixar_pdf_tfc, name='baixar_pdf_tfc'),
+
+   path('inscricao-tfc/aprovar/<int:inscricao_id>/', 
+         views.aprovar_inscricao_tfc, 
+         name='aprovar_inscricao_tfc'),
+   path('area-cientifica/pendentes/', 
+         views.lista_inscricoes_pendentes, 
+         name='lista_inscricoes_pendentes'),
+   path('area-cientifica/historico/', 
+         views.historico_inscricoes, 
+         name='historico_aprovacoes'),
+   path('inscricao/<int:inscricao_id>/rejeitar/', 
+         views.rejeitar_inscricao_tfc, 
+         name='rejeitar_inscricao_tfc'),
+   path('despachos/', views.listar_despachos, name='listar_despachos'),
+   path('despacho/novo/', views.criar_despacho, name='criar_despacho'),
+   path('despacho/pdf/<int:despacho_id>/', views.gerar_despacho_pdf, name='gerar_despacho_pdf'),
+   path('buscar-predefesas/', views.buscar_predefesas_por_curso, name='buscar_predefesas'),
+   path('despacho/eliminar/<int:pk>/', views.eliminar_despacho, name='eliminar_despacho'),
+   path('actas/', views.lista_actas, name='lista_actas'),
+   path('actas/nova/', views.criar_acta, name='criar_acta'),
+   path('actas/detalhe/<int:acta_id>/', views.detalhe_acta, name='detalhe_acta'),
+   path('actas/baixar-pdf/<int:acta_id>/', views.baixar_acta_pdf, name='baixar_acta_pdf'),
+   path('actas/baixar-tudo-zip/', views.baixar_todas_actas_zip, name='baixar_todas_actas_zip'),
+   path('baixar-zip/', views.baixar_todas_actas_zip, name='baixar_todas_actas_zip'),
+   path('solicitacoes/baixar-zip/', views.baixar_todas_solicitacoes_zip, name='baixar_todas_solicitacoes_zip'),
+   path('despachos/zip/', views.baixar_todos_despachos_zip, name='baixar_todos_despachos_zip'),
+   path('area-etica/', views.index_area_etica, name='index_area_etica'),
+   path('processos/', views.lista_processos, name='lista_processos'),
+   path('processos/criar/', views.criar_processo, name='criar_processo'),
+   path('processos/status/<int:pk>/', views.alternar_status_processo, name='alternar_status_processo'),
+   path('tutor/estudantes/', views.lista_estudantes_tutor, name='lista_estudantes_tutor'),
+   path('tutor/declaracao/<int:usuario_id>/', views.gerar_pdf_declaracao_orientador, name='gerar_pdf_declaracao'),
+   path(
+        'temas/exportar-pdf/', 
+        views.exportar_todos_temas_pdf, 
+        name='exportar_todos_temas_pdf'
+    ),
+   path(
+        'temas/despachar-cientifica/', 
+        views.despachar_para_cientifica, 
+        name='despachar_para_cientifica'
+    ),
+   path('predefesas/despachar/', views.despachar_predefesas_cientifica, name='despachar_predefesas_cientifica'),
+   path('cientifica/cursos/', views.lista_cursos_predefesas, name='lista_cursos_predefesas'),
+   path('cientifica/curso/<int:curso_id>/', views.predefesas_por_curso, name='predefesas_por_curso'),
+   path('area-cientifica/temasaprovados/', views.area_cientifica_temas, name='area_cientifica_temas'),
+   path('predefesa/editar/<int:pk>/', views.editar_predefesa, name='editar_predefesa'),
+   path('predefesa/eliminar/<int:pk>/', views.eliminar_predefesa, name='eliminar_predefesa'),
+   path('fichas-tfc/cursos/', views.lista_cursos_fichas_pendentes, name='fichas_por_curso_lista'),
+   path('fichas-tfc/curso/<int:curso_id>/', views.fichas_pendentes_por_curso, name='fichas_por_curso_detalhe'),
+   path('coordenacao/inscricoes-aprovadas/', views.lista_inscricoes_aprovadas_coordenacao, name='inscricoes_aprovadas_coordenacao'),
+   path('area-cientifica/enviar-coordenacao/<int:curso_id>/', views.enviar_para_coordenacao, name='enviar_para_coordenacao'),
+   path('despacho/<int:despacho_id>/enviar/', views.enviar_despacho_presidencia, name='enviar_despacho_presidencia'),
+   path('despacho/<int:despacho_id>/revisar/', views.assinar_despacho, name='assinar_despacho'),
+   path('processo/editar/<int:pk>/', views.editar_processo, name='editar_processo'),
+   path('processo/eliminar/<int:pk>/', views.eliminar_processo, name='eliminar_processo'),
+   path('professores/', views.gerenciar_professores, name='gerenciar_professores'),
+   path('professores/editar/<int:pk>/', views.editar_professor, name='editar_professor'),
+   path('professores/status/<int:pk>/', views.alternar_status_professor, name='alternar_status_professor'),
+   path('professores/eliminar/<int:pk>/', views.eliminar_professor, name='eliminar_professor'),
+   path('notificacoes/', views.listar_notificacoes, name='listar_notificacoes'),
+   path('notificacoes/ler/<int:pk>/', views.marcar_notificacao_lida, name='marcar_notificacao_lida'),
+   path('calendarios/gestao/', views.gerir_calendarios, name='gerir_calendarios'),
+   path('estudante/<int:estudante_id>/dossie/', views.perfil_documental, name='dossie_estudante'),
+]
+

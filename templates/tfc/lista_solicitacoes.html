@@ -1,0 +1,118 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto py-8 px-4">
+    <div class="bg-white rounded-2xl border shadow-sm overflow-hidden">
+        
+        <div class="p-6 border-b flex flex-col md:flex-row justify-between items-center bg-gray-50 gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-gray-800">Solicitações de Defesa Pública</h1>
+                <p class="text-sm text-gray-500">Gestão de pedidos enviados à Presidência</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                {% if solicitacoes %}
+                <a href="{% url 'baixar_todas_solicitacoes_zip' %}" 
+                   class="flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-xl hover:bg-amber-600 transition shadow-lg shadow-amber-100 text-sm font-bold">
+                    <span class="material-icons-sharp text-sm">inventory_2</span> Baixar Todos (ZIP)
+                </a>
+                {% endif %}
+
+                <a href="{% url 'criar_solicitacao_defesa' %}" 
+                   class="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition shadow-lg shadow-blue-100 text-sm font-bold">
+                    <span class="material-icons-sharp text-sm">add</span> Nova Solicitação
+                </a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left">
+                <thead class="bg-gray-50 text-gray-400 text-xs uppercase font-bold border-b">
+                    <tr>
+                        <th class="px-6 py-4">Estudante</th>
+                        <th class="px-6 py-4">Data Prevista</th>
+                        <th class="px-6 py-4">Status</th>
+                        <th class="px-6 py-4 text-center">Acta de Defesa</th>
+                        <th class="px-6 py-4 text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for s in solicitacoes %}
+                    <tr class="hover:bg-gray-50/50 transition">
+                        <td class="px-6 py-4 font-medium text-gray-700">
+                            {{ s.predefesa.estudante.nome }} {{ s.predefesa.estudante.sobrenome }}
+                        </td>
+
+                        <td class="px-6 py-4 text-gray-600">
+                            <div class="flex flex-col">
+                                <span class="font-bold">{{ s.data_defesa|date:"d/m/Y" }}</span>
+                                <span class="text-xs text-gray-400">{{ s.local_defesa|truncatechars:25 }}</span>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-4">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase 
+                                {% if s.status_solicitacao == 'pendentess' %}bg-yellow-100 text-yellow-700
+                                {% elif s.status_solicitacao == 'pendente' %}bg-green-100 text-green-700
+                                {% else %}bg-red-100 text-red-700{% endif %}">
+                                {{ s.get_status_solicitacao_display }}
+                            </span>
+                        </td>
+
+                        <td class="px-6 py-4 text-center">
+                            {% if s.status_solicitacao == 'pendente' %}
+                                <a href="{% url 'criar_acta' %}?solicitacao={{ s.id }}" 
+                                   class="inline-flex items-center gap-1 bg-slate-800 text-white px-3 py-1.5 rounded-lg hover:bg-black transition text-[10px] font-bold uppercase shadow-sm">
+                                    <span class="material-icons-sharp text-xs" style="font-size: 14px;">description</span>
+                                    Gerar Acta
+                                </a>
+                            {% else %}
+                                <span class="text-gray-300 text-[10px] italic">Aguardando Autorização</span>
+                            {% endif %}
+                        </td>
+                        
+                        <td class="px-6 py-4">
+                            <div class="flex items-center justify-center gap-2">
+                                <a href="{% url 'detalhes_solicitacao' s.id %}" 
+                                   class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center" 
+                                   title="Visualizar Ofício">
+                                    <span class="material-icons-sharp text-sm">visibility</span>
+                                </a>
+
+                                <a href="{% url 'gerar_pdf_solicitacao' s.id %}" 
+                                   class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all flex items-center justify-center"
+                                   title="Baixar PDF">
+                                    <span class="material-icons-sharp text-sm">picture_as_pdf</span>
+                                </a>
+
+                                <form action="#" method="POST" onsubmit="return confirm('Deseja eliminar esta solicitação?');" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" 
+                                            class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all flex items-center justify-center"
+                                            title="Eliminar">
+                                        <span class="material-icons-sharp text-sm">delete</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-gray-400 italic font-light">
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="material-icons-sharp text-4xl text-gray-200">folder_open</span>
+                                Nenhuma solicitação registada até ao momento.
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="px-6 py-4 bg-gray-50 border-t text-xs text-gray-500">
+            Total de solicitações: <b>{{ solicitacoes.count }}</b>
+        </div>
+    </div>
+</div>
+{% endblock %}

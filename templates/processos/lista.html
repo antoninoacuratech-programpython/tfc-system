@@ -1,0 +1,288 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <style>
+        #content { padding: 0 !important; }
+        .bg-primary { background-color: #2563eb; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen antialiased text-gray-900 font-sans">
+    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+        
+        <!-- Mensagens de Feedback -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded-2xl border flex items-center gap-3 {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% else %}bg-green-50 border-green-200 text-green-700{% endif %}">
+                    <span class="material-icons-sharp">{% if message.tags == 'error' %}error_outline{% else %}check_circle_outline{% endif %}</span>
+                    <span class="font-medium">{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- FORMULÁRIO DE CRIAÇÃO -->
+            <div class="lg:col-span-4">
+                <div class="bg-white p-8 rounded-[2rem] shadow-xl border border-gray-100 sticky top-6">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="material-icons-sharp text-blue-600">add_circle</span>
+                        <h2 class="text-2xl font-bold text-gray-800">Novo Processo</h2>
+                    </div>
+                    
+                    <form action="{% url 'criar_processo' %}" method="POST" class="space-y-5">
+                        {% csrf_token %}
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Título do Processo</label>
+                            <input type="text" name="titulo" placeholder="Ex: TFC 2026.1" required
+                                class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Curso Alvo</label>
+                            <select name="curso" required class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-100 outline-none appearance-none focus:bg-white">
+                                {% for c in cursos %}
+                                    <option value="{{ c.id }}">{{ c.nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Data Início</label>
+                                <input type="date" name="data_inicio" required class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-100 outline-none text-sm focus:bg-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Data Término</label>
+                                <input type="date" name="data_termino" required class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-100 outline-none text-sm focus:bg-white">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-primary hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+                            <span class="material-icons-sharp">rocket_launch</span>
+                            Abrir Processo
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- LISTAGEM DE PROCESSOS -->
+            <div class="lg:col-span-8 space-y-6">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-2xl font-bold text-gray-800">Processos Atuais</h2>
+                    <span class="text-sm text-gray-500 bg-white px-4 py-1 rounded-full border border-gray-100 shadow-sm">{{ processos|length }} Processos</span>
+                </div>
+                
+                {% for p in processos %}
+                <div class="bg-white rounded-[2rem] shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group">
+                    <div class="p-6 flex items-center justify-between">
+                        <div class="flex items-center gap-5">
+                            <!-- Verificação baseada no seu método is_periodo_valido -->
+                            <div class="w-14 h-14 rounded-2xl flex items-center justify-center {% if p.is_periodo_valido %}bg-green-50 text-green-600{% else %}bg-gray-100 text-gray-400{% endif %} transition-colors">
+                                <span class="material-icons-sharp text-3xl">folder_open</span>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-xl text-gray-800 group-hover:text-primary transition-colors">{{ p.titulo }}</h3>
+                                <div class="flex items-center gap-3 text-sm text-gray-500 mt-1">
+                                    <span class="flex items-center gap-1"><span class="material-icons-sharp text-xs">school</span> {{ p.curso.nome }}</span>
+                                    <span class="flex items-center gap-1"><span class="material-icons-sharp text-xs">calendar_today</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            {% if p.is_periodo_valido %}
+                                <span class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-green-600 bg-green-50 px-3 py-1.5 rounded-lg border border-green-100">
+                                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span> Ativo
+                                </span>
+                            {% else %}
+                                <span class="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">Inativo / Expirado</span>
+                            {% endif %}
+
+                            <form action="{% url 'alternar_status_processo' p.id %}" method="POST" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="p-1.5 hover:bg-gray-50 rounded-xl transition-all text-gray-300 hover:text-blue-600" title="Alternar status ativo">
+                                    <span class="material-icons-sharp text-3xl block">{% if p.ativo %}toggle_on{% else %}toggle_off{% endif %}</span>
+                                </button>
+                            </form>
+
+                            <!-- Botão acionador do Modal de Edição (Passando os dados do objeto por parâmetro) -->
+                            <button type="button" title="Editar dados"
+                                onclick="abrirModalEditar('{{ p.id }}', '{{ p.titulo }}', '{{ p.curso.id }}')"
+                                class="p-2 bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all border border-gray-100">
+                                <span class="material-icons-sharp text-sm block">edit</span>
+                            </button>
+
+                            <!-- Botão acionador do Modal de Eliminação -->
+                            <button type="button" title="Eliminar processo"
+                                onclick="abrirModalEliminar('{{ p.id }}', '{{ p.titulo }}')"
+                                class="p-2 bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all border border-gray-100">
+                                <span class="material-icons-sharp text-sm block">delete</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Links de Ações Internas -->
+                    <div class="bg-gray-50/50 border-t border-gray-50 p-3 grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <a href="{% url 'lista_aprovados' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-blue-600 font-semibold text-sm transition-all border border-transparent hover:border-blue-100">
+                            <span class="material-icons-sharp text-lg">lightbulb</span> Lista de Temas Aprovados
+                        </a>
+                        <a href="{% url 'lista_reprovados' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-blue-600 font-semibold text-sm transition-all border border-transparent hover:border-blue-100">
+                            <span class="material-icons-sharp text-lg">lightbulb</span> Lista de Temas Pendentes
+                        </a>
+                        <a href="{% url 'lista_inscricoes_pendentes' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-purple-600 font-semibold text-sm transition-all border border-transparent hover:border-purple-100">
+                            <span class="material-icons-sharp text-lg">app_registration</span> Inscrições TFC
+                        </a>
+                        <a href="{% url 'lista_predefesas' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-orange-600 font-semibold text-sm transition-all border border-transparent hover:border-orange-100">
+                            <span class="material-icons-sharp text-lg">history_edu</span> Pré-Defesas
+                        </a>
+                        <a href="{% url 'lista_actas' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-orange-600 font-semibold text-sm transition-all border border-transparent hover:border-orange-100">
+                            <span class="material-icons-sharp text-lg">history_edu</span> Actas de Defesa
+                        </a>
+                        <a href="{% url 'lista_solicitacoes' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-orange-600 font-semibold text-sm transition-all border border-transparent hover:border-orange-100">
+                            <span class="material-icons-sharp text-lg">history_edu</span> Solicitacoes
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="bg-white border-2 border-dashed border-gray-200 rounded-[2rem] py-24 text-center">
+                    <span class="material-icons-sharp text-6xl text-gray-200 mb-4">inventory_2</span>
+                    <p class="text-gray-400 font-medium">Nenhum processo configurado no momento.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDITAR PROCESSO -->
+<div id="modalEditar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+        
+        <div class="inline-block align-bottom bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <div class="bg-white px-8 pt-8 pb-6">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="material-icons-sharp text-amber-500">edit</span>
+                    <h3 class="text-2xl font-bold text-gray-900">Editar Processo</h3>
+                </div>
+                
+                <form id="formEditarProcesso" method="POST" class="space-y-5">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Título do Processo</label>
+                        <input type="text" name="titulo" id="edit_titulo" required
+                            class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-400 outline-none transition-all">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Curso Alvo</label>
+                        <select name="curso" id="edit_curso" required class="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 outline-none focus:bg-white">
+                            {% for c in cursos %}
+                                <option value="{{ c.id }}">{{ c.nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Data Início</label>
+                            <input type="date" name="data_inicio" id="edit_data_inicio" required class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none text-sm focus:bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-600 mb-2 ml-1">Data Término</label>
+                            <input type="date" name="data_termino" id="edit_data_termino" required class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 outline-none text-sm focus:bg-white">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="bg-gray-50 px-8 py-4 flex flex-row-reverse gap-3">
+                <button type="submit" form="formEditarProcesso" class="inline-flex justify-center rounded-xl px-5 py-2.5 bg-blue-600 text-sm font-bold text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+                    Salvar Alterações
+                </button>
+                <button type="button" onclick="fecharModalEditar()" class="inline-flex justify-center rounded-xl border border-gray-200 px-5 py-2.5 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 transition-all">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ELIMINAR PROCESSO -->
+<div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
+    <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+        <div class="inline-block align-bottom bg-white rounded-[2rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <div class="bg-white px-8 pt-8 pb-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-2xl bg-red-50 sm:mx-0 sm:h-10 sm:w-10">
+                        <span class="material-icons-sharp text-red-600">warning</span>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg font-black text-gray-900">Eliminar Processo</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500 font-medium">
+                                Tem certeza de que deseja apagar o processo <span id="texto_processo_eliminar" class="font-bold text-gray-800"></span>? Esta ação não pode ser desfeita e removerá de forma permanente todas as dependências do banco de dados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-gray-50 px-8 py-4 sm:flex sm:flex-row-reverse gap-3">
+                <form id="formEliminarProcesso" method="POST" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full inline-flex justify-center rounded-xl px-5 py-2.5 bg-red-600 text-sm font-bold text-white hover:bg-red-700 transition-all shadow-lg shadow-red-100">
+                        Eliminar Definitivamente
+                    </button>
+                </form>
+                <button type="button" onclick="fecharModalEliminar()" class="mt-3 w-full inline-flex justify-center rounded-xl border border-gray-200 px-5 py-2.5 bg-white text-sm font-bold text-gray-600 hover:bg-gray-100 transition-all sm:mt-0 sm:w-auto">
+                    Manter Processo
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gerenciamento Dinâmico do Modal de Edição
+    function abrirModalEditar(id, titulo, cursoId, dataInicio, dataTermino) {
+        const form = document.getElementById('formEditarProcesso');
+        form.action = `${window.location.origin}/processo/editar/${id}/`;
+        
+        document.getElementById('edit_titulo').value = titulo;
+        document.getElementById('edit_curso').value = cursoId;
+        document.getElementById('edit_data_inicio').value = dataInicio;
+        document.getElementById('edit_data_termino').value = dataTermino;
+        
+        document.getElementById('modalEditar').classList.remove('hidden');
+    }
+
+    function fecharModalEditar() {
+        document.getElementById('modalEditar').classList.add('hidden');
+    }
+
+    // Gerenciamento Dinâmico do Modal de Exclusão
+    function abrirModalEliminar(id, titulo) {
+        const form = document.getElementById('formEliminarProcesso');
+        form.action = `${window.location.origin}/processo/eliminar/${id}/`;
+        
+        document.getElementById('texto_processo_eliminar').innerText = titulo;
+        document.getElementById('modalEliminar').classList.remove('hidden');
+    }
+
+    function fecharModalEliminar() {
+        document.getElementById('modalEliminar').classList.add('hidden');
+    }
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

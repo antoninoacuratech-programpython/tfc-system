@@ -1,0 +1,241 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="p-4 md:p-6 space-y-6 max-w-7-xl mx-auto">
+    
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-extrabold text-gray-800 tracking-tight">Calendário de Pré-defesas</h1>
+            <p class="text-gray-500 text-sm">Gerencie as Mesas de Juris e documentos oficiais.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-2">
+            <!-- BOTÃO DE ENVIAR (Apenas Coordenação) -->
+            {% if request.user.perfil == "cordenacao" or request.user.is_superuser %}
+            <form method="POST" action="{% url 'despachar_predefesas_cientifica' %}">
+                {% csrf_token %}
+                <button type="submit" 
+                    {% if not predefesas %}disabled{% endif %}
+                    class="w-full inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-green-200 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed">
+                    <span class="material-icons-sharp text-lg">send</span>
+                    Enviar para Área Científica
+                </button>
+            </form>
+            {% endif %}
+
+            <a href="{% url 'pdf_geral' %}" 
+               class="inline-flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 px-5 py-3 rounded-2xl font-bold transition-all border border-red-100 shadow-sm active:scale-95">
+                <span class="material-icons-sharp text-lg">picture_as_pdf</span>
+                Mapa Geral (PDF)
+            </a>
+            
+            <a href="{% url 'agendar_predefesa' %}" 
+               class="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-200 active:scale-95">
+                <span class="material-icons-sharp text-lg">add</span>
+                Agendar
+            </a>
+        </div>
+    </div>
+
+    <!-- Mensagens -->
+    {% if messages %}
+    <div class="space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-2xl text-sm font-bold text-center border 
+            {% if message.tags == 'success' %} bg-green-50 border-green-100 text-green-700 {% else %} bg-red-50 border-red-100 text-red-700 {% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- MOBILE -->
+    <div class="grid grid-cols-1 gap-4 md:hidden">
+        {% for p in predefesas %}
+        <div class="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100 space-y-4">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-50 p-2 rounded-xl text-blue-600 text-center min-w-[50px]">
+                        <span class="block text-base font-bold">{{ p.data|date:"d" }}</span>
+                        <span class="block text-[10px] font-black uppercase">{{ p.data|date:"M" }}</span>
+                    </div>
+                    <div>
+                        <span class="block text-sm font-bold text-gray-800">{{ p.hora }}</span>
+                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Horário</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <a href="{% url 'pdf_predefesa' p.id %}" class="p-2 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all">
+                        <span class="material-icons-sharp text-sm">picture_as_pdf</span>
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <span class="block text-sm font-bold text-gray-800">{{ p.estudante.nome }} {{ p.estudante.sobrenome }}</span>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">{{ p.tema.titulo }}</p>
+            </div>
+
+            <!-- Botões de Ação Mobile -->
+            <div class="pt-4 border-t border-gray-50 flex items-center justify-between">
+                <div class="flex gap-2">
+                    <a href="" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
+                        <span class="material-icons-sharp text-sm">edit</span>
+                    </a>
+                    <a href="" onclick="return confirm('Tem certeza que deseja eliminar este agendamento?')" class="p-2 bg-gray-50 text-gray-400 rounded-lg hover:bg-red-500 hover:text-white transition-all">
+                        <span class="material-icons-sharp text-sm">delete</span>
+                    </a>
+                </div>
+                <div class="flex items-center gap-1.5 bg-gray-50 px-2.5 py-1 rounded-lg">
+                    <span class="text-[9px] font-black text-blue-500">PRES:</span>
+                    <span class="text-[10px] font-medium text-gray-600">{{ p.presidente.nome }}{{ p.presidente.sobrenome }}</span>
+                    <span class="text-[9px] font-black text-blue-500">Vogais e secret.:</span>
+                    <span class="text-[10px] font-medium text-gray-600">{{ p.primeiro_vogal.nome }}{{ p.primeiro_vogal.sobrenomenome }}, {{ p.segundo_vogal.nome }}{{ p.segundo_vogal.sobrenome }}, {{ p.secretario.nome }}{{ p.secretario.sobrenome }}</span>
+                    
+               
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <!-- ... vazio ... -->
+        {% endfor %}
+    </div>
+
+    <!-- DESKTOP -->
+    <div class="hidden md:block bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50 border-b border-gray-100">
+                        <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Sessão</th>
+                        <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Estudante & Tema</th>
+                        <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest">Mesa de Júris</th>
+                        <th class="px-6 py-5 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Ações</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    {% for p in predefesas %}
+                    <tr class="hover:bg-blue-50/20 transition-all group">
+                        <td class="px-6 py-5">
+                            <div class="flex items-center gap-4">
+                                <div class="bg-blue-50 p-2 rounded-xl text-blue-600 text-center min-w-[55px] group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                    <span class="block text-lg font-black">{{ p.data|date:"d" }}</span>
+                                    <span class="block text-[10px] font-bold uppercase tracking-tighter">{{ p.data|date:"M" }}</span>
+                                </div>
+                                <div class="text-sm font-bold text-gray-700">{{ p.hora }}</div>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-5">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-bold text-gray-800 mb-1 capitalize">{{ p.estudante.nome }} {{ p.estudante.sobrenome }}</span>
+                                <span class="text-xs text-gray-400 max-w-sm leading-relaxed">
+                                    {{ p.tema.titulo|truncatechars:70 }}
+                                </span>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-5 text-xs">
+                            <div class="space-y-1">
+                                <p><span class="font-bold text-blue-600">Pres:</span> {{ p.presidente.nome }}{{ p.presidente.sobrenome }}</p>
+                                <p><span class="font-bold text-gray-400">Vogais:</span> {{ p.primeiro_vogal.nome }}{{ p.primeiro_vogal.sobrenomenome }}, {{ p.segundo_vogal.nome }}{{ p.segundo_vogal.sobrenome }}</p>
+                                <p><span class="font-bold text-gray-400">Secretario:</span> {{ p.secretario.nome }}{{ p.secretario.sobrenome }}</p>
+                            </div>
+                        </td>
+
+                        <td class="px-6 py-5">
+                            <div class="flex justify-center items-center gap-2">
+                                <!-- PDF -->
+                                <a href="{% url 'pdf_predefesa' p.id %}" class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm" title="Baixar PDF">
+                                    <span class="material-icons-sharp text-sm">picture_as_pdf</span>
+                                </a>
+                                <!-- EDITAR -->
+                                <a href="{% url 'editar_predefesa' p.id %}" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Editar Agendamento">
+                                    <span class="material-icons-sharp text-sm">edit</span>
+                                </a>
+                                <!-- Botão que abre o Modal -->
+<button onclick="abrirModalEliminar('{{ p.id }}', '{{ p.estudante.nome }}')" 
+        class="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm group" 
+        title="Eliminar">
+    <span class="material-icons-sharp text-sm">delete</span>
+</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <!-- ... vazio ... -->
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!-- Modal de Confirmação -->
+<div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <!-- Overlay Escuro -->
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-900 bg-opacity-40 transition-opacity" aria-hidden="true" onclick="fecharModalEliminar()"></div>
+
+        <!-- Conteúdo do Modal -->
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
+            <div class="bg-white px-8 pt-8 pb-6">
+                <div class="sm:flex sm:items-start">
+                    <div class="mx-auto flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-3xl bg-red-50 sm:mx-0 sm:h-14 sm:w-14">
+                        <span class="material-icons-sharp text-red-500 text-3xl">delete_sweep</span>
+                    </div>
+                    <div class="mt-4 text-center sm:mt-0 sm:ml-6 sm:text-left">
+                        <h3 class="text-xl font-extrabold text-gray-800" id="modal-title">Confirmar Eliminação</h3>
+                        <div class="mt-3">
+                            <p class="text-sm text-gray-500 leading-relaxed">
+                                Você está prestes a remover o agendamento de <span id="nomeEstudanteModal" class="font-bold text-gray-800"></span>. Esta ação não pode ser desfeita.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-gray-50/50 px-8 py-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+                <button type="button" onclick="fecharModalEliminar()" 
+                    class="w-full sm:w-auto inline-flex justify-center rounded-2xl border border-gray-200 px-6 py-3 bg-white text-sm font-bold text-gray-500 hover:bg-gray-50 transition-all active:scale-95">
+                    CANCELAR
+                </button>
+                <a id="linkConfirmarEliminar" href="#" 
+                    class="w-full sm:w-auto inline-flex justify-center rounded-2xl px-6 py-3 bg-red-500 text-sm font-bold text-white hover:bg-red-600 shadow-lg shadow-red-200 transition-all active:scale-95">
+                    CONFIRMAR E ELIMINAR
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function abrirModalEliminar(id, nome) {
+        const modal = document.getElementById('modalEliminar');
+        const link = document.getElementById('linkConfirmarEliminar');
+        const nomeDisplay = document.getElementById('nomeEstudanteModal');
+
+        // Define o nome do estudante no texto
+        nomeDisplay.innerText = nome;
+        
+        // Constrói a URL dinamicamente (ajuste o prefixo da URL se necessário)
+        link.href = `/predefesa/eliminar/${id}/`; 
+
+        // Mostra o modal com animação suave
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden'; // Impede scroll ao fundo
+    }
+
+    function fecharModalEliminar() {
+        const modal = document.getElementById('modalEliminar');
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto'; // Reativa scroll
+    }
+
+    // Fechar ao pressionar ESC
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') fecharModalEliminar();
+    });
+</script>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

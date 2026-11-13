@@ -1,0 +1,125 @@
+{% extends "admin/base.html" %}
+{% load i18n static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Ajuste para integração fluida com o Django Admin */
+        #content { padding: 0 !important; background: transparent !important; }
+        .btn-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-600">
+            <div class="mb-4 md:mb-0">
+                <h1 class="text-2xl font-bold text-gray-800">Actas de Defesa Pública</h1>
+                <p class="text-gray-500 text-sm italic">Instituto Superior Politécnico do Bié</p>
+            </div>
+            
+            <div class="flex flex-wrap justify-center gap-3">
+                {% if actas %}
+                <a href="{% url 'baixar_todas_actas_zip' %}" class="btn-transition bg-amber-500 hover:bg-amber-600 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-amber-200">
+                    <i class="fas fa-file-archive"></i> 
+                    <span>Baixar Tudo (ZIP)</span>
+                </a>
+                {% endif %}
+
+                <a href="{% url 'criar_acta' %}" class="btn-transition bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold flex items-center gap-2 shadow-lg shadow-blue-200">
+                    <i class="fas fa-plus"></i> 
+                    <span>Nova Acta</span>
+                </a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-6 p-4 rounded-lg flex items-center gap-3 animate-pulse {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% else %}bg-red-50 text-red-700 border border-red-200{% endif %}">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %}"></i>
+                    <span class="font-medium">{{ message }}</span>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="bg-white shadow-xl rounded-xl overflow-hidden border border-gray-100">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Nº Acta</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estudante / Tema</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Data Sessão</th>
+                            <th class="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Resultado</th>
+                            <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 bg-white">
+                        {% for acta in actas %}
+                        <tr class="hover:bg-blue-50/40 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-mono text-blue-600 font-bold">
+                                {{ acta.numero_acta }}
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-bold text-gray-900">
+                                    {{ acta.solicitacao.predefesa.estudante.nome|default:"Estudante não identificado" }}
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1 max-w-xs truncate" title="{{ acta.solicitacao.predefesa.tema.titulo }}">
+                                    {{ acta.solicitacao.predefesa.tema.titulo }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center text-sm text-gray-600">
+                                <div class="flex flex-col items-center">
+                                    <span class="font-medium text-gray-800">{{ acta.data_sessao|date:"d/m/Y" }}</span>
+                                    <span class="text-xs text-gray-400">{{ acta.hora_abertura }} - {{ acta.hora_encerramento }}</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold {% if acta.avaliacao_final >= 10 %}bg-green-100 text-green-700{% else %}bg-red-100 text-red-700{% endif %}">
+                                    {{ acta.avaliacao_final }} Valores
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-right text-sm font-medium">
+                                <div class="flex justify-end gap-3">
+                                    <a href="{% url 'detalhe_acta' acta.id %}" class="text-gray-400 hover:text-blue-600 btn-transition" title="Ver Detalhes">
+                                        <i class="fas fa-eye fa-lg"></i>
+                                    </a>
+                                    <a href="{% url 'baixar_acta_pdf' acta.id %}" class="bg-red-50 text-red-600 px-3 py-1 rounded hover:bg-red-600 hover:text-white btn-transition flex items-center gap-1 text-xs uppercase font-bold" title="Exportar para PDF">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="p-4 bg-gray-50 rounded-full">
+                                        <i class="fas fa-folder-open text-gray-300 text-5xl"></i>
+                                    </div>
+                                    <p class="text-gray-400 italic">Nenhuma acta registrada no sistema até o momento.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+                <p class="text-xs text-gray-500 uppercase tracking-widest font-bold">
+                    Total de Registros: <span class="text-blue-600">{{ actas.count }}</span>
+                </p>
+                <span class="text-[10px] text-gray-400 font-mono">SGTFC - ISPB</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{# Esta página mostra as mensagens no seu próprio conteúdo. #}
+{% block mensagens %}{% endblock %}

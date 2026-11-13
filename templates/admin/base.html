@@ -1,0 +1,105 @@
+{% extends "layouts/painel.html" %}
+
+{% block painel_nome %}Painel de Gestão{% endblock %}
+{% block painel_subtitulo %}Painel de Gestão{% endblock %}
+{% block painel_secao %}{{ INSTITUICAO_SIGLA }}{% endblock %}
+{% block titulo_pagina %}Painel de Gestão{% endblock %}
+
+{% block sidebar_nav %}
+  {% if request.user.perfil != "presidente" %}
+    <a href="{% url 'admink' %}" class="sgtf-nav-link"><span class="material-icons-sharp">space_dashboard</span> Dashboard</a>
+  {% endif %}
+
+  {% if request.user.perfil == "presidente" or request.user.is_superuser %}
+    <p class="sgtf-nav-section">Presidência</p>
+    <a href="{% url 'dashboard_presidencia' %}" class="sgtf-nav-link"><span class="material-icons-sharp">insights</span> Dashboard geral</a>
+    <a href="{% url 'listar_despachos' %}" class="sgtf-nav-link"><span class="material-icons-sharp">draw</span> Despachos</a>
+    <a href="{% url 'lista_estudantes' %}" class="sgtf-nav-link"><span class="material-icons-sharp">groups</span> Estudantes</a>
+  {% endif %}
+
+  {% if request.user.perfil == "cordenacao" or request.user.is_superuser %}
+    <p class="sgtf-nav-section">Coordenação</p>
+    <div class="sgtf-nav-group" data-nav-group="coord-processos">
+      <button type="button" class="sgtf-nav-link" data-nav-toggle>
+        <span class="material-icons-sharp">event_note</span> Processos
+        <span class="material-icons-sharp sgtf-chevron">expand_more</span>
+      </button>
+      <div class="sgtf-nav-group__items">
+        <a href="{% url 'lista_processos' %}" class="sgtf-nav-link">Calendário / Processos</a>
+        <a href="{% url 'gerir_calendarios' %}" class="sgtf-nav-link">Calendários de aprovação</a>
+        <a href="{% url 'gerenciar_professores' %}" class="sgtf-nav-link">Professores</a>
+      </div>
+    </div>
+    <div class="sgtf-nav-group" data-nav-group="coord-temas">
+      <button type="button" class="sgtf-nav-link" data-nav-toggle>
+        <span class="material-icons-sharp">topic</span> Temas e inscrições
+        <span class="material-icons-sharp sgtf-chevron">expand_more</span>
+      </button>
+      <div class="sgtf-nav-group__items">
+        <a href="{% url 'lista_reprovados' %}" class="sgtf-nav-link">Solicitações de temas</a>
+        <a href="{% url 'lista_aprovados' %}" class="sgtf-nav-link">Temas aprovados</a>
+        <a href="{% url 'inscricoes_aprovadas_coordenacao' %}" class="sgtf-nav-link">Inscrições aprovadas</a>
+        <a href="{% url 'lista_estudantes' %}" class="sgtf-nav-link">Lista de estudantes</a>
+      </div>
+    </div>
+    <div class="sgtf-nav-group" data-nav-group="coord-defesas">
+      <button type="button" class="sgtf-nav-link" data-nav-toggle>
+        <span class="material-icons-sharp">co_present</span> Defesas e actas
+        <span class="material-icons-sharp sgtf-chevron">expand_more</span>
+      </button>
+      <div class="sgtf-nav-group__items">
+        <a href="{% url 'agendar_predefesa' %}" class="sgtf-nav-link">Agendar pré-defesa</a>
+        <a href="{% url 'lista_solicitacoes' %}" class="sgtf-nav-link">Solicitações de defesa</a>
+        <a href="{% url 'lista_actas' %}" class="sgtf-nav-link">Gestão de actas</a>
+        <a href="{% url 'criar_acta' %}" class="sgtf-nav-link">Nova acta</a>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if request.user.perfil == "area_cientifica" or request.user.is_superuser %}
+    <p class="sgtf-nav-section">Área Científica</p>
+    <a href="{% url 'index_area_cientifica' %}" class="sgtf-nav-link"><span class="material-icons-sharp">biotech</span> Início</a>
+    <div class="sgtf-nav-group" data-nav-group="ac-fichas">
+      <button type="button" class="sgtf-nav-link" data-nav-toggle>
+        <span class="material-icons-sharp">fact_check</span> Fichas de inscrição
+        <span class="material-icons-sharp sgtf-chevron">expand_more</span>
+      </button>
+      <div class="sgtf-nav-group__items">
+        <a href="{% url 'fichas_por_curso_lista' %}" class="sgtf-nav-link">Aprovar fichas TFC</a>
+        <a href="{% url 'historico_aprovacoes' %}" class="sgtf-nav-link">Histórico de inscrições</a>
+      </div>
+    </div>
+    <a href="{% url 'area_cientifica_temas' %}" class="sgtf-nav-link"><span class="material-icons-sharp">task_alt</span> Temas aprovados</a>
+    <a href="{% url 'lista_cursos_predefesas' %}" class="sgtf-nav-link"><span class="material-icons-sharp">present_to_all</span> Pré-defesas</a>
+    <div class="sgtf-nav-group" data-nav-group="ac-docs">
+      <button type="button" class="sgtf-nav-link" data-nav-toggle>
+        <span class="material-icons-sharp">folder_open</span> Documentação
+        <span class="material-icons-sharp sgtf-chevron">expand_more</span>
+      </button>
+      <div class="sgtf-nav-group__items">
+        <a href="{% url 'lista_comunicados' %}" class="sgtf-nav-link">Comunicados</a>
+        <a href="{% url 'criar_comunicado' %}" class="sgtf-nav-link">Criar comunicado</a>
+        <a href="{% url 'listar_despachos' %}" class="sgtf-nav-link">Lista de despachos</a>
+        <a href="{% url 'criar_despacho' %}" class="sgtf-nav-link">Emitir despacho</a>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if request.user.perfil == "area_etica" %}
+    <p class="sgtf-nav-section">Área Ética</p>
+    <a href="{% url 'index_area_etica' %}" class="sgtf-nav-link"><span class="material-icons-sharp">balance</span> Início</a>
+  {% endif %}
+
+  {% if request.user.perfil == "cordenacao" or request.user.perfil == "presidente" or request.user.is_superuser %}
+    <p class="sgtf-nav-section">Utilizadores</p>
+    <a href="{% url 'lista_estudantes' %}" class="sgtf-nav-link"><span class="material-icons-sharp">group</span> Lista geral</a>
+    <a href="{% url 'add_estudante' %}" class="sgtf-nav-link"><span class="material-icons-sharp">person_add</span> Adicionar utilizador</a>
+  {% endif %}
+
+  {% if request.user.is_superuser %}
+    <p class="sgtf-nav-section">Estrutura</p>
+    <a href="{% url 'lista_departamentos' %}" class="sgtf-nav-link"><span class="material-icons-sharp">apartment</span> Departamentos</a>
+    <a href="{% url 'lista_cursos' %}" class="sgtf-nav-link"><span class="material-icons-sharp">menu_book</span> Cursos</a>
+    <a href="{% url 'admin:index' %}" class="sgtf-nav-link"><span class="material-icons-sharp">admin_panel_settings</span> Administração Django</a>
+  {% endif %}
+{% endblock %}
