@@ -4,7 +4,6 @@
 
 {% block conteudo %}
   <h1 class="sgtf-auth__title">Bem-vindo!</h1>
-  <p class="sgtf-auth__subtitle">Entre para aceder ao sistema.</p>
 
   <div class="mt-5">{% include "partials/_mensagens.html" %}</div>
 
@@ -39,5 +38,4 @@
   <p class="mt-6 text-center text-sm text-[#b9c6e8]">
     Estudante sem conta? <a href="{% url 'cadastro' %}" class="sgtf-auth-link">Criar conta</a>
   </p>
-  <p class="mt-2 text-center text-xs text-[#8fa0c9]">Esqueceu-se da senha? Contacte a coordenação do seu curso.</p>
 {% endblock %}

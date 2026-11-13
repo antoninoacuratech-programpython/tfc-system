@@ -9,10 +9,8 @@
   <main class="sgtf-auth">
     <div class="sgtf-auth__panel">
       <div class="sgtf-auth__brand">
-        <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="{{ INSTITUICAO_SIGLA }}" class="sgtf-auth__logo">
-        <p class="sgtf-auth__name">{{ SISTEMA_NOME }}</p>
-        <p class="sgtf-auth__tagline">{{ SISTEMA_DESCRICAO }}</p>
-        <span class="sgtf-auth__strip" aria-hidden="true"></span>
+        <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="{{ SISTEMA_NOME }} · {{ INSTITUICAO_SIGLA }}" class="sgtf-auth__logo">
+        <p class="sgtf-auth__tagline mt-5">{{ SISTEMA_DESCRICAO }}</p>
       </div>
 
       {% block conteudo %}{% endblock %}
