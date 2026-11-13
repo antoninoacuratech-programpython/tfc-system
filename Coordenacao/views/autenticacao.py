@@ -12,7 +12,6 @@ from django.utils.http import url_has_allowed_host_and_scheme
 
 from ..models import Curso, Departamento, Usuario
 
-# Página inicial de cada perfil após o login.
 PAGINA_INICIAL_POR_PERFIL = {
     "cordenacao": "admink",
     "area_cientifica": "index_area_cientifica",
@@ -22,12 +21,11 @@ PAGINA_INICIAL_POR_PERFIL = {
     "area_etica": "index_area_etica",
 }
 
-# Perfis que se podem registar sozinhos. Os restantes são criados pela coordenação.
+# só os estudantes se registam sozinhos; os outros perfis são criados pela coordenação
 PERFIS_AUTO_REGISTO = ("estudante",)
 
 
 def pagina_inicial(user):
-    """Nome da URL do painel inicial do utilizador, ou None se o perfil não tiver painel."""
     if user.is_superuser:
         return "admink"
     return PAGINA_INICIAL_POR_PERFIL.get(user.perfil)
@@ -140,7 +138,6 @@ def atualizar_perfil(request):
     usuario = request.user
 
     if request.method == "POST":
-        # Dados normais
         usuario.nome = request.POST.get("nome")
         usuario.sobrenome = request.POST.get("sobrenome")
         usuario.telefone = request.POST.get("telefone")
@@ -148,7 +145,6 @@ def atualizar_perfil(request):
         if request.FILES.get("imagem"):
             usuario.imagem = request.FILES.get("imagem")
 
-        # ---- ALTERAÇÃO DE SENHA (opcional) ----
         senha_atual = request.POST.get("senha_atual")
         nova_senha = request.POST.get("nova_senha")
         confirmar_senha = request.POST.get("confirmar_senha")

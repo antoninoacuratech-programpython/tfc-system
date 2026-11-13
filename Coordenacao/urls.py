@@ -2,15 +2,12 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    # --- Rotas de Solicitação de Defesa ---
     path('solicitacoes/', views.lista_solicitacoes_defesa, name='lista_solicitacoes'),
     path('solicitacoes/<int:pk>/', views.detalhes_solicitacao_defesa, name='detalhes_solicitacao'),
     path('defesa/solicitar/', views.criar_solicitacao_defesa, name='criar_solicitacao_defesa'),
     path('lista/', views.lista_solicitacoes_defesa, name='lista_solicitacoes_defesa'),
     
-    # NOVA ROTA PARA O PDF:
     path('solicitacoes/pdf/<int:pk>/', views.gerar_pdf_solicitacao, name='gerar_pdf_solicitacao'),
-    # --------------------------------------
     path('estudantes/processo/<int:processo_id>/', views.lista_estudantes, name='lista_estudantes_por_processo'),
     path('', views.login_view, name='login'),
     path('cadastro/', views.cadastro, name='cadastro'),
@@ -48,10 +45,8 @@ urlpatterns = [
    path("perfil/atualizar/", views.atualizar_perfil, name="atualizar_perfil"),
    path('buscar-predefesas-por-curso/', views.lista_predefesas, name='lista_predefesas'),
     
-    # Rota para o formulário de agendamento
    path('predefesas/agendar/', views.agendar_predefesa, name='agendar_predefesa'),
     
-    # Rota para gerar o PDF da acta (recebe o ID da predefesa)
    path('predefesas/pdf/<int:pk>/', views.gerar_pdf_predefesa, name='pdf_predefesa'),
    path('predefesas/pdf/geral/', views.gerar_pdf_todas_predefesas, name='pdf_geral'),
    path("departamentos/", views.lista_departamentos, name="lista_departamentos"),
@@ -73,10 +68,8 @@ urlpatterns = [
    path('tfc/minhas-inscricoes/', views.lista_inscricoes_tfc, name='lista_inscricoes_tfc'),
    path('tfc/inscricao/nova/', views.gerar_ficha_tfc, name='gerar_ficha_tfc'),
     
-    # Formulário para editar uma ficha existente (se ainda estiver pendente)
    path('tfc/inscricao/editar/<int:pk>/', views.editar_inscricao_tfc, name='editar_inscricao_tfc'),
     
-    # Rota para gerar e baixar o PDF oficial
    path('tfc/inscricao/pdf/<int:pk>/', views.baixar_pdf_tfc, name='baixar_pdf_tfc'),
 
    path('inscricao-tfc/aprovar/<int:inscricao_id>/', 

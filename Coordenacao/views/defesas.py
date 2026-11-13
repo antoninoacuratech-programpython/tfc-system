@@ -22,11 +22,8 @@ from ..models import ActaDefesa, Predefesa, SolicitacaoDefesa
 from ..permissions import PERFIS_GESTAO, perfil_requerido
 
 
-# 1. Listagem de Solicitações
 @perfil_requerido(*PERFIS_GESTAO)
 def lista_solicitacoes_defesa(request):
-    # Filtramos as solicitações onde o estudante associado à pré-defesa 
-    # pertence ao mesmo curso do usuário logado.
     solicitacoes = SolicitacaoDefesa.objects.select_related(
         'predefesa__estudante', 
         'predefesa__tema__tutor_indicado',
@@ -38,17 +35,14 @@ def lista_solicitacoes_defesa(request):
     return render(request, 'tfc/lista_solicitacoes.html', {'solicitacoes': solicitacoes})
 
 
-# 2. Detalhes (Pode servir para visualizar antes de gerar o PDF)
 @perfil_requerido(*PERFIS_GESTAO)
 def detalhes_solicitacao_defesa(request, pk):
     solicitacao = get_object_or_404(SolicitacaoDefesa, pk=pk)
     return render(request, 'tfc/detalhes_solicitacao.html', {'solicitacao': solicitacao})
 
 
-# 3. Criar Nova Solicitação (Com lógica de filtro por curso)
 @perfil_requerido(*PERFIS_GESTAO)
 def criar_solicitacao_defesa(request):
-    # Filtra apenas pré-defesas do curso do usuário que ainda não têm solicitação
     predefesas_disponiveis = Predefesa.objects.filter(
         estudante__curso=request.user.curso,
         solicitacao_defesa__isnull=True
@@ -78,7 +72,6 @@ def criar_solicitacao_defesa(request):
     })
 
 
-# --- FUNÇÃO AUXILIAR CORRIGIDA (LOGOTIPO RESILIENTE) ---
 def extrair_logica_pdf_solicitacao(buffer, solicitacao):
     pre = solicitacao.predefesa
     estudante = pre.estudante if pre else None
@@ -93,14 +86,12 @@ def extrair_logica_pdf_solicitacao(buffer, solicitacao):
         fontSize=11, leading=14, alignment=TA_JUSTIFY
     )
 
-    # --- LÓGICA DE BUSCA DO LOGOTIPO ---
     relative_path = 'imgs/icons/finalispbie.jpg'
-    logo_path = finders.find(relative_path) # Tenta em desenvolvimento
+    logo_path = finders.find(relative_path)
     
     if not logo_path and hasattr(settings, 'STATIC_ROOT'):
-        logo_path = os.path.join(settings.STATIC_ROOT, relative_path) # Tenta em produção
+        logo_path = os.path.join(settings.STATIC_ROOT, relative_path)
     
-    # Se ainda não achar, tenta no primeiro diretório de STATICFILES_DIRS
     if not logo_path and settings.STATICFILES_DIRS:
         logo_path = os.path.join(settings.STATICFILES_DIRS[0], relative_path)
 
@@ -108,10 +99,8 @@ def extrair_logica_pdf_solicitacao(buffer, solicitacao):
         try:
             p.drawImage(logo_path, (width/2) - 40, height - 90, width=80, preserveAspectRatio=True, mask='auto')
         except Exception:
-            # Caso a imagem exista mas o ReportLab falhe ao ler (formato inválido), apenas ignora para não quebrar o PDF
             pass 
 
-    # Cabeçalho
     p.setFont("Helvetica-Bold", 12)
     p.drawCentredString(width/2, height - 120, "INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ")
     p.drawCentredString(width/2, height - 135, "DEPARTAMENTO DE ENGENHARIAS")
@@ -119,7 +108,6 @@ def extrair_logica_pdf_solicitacao(buffer, solicitacao):
     p.setFont("Helvetica-Bold", 10)
     p.drawString(50, height - 170, "ASSUNTO: Pedido de autorização para a apresentação e defesa pública de TFC.")
 
-    # Informações Dinâmicas
     y = height - 210
     info_texto = [
         f"<b>Estudante:</b> {estudante.nome} {estudante.sobrenome}" if estudante else "<b>Estudante:</b> N/A",
@@ -133,14 +121,12 @@ def extrair_logica_pdf_solicitacao(buffer, solicitacao):
         para.drawOn(p, 50, y - h)
         y -= (h + 12)
 
-    # Texto Corpo
     corpo = ("Após o parecer emitido pelo júri nomeado para a avaliação deste trabalho de fim do curso (TFC), "
              "consideramos que o mesmo reúne as condições requeridas para a sua apresentação e defesa pública.")
     para_corpo = Paragraph(corpo, style_corpo)
     w, h = para_corpo.wrap(width - 100, height)
     para_corpo.drawOn(p, 50, y - 40)
 
-    # Agendamento
     data_f = solicitacao.data_defesa.strftime('%d/%m/%Y') if solicitacao.data_defesa else "__/__/__"
     hora_f = solicitacao.hora_defesa.strftime('%H:%M') if solicitacao.hora_defesa else "__:__"
     agendamento = f"Assim, solicitamos que a mesma seja marcada para dia <b>{data_f}</b> pelas <b>{hora_f}</b> horas no <b>{solicitacao.local_defesa}</b>."
@@ -148,13 +134,11 @@ def extrair_logica_pdf_solicitacao(buffer, solicitacao):
     w, h = para_age.wrap(width - 100, height)
     para_age.drawOn(p, 50, y - 60 - h)
 
-    # Assinatura
     p.drawCentredString(width/2, 200, "O Chefe do Departamento")
     p.drawCentredString(width/2, 185, "_______________________________________")
     if solicitacao.chefe_departamento:
         p.drawCentredString(width/2, 170, f"{solicitacao.chefe_departamento.nome} {solicitacao.chefe_departamento.sobrenome}")
 
-    # Rodapé
     p.setFont("Helvetica", 8)
     p.drawCentredString(width/2, 45, "Rua Padre Fidalgo, Cidade do Cuito-Bié | NIF: 5000308765")
     
@@ -163,21 +147,18 @@ def extrair_logica_pdf_solicitacao(buffer, solicitacao):
     return buffer
 
 
-# --- VIEW 1: DOWNLOAD INDIVIDUAL (FORCE DOWNLOAD) ---
 @perfil_requerido(*PERFIS_GESTAO)
 def gerar_pdf_solicitacao(request, pk):
     solicitacao = get_object_or_404(SolicitacaoDefesa, pk=pk)
     
     response = HttpResponse(content_type='application/pdf')
     nome_f = solicitacao.predefesa.estudante.nome.replace(" ", "_")
-    # 'attachment' garante que o navegador baixe o arquivo em vez de abrir
     response['Content-Disposition'] = f'attachment; filename="Solicitacao_{nome_f}.pdf"'
     
     extrair_logica_pdf_solicitacao(response, solicitacao)
     return response
 
 
-# --- VIEW 2: DOWNLOAD ZIP ---
 @perfil_requerido(*PERFIS_GESTAO)
 def baixar_todas_solicitacoes_zip(request):
     solicitacoes = SolicitacaoDefesa.objects.all()
@@ -204,17 +185,14 @@ def baixar_todas_solicitacoes_zip(request):
 @perfil_requerido(*PERFIS_GESTAO)
 def criar_acta(request):
     try:
-        # O SEGREDO: predefesa__isnull=False garante que não venha lixo do banco
         solicitacoes = SolicitacaoDefesa.objects.filter(
             acta_final__isnull=True, 
             predefesa__isnull=False
         ).select_related('predefesa__estudante', 'predefesa__tema')
 
         if request.method == "POST":
-            # Captura de IDs
             sol_id = request.POST.get('solicitacao')
             
-            # Criando o objeto com tratamento de decimais
             ActaDefesa.objects.create(
                 solicitacao_id=sol_id,
                 numero_acta=request.POST.get('numero_acta'),
@@ -233,13 +211,10 @@ def criar_acta(request):
         return render(request, 'actas/form.html', {'solicitacoes': solicitacoes})
 
     except Exception as e:
-        # Se der erro, ele mostra a frase exata do problema em vez de 'Server Error 500'
         return HttpResponse(f"Erro Crítico de Dados: {e}. Verifique se todas as solicitações possuem pré-defesas.")
 
 
-# --- FUNÇÃO AUXILIAR (O MOTOR DO PDF) ---
 def gerar_conteudo_pdf_acta(acta):
-    """Gera o conteúdo binário do PDF de uma acta específica."""
     sol = acta.solicitacao
     pre = sol.predefesa if sol else None
     est = pre.estudante if pre else None
@@ -259,7 +234,6 @@ def gerar_conteudo_pdf_acta(acta):
     style_bc = ParagraphStyle(name='BoldCenter', parent=style_b, alignment=TA_CENTER, fontSize=11)
     style_j = ParagraphStyle(name='Justify', parent=style_n, alignment=TA_JUSTIFY)
 
-    # Logotipo
     logo_path = finders.find('imgs/icons/finalispbie.jpg')
     if logo_path:
         try:
@@ -272,7 +246,6 @@ def gerar_conteudo_pdf_acta(acta):
     elements.append(Paragraph(f"ACTA N. {str(acta.numero_acta or '_______ /20___')}", style_bc))
     elements.append(Spacer(1, 0.5*cm))
 
-    # Identificação e Dados (Mantendo sua lógica original)
     data_ext = acta.data_sessao.strftime('%d/%m/%Y') if acta.data_sessao else "_____/_____/____"
     local = str(acta.local_sessao or "_________________________")
     elements.append(Paragraph(f"Em {local}, aos {data_ext}", style_n))
@@ -293,7 +266,6 @@ def gerar_conteudo_pdf_acta(acta):
     texto_orientacao = f"E foi orientado por <b>{orientador}</b> e Co-tutorado Por <b>________________</b> Docente (ou orientador convidado) do Departamento de <b>________________</b> ISP-BI."
     elements.append(Paragraph(texto_orientacao, style_j))
     
-    # Júri
     dados_juri = [
         ["Presidente:", str(pre.presidente.nome if pre and pre.presidente else "________________"), "DEI", "________________"],
         ["1º Vogal:", str(pre.primeiro_vogal.nome if pre and pre.primeiro_vogal else "________________"), "DEI", "________________"],
@@ -305,23 +277,19 @@ def gerar_conteudo_pdf_acta(acta):
     elements.append(t_juri)
     elements.append(Spacer(1, 0.3*cm))
 
-    # --- Sessão --- 
     texto_horario = f"O júri declarou a sessão Pública às <b>{str(acta.hora_abertura or '_______')}</b> e a sessão foi encerrada às <b>{str(acta.hora_encerramento or '_______')}</b>."
     elements.append(Paragraph(texto_horario, style_j))
     elements.append(Spacer(1, 0.4*cm))
 
-    # --- Pontos Fortes/Fracos ---
     elements.append(Paragraph(f"<b>Pontos Fortes:</b> {str(acta.pontos_fortes or '________________')}", style_j))
     elements.append(Paragraph(f"<b>Pontos Fracos:</b> {str(acta.pontos_fracos or '________________')}", style_j))
     elements.append(Spacer(1, 0.4*cm))
 
-    # --- Avaliação ---
     elements.append(Paragraph(f"Avaliação a sessão da defesa: <b>{str(acta.avaliacao_sessao or '_______')} Valores</b>", style_n))
     elements.append(Paragraph(f"Avaliação Final: <b>{str(acta.avaliacao_final or '_______')} Valores</b>", style_n))
     elements.append(Paragraph(f"Observações: {str(acta.observacoes or '________________')}", style_j))
     elements.append(Spacer(1, 1.0*cm))
 
-    # --- Assinaturas ---
     assinaturas = [
         [Paragraph("O Presidente<br/>_______________________", style_bc), Paragraph("1º Vogal<br/>_______________________", style_bc)],
         [Spacer(1, 1.2*cm), Spacer(1, 1.2*cm)],
@@ -329,7 +297,6 @@ def gerar_conteudo_pdf_acta(acta):
     ]
     elements.append(Table(assinaturas, colWidths=[8.5*cm, 8.5*cm]))
     
-    # Rodapé
     def footer(canvas, doc):
         canvas.saveState()
         canvas.setFont('Helvetica', 7)
@@ -343,7 +310,6 @@ def gerar_conteudo_pdf_acta(acta):
     return pdf
 
 
-# --- VIEW PARA DOWNLOAD INDIVIDUAL ---
 @perfil_requerido(*PERFIS_GESTAO)
 def baixar_acta_pdf(request, acta_id):
     try:
@@ -356,7 +322,6 @@ def baixar_acta_pdf(request, acta_id):
         return HttpResponse(f"Erro: {str(e)}", status=500)
 
 
-# --- VIEW PARA DOWNLOAD EM MASSA (ZIP) ---
 @perfil_requerido(*PERFIS_GESTAO)
 def baixar_todas_actas_zip(request):
     try:
@@ -367,10 +332,8 @@ def baixar_todas_actas_zip(request):
         buffer_zip = io.BytesIO()
         with zipfile.ZipFile(buffer_zip, 'w') as zip_file:
             for acta in actas:
-                # Gera o PDF usando a função auxiliar
                 pdf_content = gerar_conteudo_pdf_acta(acta)
                 
-                # Nome do arquivo dentro do ZIP (limpando caracteres especiais)
                 nome_estudante = acta.solicitacao.predefesa.estudante.nome.replace(" ", "_")
                 nome_pdf = f"Acta_{acta.numero_acta.replace('/', '-')}_{nome_estudante}.pdf"
                 
@@ -393,7 +356,6 @@ def lista_actas(request):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def detalhe_acta(request, acta_id):
-    # Carrega a acta e TODA a hierarquia de relações do seu model
     acta = get_object_or_404(
         ActaDefesa.objects.select_related(
             'solicitacao__predefesa__estudante',

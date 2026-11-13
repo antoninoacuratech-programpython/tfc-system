@@ -8,13 +8,11 @@
         #content { padding: 0 !important; }
         .bg-primary { background-color: #2563eb; }
         
-        /* Suavização de scroll estilo Flutter/Material */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+                ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 20px; }
 
-        /* Animação para os Snackbars de notificação */
-        @keyframes fadeInDown {
+                @keyframes fadeInDown {
             from { opacity: 0; transform: translate3d(0, -20px, 0); }
             to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
@@ -28,7 +26,6 @@
 <div class="bg-gray-50 min-h-screen antialiased text-gray-900 font-sans">
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         
-        <!-- Alertas de Feedback (Snackbars estilo Flutter) -->
         {% if messages %}
             {% for message in messages %}
                 <div class="mb-6 p-4 rounded-2xl border flex items-center gap-3 shadow-sm animate-fade-in-down {% if message.tags == 'error' %}bg-red-50 border-red-100 text-red-700{% else %}bg-green-50 border-green-100 text-green-700{% endif %}">
@@ -40,7 +37,6 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- FORMULÁRIO DE CADASTRO -->
             <div class="lg:col-span-4">
                 <div class="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 sticky top-6">
                     <div class="flex items-center gap-3 mb-6">
@@ -110,7 +106,6 @@
                 </div>
             </div>
 
-            <!-- LISTAGEM DE PROFESSORES -->
             <div class="lg:col-span-8 space-y-4">
                 <div class="flex items-center justify-between px-2">
                     <div>
@@ -120,11 +115,9 @@
                     <span class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-full">{{ professores|length }} Cadastrados</span>
                 </div>
                 
-                <!-- CONTAINER DA TABELA (ESTILO CARD ARREDONDADO FLUTTER) -->
                 <div class="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                     
                     {% if professores %}
-                        <!-- 1. MODELO DESKTOP (Tabela Estruturada) -->
                         <div class="hidden md:block overflow-x-auto">
                             <table class="w-full text-left border-collapse">
                                 <thead>
@@ -139,7 +132,6 @@
                                 <tbody class="divide-y divide-gray-50">
                                     {% for prof in professores %}
                                     <tr class="hover:bg-gray-50/50 transition-colors group">
-                                        <!-- Avatar + Nome -->
                                         <td class="py-4 px-6 flex items-center gap-3">
                                             {% if prof.imagem %}
                                                 <img src="{{ prof.imagem.url }}" alt="Foto" class="w-10 h-10 rounded-xl object-cover border border-gray-100 shadow-sm">
@@ -154,13 +146,11 @@
                                             </div>
                                         </td>
                                         
-                                        <!-- Contatos -->
                                         <td class="py-4 px-4">
                                             <span class="text-xs text-gray-600 block font-medium">{{ prof.email }}</span>
                                             <span class="text-[11px] text-gray-400 flex items-center gap-0.5 mt-0.5"><span class="material-icons-sharp text-xs">phone</span> {{ prof.telefone }}</span>
                                         </td>
                                         
-                                        <!-- Cursos / Dep -->
                                         <td class="py-4 px-4">
                                             {% if prof.curso %}
                                                 <span class="text-xs text-gray-700 font-semibold block">{{ prof.curso.nome }}</span>
@@ -172,7 +162,6 @@
                                             {% endif %}
                                         </td>
 
-                                        <!-- Status Switch -->
                                         <td class="py-4 px-4 text-center">
                                             <div class="flex items-center justify-center gap-2">
                                                 <form action="{% url 'alternar_status_professor' prof.id %}" method="POST" class="inline flex items-center">
@@ -184,7 +173,6 @@
                                             </div>
                                         </td>
 
-                                        <!-- Botões de Ação -->
                                         <td class="py-4 px-6 text-right">
                                             <div class="flex items-center justify-end gap-1.5">
                                                 <button type="button" onclick="abrirModalEditar('{{ prof.id }}', '{{ prof.nome }}', '{{ prof.sobrenome }}', '{{ prof.email }}', '{{ prof.telefone }}', '{{ prof.curso.id|default:'' }}', '{{ prof.depart.id|default:'' }}')"
@@ -203,7 +191,6 @@
                             </table>
                         </div>
 
-                        <!-- 2. MODELO MOBILE (Cards Compactos estilo ListTile do Flutter) -->
                         <div class="md:hidden divide-y divide-gray-100">
                             {% for prof in professores %}
                             <div class="p-4 flex flex-col gap-3 hover:bg-gray-50/50">
@@ -222,7 +209,6 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Toggle Status Mobile -->
                                     <form action="{% url 'alternar_status_professor' prof.id %}" method="POST" class="inline">
                                         {% csrf_token %}
                                         <button type="submit" class="text-gray-300 hover:text-blue-600">
@@ -256,7 +242,6 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <!-- Estado Vazio -->
                         <div class="py-20 text-center">
                             <span class="material-icons-sharp text-5xl text-gray-200 p-4 bg-gray-50 rounded-full mb-3">badge</span>
                             <p class="text-gray-400 text-sm font-medium">Nenhum docente mapeado nesta lista.</p>
@@ -268,7 +253,6 @@
     </div>
 </div>
 
-<!-- MODAL EDITAR PROFESSOR -->
 <div id="modalEditar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity"></div>
@@ -347,7 +331,6 @@
     </div>
 </div>
 
-<!-- MODAL ELIMINAR PROFESSOR -->
 <div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity"></div>
@@ -401,7 +384,6 @@
         document.getElementById('modalEditar').classList.add('hidden');
     }
 
-    // Gerencia o modal de remoção
     function abrirModalEliminar(id, nomeCompleto) {
         const form = document.getElementById('formEliminarProfessor');
         form.action = `${window.location.origin}/professores/eliminar/${id}/`;
@@ -416,5 +398,4 @@
 </script>
 {% endblock %}
 
-{# Esta página mostra as mensagens no seu próprio conteúdo. #}
 {% block mensagens %}{% endblock %}

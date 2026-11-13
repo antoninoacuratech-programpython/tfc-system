@@ -174,7 +174,6 @@ function applyFilters() {
     });
 
     noResults.classList.toggle("hidden", hasMatch);
-    // Esconde o cabeçalho da tabela se não houver resultados (apenas desktop)
     const tableHeader = document.querySelector('thead');
     if(tableHeader) tableHeader.style.display = hasMatch ? "" : "none";
 }

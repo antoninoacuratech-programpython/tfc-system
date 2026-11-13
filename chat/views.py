@@ -7,7 +7,6 @@ from django.http import JsonResponse
 from Coordenacao.models import Usuario, Tema
 
 
-
 @login_required
 def chat_view(request, user_id):
     outro = get_object_or_404(Usuario, id=user_id)
@@ -39,7 +38,6 @@ def enviar_mensagem(request, user_id):
 
         return JsonResponse({"status": "ok"})
 
-# Lista de estudantes por tutores ... 
 @login_required
 def tutor_chat_estudantes(request):
     if request.user.perfil != 'tutor':
@@ -52,7 +50,6 @@ def tutor_chat_estudantes(request):
         "estudantes": estudantes
     })
 
-# Chat com estudante específico apenas o tutor x com o estudante y
 @login_required
 def chat_tutor(request, estudante_id):
     if request.user.perfil != 'tutor':
@@ -60,7 +57,6 @@ def chat_tutor(request, estudante_id):
 
     aluno = get_object_or_404(Usuario, id=estudante_id)
 
-    # Relacao Tutor x ----> Aluno Y 
     if not Tema.objects.filter(tutor_indicado=request.user, estudante=aluno).exists():
         return JsonResponse({"erro": "Acesso negado"}, status=403)
 
@@ -76,7 +72,6 @@ def chat_tutor(request, estudante_id):
 @login_required
 @require_POST
 def chat_tutor_enviar(request, estudante_id):
-
     if request.method == "POST" and request.user.perfil == 'tutor':
         aluno = get_object_or_404(Usuario, id=estudante_id) 
 

@@ -3,8 +3,6 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 import os
 
 
-
-
 class Departamento(models.Model):
     nome = models.CharField(max_length=150, unique=True)
     descricao = models.TextField(max_length=800)
@@ -24,11 +22,8 @@ class Curso(models.Model):
 )
 
 
-
     def __str__(self):
         return f"{self.nome} - {self.departamento.nome}"
-
-
 
 
 class UsuarioManager(BaseUserManager):
@@ -97,32 +92,23 @@ class Usuario(AbstractUser):
     REQUIRED_FIELDS = ["nome", "sobrenome"]
 
     objects = UsuarioManager()
-    # Dentro da sua classe Usuario(AbstractUser) em models.py
 
     def obter_todos_documentos(self):
-        """
-        Retorna uma lista consolidada de todos os ficheiros (FileField/ImageField)
-        do estudante, percorrendo todo o ciclo de vida do TFC.
-        """
         docs = []
 
-        # 1. Inscrições TFC
         for i in self.inscricoes_tfc.all():
             if i.requerimento: docs.append({'nome': 'Inscrição: Requerimento', 'url': i.requerimento.url})
             if i.curriculum_academico: docs.append({'nome': 'Inscrição: Currículo', 'url': i.curriculum_academico.url})
             if i.copia_bi: docs.append({'nome': 'Inscrição: Cópia BI', 'url': i.copia_bi.url})
 
-        # 2. Temas
         for t in self.temas.all():
             if t.resumo: docs.append({'nome': 'Tema: Resumo', 'url': t.resumo.url})
             if t.requerimento: docs.append({'nome': 'Tema: Requerimento', 'url': t.requerimento.url})
 
-        # 3. Pré-defesas e fluxos vinculados (Solicitações/Actas)
         for pd in self.minhas_predefesas.all():
             if hasattr(pd, 'solicitacao_defesa'):
-                docs.append({'nome': 'Solicitação de Defesa', 'url': '#'}) # Ajuste para o campo real do PDF
+                docs.append({'nome': 'Solicitação de Defesa', 'url': '#'})
                 
-                # Se houver acta final vinculada
                 if hasattr(pd.solicitacao_defesa, 'acta_final'):
                     docs.append({'nome': f'Acta de Defesa: {pd.solicitacao_defesa.acta_final.numero_acta}', 'url': '#'})
 
@@ -181,7 +167,6 @@ class Tema(models.Model):
         ('rejeitado', 'Rejeitado'),
     )
 
-    # Relacionamentos Principais
     estudante = models.ForeignKey(
         'Usuario',
         on_delete=models.CASCADE,
@@ -189,7 +174,6 @@ class Tema(models.Model):
         limit_choices_to={'perfil': 'estudante'}
     )
     
-    # Campo preenchido automaticamente no clean/save
     processo = models.ForeignKey(
         'ProcessoEtapa',
         on_delete=models.CASCADE,
@@ -200,7 +184,6 @@ class Tema(models.Model):
         blank=True
     )
 
-    # Dados do Tema
     titulo = models.CharField(max_length=200)
     descricao = models.TextField()
     resumo = models.FileField(upload_to='resumos/', blank=True, null=True)
@@ -215,12 +198,10 @@ class Tema(models.Model):
         limit_choices_to={'perfil': 'tutor'}
     )
 
-    # Fluxo de Status
     status_tutor = models.CharField(max_length=15, choices=STATUS_TUTOR, default='pendente')
     status_coordenacao = models.CharField(max_length=20, choices=STATUS_COORD, default='pendente')
     status_final = models.CharField(max_length=15, choices=STATUS_FINAL, default='pendente')
 
-    # Metadados
     data_envio = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
 
@@ -230,15 +211,11 @@ class Tema(models.Model):
         ordering = ['-data_envio']
 
     def clean(self):
-        """
-        Valida a existência de um processo aberto e o vincula ao tema.
-        """
         super().clean()
         
         if self.estudante and hasattr(self.estudante, 'curso') and self.estudante.curso:
             hoje = timezone.now().date()
             
-            # Busca o processo ativo para o curso do aluno
             processo_ativo = ProcessoEtapa.objects.filter(
                 curso=self.estudante.curso,
                 ativo=True,
@@ -252,17 +229,14 @@ class Tema(models.Model):
                     f"{self.estudante.curso.nome} nesta data ({hoje.strftime('%d/%m/%Y')})."
                 )
             
-            # Vincula o tema ao processo encontrado
             self.processo = processo_ativo
         else:
             raise ValidationError("O estudante precisa estar vinculado a um curso para criar um tema.")
 
     def save(self, *args, **kwargs):
-        # 1. Garante a validação de processo apenas na criação (ou se for necessário revalidar)
         if not self.pk:
             self.full_clean()
 
-        # 2. Lógica de consolidação do Status Final
         if self.status_tutor == 'aprovado' and self.status_coordenacao == 'aprovado':
             self.status_final = 'aprovado'
         elif self.status_tutor == 'rejeitado' or self.status_coordenacao == 'rejeitado':
@@ -304,13 +278,8 @@ class Recomendacao(models.Model):
         verbose_name_plural = "Recomendações"
 
     def clean(self):
-        """
-        Garante que recomendações só sejam feitas se o processo do curso 
-        do tema estiver dentro do período de vigência.
-        """
         super().clean()
         
-        # O curso do processo é extraído através do estudante dono do tema
         if self.tema and self.tema.estudante and self.tema.estudante.curso:
             hoje = timezone.now().date()
             curso_do_tema = self.tema.estudante.curso
@@ -329,7 +298,6 @@ class Recomendacao(models.Model):
                 )
 
     def save(self, *args, **kwargs):
-        # Força a validação do período antes de salvar
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -367,7 +335,6 @@ class Predefesa(models.Model):
         related_name='atuacoes_secretario'
     )
 
-    # Definição dos três Júris específicos
     presidente = models.ForeignKey(
         'Usuario', on_delete=models.CASCADE, 
         limit_choices_to={'perfil': 'tutor'}, related_name='presidencias'
@@ -386,7 +353,6 @@ class Predefesa(models.Model):
         if not self.estudante:
             return
 
-        # --- 1. VALIDAÇÃO DO PROCESSO ABERTO PELO COORDENADOR ---
         if self.estudante.curso:
             hoje = timezone.now().date()
             processo = ProcessoEtapa.objects.filter(
@@ -402,7 +368,6 @@ class Predefesa(models.Model):
                     f"{self.estudante.curso.nome} não está aberto ou já expirou."
                 )
         
-        # --- 2. VALIDAÇÃO DO TEMA E ORIENTADOR ---
         tema_obj = Tema.objects.filter(estudante=self.estudante).order_by('-data_envio').first()
         if not tema_obj:
             raise ValidationError(f"O estudante {self.estudante} não possui um tema registrado.")
@@ -412,7 +377,7 @@ class Predefesa(models.Model):
         
         juris_selecionados = [self.presidente, self.primeiro_vogal, self.segundo_vogal, self.secretario]
 
-        # Cada docente só pode ocupar uma função na mesma mesa de júri.
+        # o mesmo docente não pode ocupar duas funções na mesa
         ids_juri = [j.pk for j in juris_selecionados if j is not None]
         if len(ids_juri) != len(set(ids_juri)):
             raise ValidationError(
@@ -424,7 +389,6 @@ class Predefesa(models.Model):
             if juri == tutor_do_estudante:
                 raise ValidationError(f"Conflito: O orientador {juri} não pode fazer parte da Mesa de Júri deste estudante.")
         
-        # --- 3. VERIFICAÇÃO DE HORÁRIO (Intervalo de 1h30) ---
         self.validar_conflito_horario(juris_selecionados)
 
     def validar_conflito_horario(self, juris):
@@ -454,7 +418,6 @@ class Predefesa(models.Model):
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
-
 
 
 class Comunicado(models.Model):
@@ -494,7 +457,7 @@ class Notificacao(models.Model):
 from django.db import models
 
 
-
+# tem de ser uma função com nome, senão o makemigrations gera uma migração nova sempre
 def current_year():
     return timezone.now().year
 
@@ -509,27 +472,21 @@ class InscricaoTFC(models.Model):
         ('aprovado', 'Inscrição feita com sucesso'),
     ]
 
-    # Relacionamentos
     estudante = models.ForeignKey('Usuario', on_delete=models.CASCADE, related_name='inscricoes_tfc')
     tema = models.OneToOneField('Tema', on_delete=models.CASCADE, related_name='ficha_inscricao')
-    # Adicione este campo dentro da sua class InscricaoTFC(models.Model):
     enviado_para_coordenacao = models.BooleanField(default=False)
-    # Informações Académicas e Pessoais
     periodo = models.CharField(max_length=20, choices=PERIODO_CHOICES, default='Regular')
     nacionalidade = models.CharField(max_length=50, default="Angolana")
     endereco = models.CharField(max_length=255)
     local_desenvolvimento = models.CharField(max_length=255)
     ano_conclusao_curriculo = models.PositiveIntegerField(default=current_year)
     
-    # --- NOVOS CAMPOS DE FICHEIROS ADICIONADOS ---
     requerimento = models.FileField(upload_to='tfc/requerimentos/', null=True, blank=True)
     curriculum_academico = models.FileField(upload_to='tfc/curriculos/', null=True, blank=True)
     ficha_reconfirmacao = models.FileField(upload_to='tfc/fichas/', null=True, blank=True)
     comprovativo_pagamento = models.FileField(upload_to='tfc/pagamentos/', null=True, blank=True)
     copia_bi = models.FileField(upload_to='tfc/documentos_id/', null=True, blank=True)
-    # ---------------------------------------------
 
-    # Status e Auditoria
     status = models.CharField(max_length=30, choices=STATUS_CHOICES, default='pendente')
     aprovado_por = models.ForeignKey(
         'Usuario', on_delete=models.SET_NULL, null=True, blank=True, related_name='validador_tfc'
@@ -537,17 +494,12 @@ class InscricaoTFC(models.Model):
     data_criacao = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-        """
-        Verifica se existe um processo aberto pelo coordenador para o curso 
-        do estudante antes de permitir a inscrição.
-        """
         super().clean()
         
         if self.estudante and self.estudante.curso:
             hoje = timezone.now().date()
             
-            # Busca o processo ativo para o curso do estudante
-            from .models import ProcessoEtapa # Import local para evitar circularidade se necessário
+            from .models import ProcessoEtapa
             processo = ProcessoEtapa.objects.filter(
                 curso=self.estudante.curso,
                 ativo=True,
@@ -564,7 +516,6 @@ class InscricaoTFC(models.Model):
             raise ValidationError("O estudante precisa estar vinculado a um curso para realizar a inscrição.")
 
     def save(self, *args, **kwargs):
-        # Força a execução do clean() para garantir a validação de data
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -572,14 +523,10 @@ class InscricaoTFC(models.Model):
         return f"Ficha {self.id} - {self.estudante.nome}"
 
 class NotificacaoTFC(models.Model):
-    # Quem enviou (Ex: O coordenador que aprovou)
     remetente = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='notificacoes_enviadas')
     
-    # O destinatário específico (Ex: O estudante dono da ficha)
-    # Colocamos null=True e blank=True para caso queira enviar uma notificação geral para a área científica sem um usuário específico
     destinatario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='notificacoes_recebidas', null=True, blank=True)
     
-    # Define o grupo alvo: 'area_cientifica' ou 'estudante'
     destinatario_perfil = models.CharField(max_length=20, default='area_cientifica') 
     
     mensagem = models.TextField()
@@ -594,7 +541,6 @@ from django.db import models
 from django.utils import timezone
 
 
-
 class Despacho(models.Model):
     STATUS_CHOICES = (
         ('pendente', 'Pendente (Aguardando Presidente)'),
@@ -603,8 +549,6 @@ class Despacho(models.Model):
         ('enviado', 'enviado'),
     )
 
-    # Relacionamento central com a Pré-defesa [cite: 1]
-    # Através da predefesa, acessamos: Estudante, Curso, Tema, Tutor e Júris
     predefesa = models.OneToOneField(
         'Predefesa', 
         on_delete=models.CASCADE, 
@@ -612,14 +556,12 @@ class Despacho(models.Model):
         help_text="Selecione a Pré-defesa para extrair os dados do Estudante e Júri"
     )
 
-    # --- Identificação do Documento (Cabeçalho do PDF) ---
     numero_despacho = models.CharField(
         max_length=50, 
         help_text="Ex: 045/G.P/ISP-BI/01/2026"
     )
     ano_letivo = models.PositiveIntegerField(default=current_year)
 
-    # --- Referências Legais (Padrão ISP-BI conforme Modelo) ---
     referencia_legal_1 = models.CharField(
         max_length=255, 
         default="art. 48 do Decreto Presidencial nº 193/18 de 10 de Agosto"
@@ -629,7 +571,6 @@ class Despacho(models.Model):
         default="alínea n) do art. 51 do Decreto Presidencial nº 310/20 de 7 de Dezembro"
     )
 
-    # --- Dados de Localização e Emissão ---
     local_desenvolvimento = models.CharField(
         max_length=255,
         help_text="Instituição/Local onde o tema foi aplicado"
@@ -642,7 +583,6 @@ class Despacho(models.Model):
         default=timezone.now
     )
 
-    # --- Fluxo de Aprovação e Assinatura ---
     status = models.CharField(
         max_length=20, 
         choices=STATUS_CHOICES, 
@@ -661,7 +601,6 @@ class Despacho(models.Model):
         help_text="Se marcado, o despacho fica visível e entra em vigor"
     )
 
-    # --- Metadados de Gestão ---
     criado_por = models.ForeignKey(
         'Usuario', 
         on_delete=models.SET_NULL, 
@@ -694,7 +633,6 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 class SolicitacaoDefesa(models.Model):
-    # Relacionamento com a Predefesa para obter os dados do Júri e Estudante
     predefesa = models.OneToOneField(
         'Predefesa', 
         on_delete=models.CASCADE, 
@@ -738,13 +676,8 @@ class SolicitacaoDefesa(models.Model):
         verbose_name_plural = "Solicitações de Defesa de TFC"
 
     def clean(self):
-        """
-        Valida se a solicitação está sendo feita dentro do período do processo
-        aberto pelo coordenador para o curso do estudante.
-        """
         super().clean()
         
-        # Acessamos o curso através de: Solicitacao -> Predefesa -> Estudante -> Curso
         if self.predefesa and self.predefesa.estudante and self.predefesa.estudante.curso:
             hoje = timezone.now().date()
             curso_alvo = self.predefesa.estudante.curso
@@ -763,7 +696,6 @@ class SolicitacaoDefesa(models.Model):
                 )
 
     def save(self, *args, **kwargs):
-        # Força a validação do método clean() antes de persistir no banco
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -772,7 +704,6 @@ class SolicitacaoDefesa(models.Model):
 
     @property
     def co_tutor(self):
-        """Retorna vazio conforme solicitado."""
         return ""
 
 from django.db import models
@@ -780,27 +711,22 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 class ActaDefesa(models.Model):
-    # Relacionamento com a Solicitação (que já traz Estudante, Tema e Júri)
     solicitacao = models.OneToOneField(
         'SolicitacaoDefesa',
         on_delete=models.CASCADE,
         related_name='acta_final'
     )
 
-    # Identificação da Acta 
     numero_acta = models.CharField(max_length=50, help_text="Ex: 001/2026")
     data_sessao = models.DateField()
     local_sessao = models.CharField(max_length=255, default="Instituto Superior Politécnico do Bié")
 
-    # Horários da Sessão Pública 
     hora_abertura = models.TimeField(help_text="Início da sessão pública")
     hora_encerramento = models.TimeField(help_text="Encerramento da sessão")
 
-    # Conteúdo da Avaliação 
     pontos_fortes = models.TextField(blank=True, null=True)
     pontos_fracos = models.TextField(blank=True, null=True)
     
-    # Notas (Valores de 0 a 20) 
     avaliacao_sessao = models.DecimalField(max_digits=4, decimal_places=2, help_text="Avaliação da sessão")
     avaliacao_final = models.DecimalField(max_digits=4, decimal_places=2, help_text="Avaliação Final")
     
@@ -812,13 +738,8 @@ class ActaDefesa(models.Model):
         verbose_name_plural = "Actas das Sessões de Defesa"
 
     def clean(self):
-        """
-        Verifica se a Acta está sendo gerada dentro do período de processo
-        aberto pelo coordenador para o curso do estudante.
-        """
         super().clean()
         
-        # O caminho para o curso é: Acta -> Solicitação -> Predefesa -> Estudante -> Curso
         if self.solicitacao and self.solicitacao.predefesa.estudante.curso:
             hoje = timezone.now().date()
             curso_estudante = self.solicitacao.predefesa.estudante.curso
@@ -837,14 +758,12 @@ class ActaDefesa(models.Model):
                 )
 
     def save(self, *args, **kwargs):
-        # Validação total antes de salvar a nota final
         self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"Acta {self.numero_acta} - {self.solicitacao.predefesa.estudante.nome}"
 
-    # Propriedades para preenchimento automático
     @property
     def estudante(self):
         return self.solicitacao.predefesa.estudante
@@ -867,7 +786,6 @@ class ListaTemasAprovados(models.Model):
         ('recebido', 'Recebido pela Área Científica'),
     )
 
-    # Identificação da Lista
     codigo_referencia = models.CharField(
         max_length=50, 
         unique=True, 
@@ -875,8 +793,6 @@ class ListaTemasAprovados(models.Model):
         help_text="Ex: LISTA-2026-ENG-001"
     )
     
-    # Relacionamos com os temas que foram aprovados
-    # Usamos ManyToMany para que uma lista contenha vários temas
     temas = models.ManyToManyField(
         'Tema', 
         related_name='listas_aprovadas',
@@ -884,14 +800,12 @@ class ListaTemasAprovados(models.Model):
         verbose_name="Temas Aprovados"
     )
 
-    # Controle de Fluxo
     status = models.CharField(
         max_length=20, 
         choices=STATUS_ENVIO, 
         default='nao_enviado'
     )
     
-    # Responsável pelo envio (Coordenador)
     enviado_por = models.ForeignKey(
         'Usuario', 
         on_delete=models.SET_NULL, 
@@ -900,7 +814,6 @@ class ListaTemasAprovados(models.Model):
         related_name='listas_enviadas'
     )
 
-    # Metadados
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_envio = models.DateTimeField(null=True, blank=True)
     observacoes = models.TextField(blank=True, null=True, help_text="Notas para a Área Científica")
@@ -914,7 +827,6 @@ class ListaTemasAprovados(models.Model):
         return f"{self.codigo_referencia} - {self.get_status_display()}"
 
     def enviar_para_area_cientifica(self):
-        """Método para marcar como enviado e registrar a data"""
         from django.utils import timezone
         self.status = 'enviado'
         self.data_envio = timezone.now()
@@ -928,10 +840,8 @@ class ListaPreDefesas(models.Model):
         ('enviado', 'Enviado'),
     )
 
-    # 1. Atributo: Lista de pré-defesas (Relacionamento)
     predefesas = models.ManyToManyField('Predefesa', related_name='listas')
 
-    # 2. Atributo: Status
     status = models.CharField(
         max_length=20, 
         choices=STATUS_ENVIO, 
@@ -956,7 +866,6 @@ class NotificacaoFinal(models.Model):
     mensagem = models.TextField()
     lida = models.BooleanField(default=False)
     criada_em = models.DateTimeField(auto_now_add=True)
-    # Campo adicionado para suportar links
     link = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -987,8 +896,6 @@ class CalendarioAprovacao(models.Model):
         return f"{self.titulo} - {self.get_periodo_display()} ({self.data_aprovacao.strftime('%d/%m/%Y %H:%M')})"
 
 class RegistoBackup(models.Model):
-    """Histórico das cópias de segurança feitas pelo administrador."""
-
     utilizador = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="backups_feitos"
     )

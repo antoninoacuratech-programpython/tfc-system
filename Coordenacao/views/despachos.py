@@ -21,12 +21,7 @@ from ..models import Curso, Despacho, Predefesa
 from ..permissions import PERFIS_GESTAO, perfil_requerido, garantir_acesso_estudante
 
 
-# --- FUNÇÃO MESTRE (Cria o conteúdo do Despacho) ---
 def gerar_buffer_despacho(despacho):
-    """
-    Esta função contém toda a sua lógica funcional atual, 
-    mas retorna um valor binário (bytes) em vez de uma HttpResponse.
-    """
     predefesa = despacho.predefesa
     estudante = predefesa.estudante
     tema = predefesa.tema
@@ -47,7 +42,6 @@ def gerar_buffer_despacho(despacho):
     style_justify = ParagraphStyle(name='Justify', parent=style_normal, alignment=TA_JUSTIFY, leading=14)
     style_center = ParagraphStyle(name='Center', parent=style_normal, alignment=TA_CENTER)
 
-    # --- Inserção do Logotipo ---
     relative_path = 'imgs/icons/finalispbie.jpg'
     logo_path = finders.find(relative_path) or os.path.join(settings.STATIC_ROOT, relative_path)
     
@@ -69,7 +63,6 @@ def gerar_buffer_despacho(despacho):
     
     elements.append(Paragraph(f"<b>Considerando ainda</b> que, a estudante <b>{estudante.nome} {estudante.sobrenome}</b>, terminou com aproveitamento positivo a parte curricular do curso de {estudante.curso.nome}, período Regular.", style_justify))
     elements.append(Spacer(1, 0.3*cm))
-    
 
     elements.append(Paragraph(f"<b>Havendo a necessidade</b> de se nomear o júri para avaliar o Trabalho de Fim de Curso com o título: <b>{titulo_tema}.</b> Local de desenvolvimento: <b>{despacho.local_desenvolvimento}</b>", style_justify))
     elements.append(Spacer(1, 0.3*cm))
@@ -114,9 +107,7 @@ def gerar_buffer_despacho(despacho):
     
     data_emissao = despacho.data_emissao.strftime('%d DE %B DE %Y').upper()
     elements.append(Paragraph(f"GABINETE DO PRESIDENTE DO INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ, {despacho.local_emissao.upper()}, AOS {data_emissao}.", style_center))
-    
 
-    # Assinatura
     nome_presidente = f"{despacho.aprovado_por.nome} {despacho.aprovado_por.sobrenome}" if despacho.aprovado_por else "A ASSINAR"
     elements.append(Spacer(1, 1.5*cm))
     elements.append(Paragraph("<b>O PRESIDENTE</b>", style_center))
@@ -130,7 +121,6 @@ def gerar_buffer_despacho(despacho):
     return pdf_data
 
 
-# --- VIEW 1: DOWNLOAD INDIVIDUAL ---
 @login_required
 def gerar_despacho_pdf(request, despacho_id):
     despacho = get_object_or_404(Despacho, id=despacho_id)
@@ -143,7 +133,6 @@ def gerar_despacho_pdf(request, despacho_id):
     return response
 
 
-# --- VIEW 2: DOWNLOAD ZIP ---
 @perfil_requerido(*PERFIS_GESTAO)
 def baixar_todos_despachos_zip(request):
     despachos = Despacho.objects.all()
@@ -155,16 +144,13 @@ def baixar_todos_despachos_zip(request):
     with zipfile.ZipFile(buffer_zip, 'w') as zip_file:
         for d in despachos:
             try:
-                # Gera o binário do PDF para este despacho
                 pdf_data = gerar_buffer_despacho(d)
                 
-                # Nome do arquivo dentro do ZIP
                 estudante_nome = d.predefesa.estudante.nome.replace(" ", "_")
                 filename = f"Despacho_{d.numero_despacho}_{estudante_nome}.pdf"
                 
                 zip_file.writestr(filename, pdf_data)
             except Exception as e:
-                # Se um PDF falhar (ex: falta de dados), continua para o próximo
                 continue
 
     buffer_zip.seek(0)
@@ -180,7 +166,6 @@ def criar_despacho(request):
         numero = request.POST.get('numero_despacho')
         local = request.POST.get('local_desenvolvimento')
 
-        # validacao de predefesa se existe ///
         if not predefesa_id:
             messages.error(request, "Erro: Você deve selecionar um estudante/pré-defesa.")
             return redirect('criar_despacho')
@@ -214,17 +199,14 @@ def criar_despacho(request):
     return render(request, 'tfc/criar_despacho.html', {'cursos': cursos})
 
 
-# --- 1. VIEW PARA ENVIAR À PRESIDÊNCIA (Área Científica) ---
 @perfil_requerido(*PERFIS_GESTAO)
 def enviar_despacho_presidencia(request, despacho_id):
     if request.method == 'POST':
         despacho = get_object_or_404(Despacho, id=despacho_id)
-        
-        
+
         if despacho.status != 'pendente' and despacho.status != 'rascunho':
             messages.error(request, f"O despacho nº {despacho.numero_despacho} já foi processado ou enviado anteriormente.")
             return redirect('listar_despachos')
-            
 
         despacho.status = 'enviado'
         despacho.save()
@@ -235,27 +217,21 @@ def enviar_despacho_presidencia(request, despacho_id):
     return redirect('listar_despachos')
 
 
-# --- 2. VIEW PARA ASSINAR OU REJEITAR O DESPACHO (Presidente) ---
 @perfil_requerido(*PERFIS_GESTAO)
 def assinar_despacho(request, despacho_id):
-    """
-    O Presidente visualiza o despacho e decide se vai Assinar (Aprovar) 
-    ou Rejeitar o documento.
-    """
     despacho = get_object_or_404(Despacho, id=despacho_id)
 
-    # Segurança básica de perfil (ajuste se o campo no seu modelo for diferente)
     if not request.user.is_authenticated or request.user.perfil != 'presidente':
         messages.error(request, "Acesso negado. Apenas o Presidente pode assinar despachos.")
         return redirect('listar_despachos')
 
     if request.method == 'POST':
-        acao = request.POST.get('acao') # Captura qual botão o presidente clicou
+        acao = request.POST.get('acao')
 
         if acao == 'aprovar':
             despacho.status = 'aprovado'
-            despacho.aprovado_por = request.user  # Guarda quem assinou
-            despacho.publicado = True             # Entra em vigor
+            despacho.aprovado_por = request.user
+            despacho.publicado = True
             despacho.save()
             messages.success(request, f"Despacho nº {despacho.numero_despacho} assinado e aprovado com sucesso!")
             
@@ -269,7 +245,6 @@ def assinar_despacho(request, despacho_id):
 
         return redirect('listar_despachos')
 
-    # Se for GET, renderiza a página com os detalhes para o presidente ler antes de assinar
     return render(request, 'tfc/revisar_despacho.html', {'despacho': despacho})
 
 

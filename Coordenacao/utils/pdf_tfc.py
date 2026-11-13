@@ -11,17 +11,12 @@ from reportlab.lib.units import cm
 
 
 def campo(valor, tamanho=60):
-    """
-    Se houver valor, mostra o valor.
-    Se não houver, mostra linha para preenchimento manual.
-    """
     if valor:
         return valor
     return "_" * tamanho
 
 
 def gerar_ficha_tfc_pdf(dados: dict):
-
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
@@ -35,7 +30,6 @@ def gerar_ficha_tfc_pdf(dados: dict):
 
     elements = []
 
-    # ================= ESTILOS =================
     style_header = ParagraphStyle(
         'Header', fontSize=10, fontName='Helvetica-Bold',
         alignment=TA_CENTER, leading=14
@@ -59,7 +53,6 @@ def gerar_ficha_tfc_pdf(dados: dict):
         'Sign', fontSize=10, alignment=TA_CENTER
     )
 
-    # ================= LOGO =================
     relative_path = 'imgs/icons/finalispbie.jpg'
     logo_path = finders.find(relative_path) or os.path.join(settings.STATIC_ROOT, relative_path)
 
@@ -68,7 +61,6 @@ def gerar_ficha_tfc_pdf(dados: dict):
     except:
         logo = Paragraph("ISPB", style_header)
 
-    # ================= CABEÇALHO =================
     header_text = [
         Paragraph("INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ", style_header),
         Paragraph(
@@ -87,13 +79,11 @@ def gerar_ficha_tfc_pdf(dados: dict):
     elements.append(header_table)
     elements.append(Spacer(1, 20))
 
-    # ================= TÍTULO =================
     elements.append(Paragraph(
         "FICHA DE INSCRIÇÃO DO TRABALHO DE FIM DE CURSO Nº ____________.",
         style_title
     ))
 
-    # ================= CORPO DINÂMICO =================
     elements.append(Paragraph(
         f"Nome completo: {campo(dados.get('nome'), 75)};",
         style_text
@@ -167,7 +157,6 @@ def gerar_ficha_tfc_pdf(dados: dict):
         style_text
     ))
 
-    # ================= ASSINATURAS =================
     elements.append(Spacer(1, 30))
     elements.append(Paragraph("Conferido por:", style_text))
     elements.append(Spacer(1, 25))
@@ -180,7 +169,6 @@ def gerar_ficha_tfc_pdf(dados: dict):
     elements.append(Paragraph("__________________________________", style_sign))
     elements.append(Paragraph("(Nome Completo e legível)", style_sign))
 
-    # ================= BUILD =================
     doc.build(elements)
     buffer.seek(0)
 

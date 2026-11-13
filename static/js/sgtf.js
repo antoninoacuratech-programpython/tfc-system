@@ -1,11 +1,10 @@
-/* SGTF — comportamento partilhado dos painéis (sem dependências). */
 (function () {
   "use strict";
 
   const sidebar = document.getElementById("sidebar");
   const overlay = document.getElementById("sidebarOverlay");
 
-  // ---------- Menu lateral (mobile) ----------
+  // menu lateral no telemóvel
   function setSidebar(open) {
     if (!sidebar) return;
     sidebar.classList.toggle("is-open", open);
@@ -16,7 +15,7 @@
   document.querySelectorAll("[data-sidebar-close]").forEach((b) => b.addEventListener("click", () => setSidebar(false)));
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") { setSidebar(false); closeDropdowns(); } });
 
-  // ---------- Grupos do menu (submenus) ----------
+  // lembra que grupos do menu ficaram abertos
   const STORAGE_KEY = "sgtf:menu-aberto";
   let abertos = [];
   try { abertos = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch (e) { abertos = []; }
@@ -27,7 +26,6 @@
     if (abertos.includes(id)) group.classList.add("is-open");
     toggle?.setAttribute("aria-expanded", group.classList.contains("is-open"));
     toggle?.addEventListener("click", () => {
-      // No modo "rail" (tablet), tocar num grupo abre o menu completo com esse grupo expandido.
       const emRail = window.matchMedia("(min-width: 768px) and (max-width: 1279px)").matches;
       if (emRail && !sidebar.classList.contains("is-open")) {
         group.classList.add("is-open");
@@ -42,7 +40,6 @@
     });
   });
 
-  // ---------- Link activo ----------
   const path = window.location.pathname;
   let melhor = null;
   document.querySelectorAll("[data-nav] a.sgtf-nav-link[href]").forEach((a) => {
@@ -59,7 +56,6 @@
     grupo?.classList.add("is-open", "has-active");
   }
 
-  // ---------- Barra de navegação inferior: destino activo ----------
   let melhorInferior = null;
   document.querySelectorAll("[data-bottom-nav] a.sgtf-bnav-item[href]").forEach((a) => {
     const href = a.getAttribute("href");
@@ -72,10 +68,8 @@
     melhorInferior.setAttribute("aria-current", "page");
   }
 
-  // Fecha o menu deslizante ao passar para o ecrã largo (ex.: rodar o tablet).
   window.matchMedia("(min-width: 1280px)").addEventListener("change", (e) => { if (e.matches) setSidebar(false); });
 
-  // ---------- Dropdowns (notificações, utilizador) ----------
   function closeDropdowns(except) {
     document.querySelectorAll("[data-dropdown]").forEach((dd) => {
       if (dd === except) return;
@@ -98,7 +92,6 @@
   });
   document.addEventListener("click", () => closeDropdowns());
 
-  // ---------- Alertas ----------
   document.querySelectorAll("[data-alert]").forEach((alerta) => {
     alerta.querySelector("[data-alert-close]")?.addEventListener("click", () => alerta.remove());
     if (alerta.classList.contains("sgtf-alert--success") || alerta.classList.contains("sgtf-alert--info")) {
@@ -110,15 +103,11 @@
     }
   });
 
-  // ---------- Tabelas adaptativas (cartões no telemóvel) ----------
-  // Cada célula recebe o título da sua coluna; o CSS mostra-o como etiqueta no cartão.
-  // Para manter uma tabela tal como está: <table data-sem-cartoes>.
+  // no telemóvel as tabelas passam a cartões; o CSS usa o data-label como título
   function prepararTabelas(raiz) {
-    // Idempotente: só acrescenta etiquetas às células que ainda não as têm.
     (raiz || document).querySelectorAll(".sgtf-content table:not([data-sem-cartoes])").forEach((tabela) => {
       const titulos = [...tabela.querySelectorAll("thead th")].map((th) => th.textContent.replace(/\s+/g, " ").trim());
       if (!titulos.length) {
-        // Sem cabeçalho: apenas permitir rolagem horizontal.
         if (!tabela.parentElement.classList.contains("sgtf-table-wrap") && !tabela.closest(".overflow-x-auto")) {
           const wrap = document.createElement("div");
           wrap.className = "sgtf-table-wrap";
@@ -138,7 +127,6 @@
     });
   }
   prepararTabelas();
-  // Tabelas preenchidas depois (AJAX) também são adaptadas.
   const conteudo = document.querySelector(".sgtf-content");
   if (conteudo && "MutationObserver" in window) {
     let pendente = false;
@@ -149,7 +137,6 @@
     }).observe(conteudo, { childList: true, subtree: true });
   }
 
-  // ---------- Efeito de toque (ripple, estilo Material) ----------
   document.addEventListener("pointerdown", (e) => {
     const alvo = e.target.closest(".sgtf-btn, .sgtf-nav-link, .sgtf-bnav-item, .sgtf-auth-btn, .sgtf-dropdown__item");
     if (!alvo) return;
@@ -163,10 +150,7 @@
     setTimeout(() => onda.remove(), 550);
   });
 
-  // ---------- Selects exclusivos (ex.: mesa de júri) ----------
-  // Uso: <select data-exclusivo="juri">...</select> em vários campos do mesmo grupo.
-  // Um valor escolhido num campo desaparece das opções dos restantes campos do grupo.
-  // Valores extra a excluir de todo o grupo: <input type="hidden" data-exclusivo-extra="juri" value="ID">
+  // júri da pré-defesa: um professor escolhido num campo sai das opções dos outros
   function atualizarExclusivos() {
     const grupos = {};
     document.querySelectorAll("select[data-exclusivo]").forEach((s) => {
@@ -185,7 +169,6 @@
           opt.hidden = bloquear;
           opt.disabled = bloquear;
         });
-        // Se o valor actual ficou bloqueado (ex.: orientador escolhido depois), limpa o campo.
         if (select.value && usadosNosOutros.has(select.value) && [...select.options].some((o) => !o.value)) {
           select.value = "";
           select.dispatchEvent(new Event("change", { bubbles: true }));
@@ -199,8 +182,6 @@
   atualizarExclusivos();
   window.SGTF = Object.assign(window.SGTF || {}, { atualizarExclusivos });
 
-  // ---------- Confirmação de acções destrutivas ----------
-  // Uso: <a href="..." data-confirm="Eliminar este registo?">  ou  <form data-confirm="...">
   document.addEventListener("click", (e) => {
     const el = e.target.closest("a[data-confirm], button[data-confirm]");
     if (el && !window.confirm(el.getAttribute("data-confirm"))) { e.preventDefault(); e.stopPropagation(); }
@@ -208,11 +189,9 @@
   document.addEventListener("submit", (e) => {
     const form = e.target;
     if (form.matches("form[data-confirm]") && !window.confirm(form.getAttribute("data-confirm"))) { e.preventDefault(); return; }
-    // Evita submissões duplicadas.
     const btn = form.querySelector('[type="submit"]:not([data-no-lock])');
     if (btn && !e.defaultPrevented) {
       setTimeout(() => { btn.disabled = true; btn.classList.add("opacity-70", "cursor-wait"); }, 0);
-      // Reactiva caso a resposta seja um download (a página não muda).
       setTimeout(() => { btn.disabled = false; btn.classList.remove("opacity-70", "cursor-wait"); }, 8000);
     }
   });

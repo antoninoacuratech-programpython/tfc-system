@@ -2,15 +2,12 @@
 
 {% block content %}
 
-<!-- Cabeçalho com Título e Botões de Ação -->
 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 px-4 sm:px-0 gap-4">
     <h2 class="text-2xl font-bold text-gray-800">Temas Aprovados</h2>
     
-    <!-- Os botões só aparecem se o perfil for coordenacao ou superuser -->
     {% if request.user.perfil == "cordenacao" or request.user.is_superuser %}
     <div class="flex flex-wrap gap-2">
         
-        <!-- BOTÃO DE ENVIAR (NOVO) -->
         <form method="POST" action="{% url 'despachar_para_cientifica' %}">
             {% csrf_token %}
             <button type="submit" 
@@ -23,7 +20,6 @@
             </button>
         </form>
 
-        <!-- BOTÃO DE EXPORTAR -->
         <a href="{% url 'exportar_todos_temas_pdf' %}" 
            class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded shadow-sm transition duration-150">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -48,7 +44,6 @@
         {% endfor %}
     </div>
 
-    <!-- TABELA DESKTOP -->
     <table class="hidden md:table w-full border-collapse">
         <thead>
             <tr class="bg-gray-100 border-b border-gray-300">
@@ -78,7 +73,6 @@
         </tbody>
     </table>
 
-    <!-- LISTA MOBILE -->
     <div class="md:hidden space-y-4">
         {% for tema in lista_temas_aprovados %}
         <div class="border border-gray-200 rounded-lg p-4 shadow-sm bg-gray-50">
@@ -122,5 +116,4 @@
 
 {% endblock %}
 
-{# Esta página mostra as mensagens no seu próprio conteúdo. #}
 {% block mensagens %}{% endblock %}

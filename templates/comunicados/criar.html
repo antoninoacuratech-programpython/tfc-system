@@ -94,7 +94,6 @@
   function validarForm() {
     let erroAtivo = false;
 
-    // 1. Validar Datas (Fim deve ser maior que Início)
     if (dInicio.value && dFim.value) {
       if (dFim.value <= dInicio.value) {
         msgData.classList.remove('hidden');
@@ -134,5 +133,4 @@
 </script>
 {% endblock %}
 
-{# Esta página mostra as mensagens no seu próprio conteúdo. #}
 {% block mensagens %}{% endblock %}

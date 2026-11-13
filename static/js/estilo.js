@@ -1,5 +1,4 @@
 
-// Alerta simples com ícone
 function mostrarAlerta() {
     Swal.fire({
         icon: 'info',               // Ícones: info, success, error, warning, question
@@ -8,7 +7,6 @@ function mostrarAlerta() {
     });
 }
 
-// Alerta com confirmação (OK e Cancelar)
 function confirmarAcao() {
     Swal.fire({
         title: 'Tem certeza?',

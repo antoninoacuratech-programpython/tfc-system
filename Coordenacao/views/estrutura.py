@@ -147,7 +147,6 @@ def editar_curso(request, id):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def excluir_curso(request, id):
-    # Permissão: apenas presidente ou staff
     if not request.user.is_staff:
         messages.error(request, "Acesso não autorizado.")
         return redirect("admink")

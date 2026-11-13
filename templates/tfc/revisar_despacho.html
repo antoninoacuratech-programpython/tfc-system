@@ -3,7 +3,6 @@
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 sm:px-6 py-8">
     
-    <!-- Cabeçalho de Navegação -->
     <div class="mb-6 flex items-center justify-between">
         <a href="{% url 'listar_despachos' %}" class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-gray-700 transition">
             <span class="material-icons-sharp text-base mr-1">arrow_back</span>
@@ -14,10 +13,8 @@
         </span>
     </div>
 
-    <!-- Bloco Principal do Despacho -->
     <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden mb-6">
         
-        <!-- Header do Card -->
         <div class="border-b border-gray-100 bg-gray-50/50 px-6 py-5 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h2 class="text-xl font-extrabold text-gray-800">
@@ -34,10 +31,8 @@
             </div>
         </div>
 
-        <!-- Conteúdo/Dados do Despacho -->
         <div class="p-6 sm:p-8 space-y-6">
             
-            <!-- Seção: Dados do Estudante -->
             <div>
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
                     <span class="material-icons-sharp text-sm">school</span> Dados do Candidato
@@ -56,7 +51,6 @@
 
             <hr class="border-gray-100">
 
-            <!-- Seção: Informações do Júri / Pré-Defesa -->
             <div>
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
                     <span class="material-icons-sharp text-sm">groups</span> Estrutura do Júri Proposta
@@ -84,7 +78,6 @@
 
             <hr class="border-gray-100">
 
-            <!-- Seção: Texto ou Observações do Despacho -->
             <div>
                 <h3 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1">
                     <span class="material-icons-sharp text-sm">description</span> Conteúdo do Documento
@@ -96,25 +89,20 @@
 
         </div>
 
-        <!-- Rodapé com as Ações Decisórias -->
         <div class="bg-gray-50 border-t border-gray-100 px-6 py-5 sm:px-8 flex flex-col sm:flex-row-reverse justify-between gap-4">
             
-            <!-- Formulário Único Decisório direcionado à view correta -->
             <form action="{% url 'assinar_despacho' despacho.id %}" method="POST" id="formAssinatura" class="w-full sm:w-auto">
                 {% csrf_token %}
-                <!-- Input oculto manipulado dinamicamente via JS -->
                 <input type="hidden" name="acao" id="inputAcao" value="">
 
                 <div class="flex flex-col sm:flex-row gap-3">
                     
-                    <!-- Botão Rejeitar -->
                     <button type="button" onclick="confirmarAcao('rejeitar', 'Rejeitar Nomeação', 'bg-red-600')"
                             class="w-full sm:w-auto inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-red-200 bg-red-50 text-red-600 text-sm font-bold hover:bg-red-600 hover:text-white transition shadow-sm btn-decisao">
                         <span class="material-icons-sharp text-sm mr-2">close</span>
                         Rejeitar Nomeação
                     </button>
 
-                    <!-- Botão Assinar / Aprovar -->
                     <button type="button" onclick="confirmarAcao('aprovar', 'Aprovar e Assinar', 'bg-emerald-600')"
                             class="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-100 btn-decisao">
                         <span class="material-icons-sharp text-sm mr-2">draw</span>
@@ -123,7 +111,6 @@
                 </div>
             </form>
             
-            <!-- Voltar sem alterar nada -->
             <a href="{% url 'listar_despachos' %}" 
                class="inline-flex items-center justify-center px-4 py-2.5 text-sm font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition text-center align-middle">
                 Decidir mais tarde
@@ -132,7 +119,6 @@
     </div>
 </div>
 
-<!-- MODAL DE CONFIRMAÇÃO FLUTUANTE -->
 <div id="modalConfirmacao" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
@@ -173,7 +159,6 @@
         const iconContainer = document.getElementById('modalIconContainer');
         const icon = document.getElementById('modalIcon');
 
-        // Configura o modal de forma personalizada de acordo com o clique do Presidente
         document.getElementById('modalTitulo').innerText = `${acaoTexto}`;
         document.getElementById('modalMensagem').innerText = `Deseja realmente prosseguir com a ação de "${acaoTexto.toLowerCase()}" para o despacho № {{ despacho.numero_despacho }}?`;
         
@@ -195,13 +180,10 @@
         acaoSelecionada = null;
     }
 
-    // Intercepta e congela os botões após a confirmação para evitar duplo clique
     document.getElementById('btnModalConfirmar').addEventListener('click', function() {
         if (acaoSelecionada) {
-            // Atribui o valor ("aprovar" ou "rejeitar") ao input que a view espera receber
             document.getElementById('inputAcao').value = acaoSelecionada;
 
-            // Bloqueio visual e lógico contra múltiplos disparos
             this.disabled = true;
             this.innerText = "Processando...";
             
@@ -210,7 +192,6 @@
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
             });
 
-            // Dispara o formulário unificado
             document.getElementById('formAssinatura').submit();
         }
     });

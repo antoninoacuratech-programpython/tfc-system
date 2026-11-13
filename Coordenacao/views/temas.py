@@ -40,7 +40,6 @@ def lista_estudantes(request, processo_id=None):
 
             if request.user.is_staff:
                 queryset_update = Usuario.objects.filter(id__in=ids_selecionados)
-               
 
             if acao == 'activar':
                 queryset_update.update(estado_user='activo')
@@ -49,29 +48,23 @@ def lista_estudantes(request, processo_id=None):
                 queryset_update.update(estado_user='desativado')
                 messages.success(request, f"{queryset_update.count()} estudante(s) desativado(s) com sucesso.")
         
-        # O segredo: redireciona para a mesma URL, mantendo o ID do processo
         return redirect(request.get_full_path())
 
-    # --- FILTRAGEM ---
-    # Começamos com a base de estudantes permitida para o usuário
     estudantes_qs = Usuario.objects.filter(perfil='estudante')
     if user.perfil == 'cordenacao':
         estudantes_qs = estudantes_qs.filter(curso=user.curso)
 
     processo_nome = "Todos os Processos"
     
-    # Se clicou no link que passaste acima, o processo_id existirá aqui
     if processo_id:
         if user.perfil == 'cordenacao':
             processo = get_object_or_404(ProcessoEtapa, id=processo_id, curso=user.curso)
         else:
             processo = get_object_or_404(ProcessoEtapa, id=processo_id)
         
-        # Filtra os estudantes que possuem temas vinculados a ESTE processo
         estudantes_qs = estudantes_qs.filter(temas__processo=processo).distinct()
         processo_nome = processo.titulo
 
-    # Otimização de performance
     temas_prefetch = Prefetch(
         'temas',
         queryset=Tema.objects.all().select_related('processo', 'tutor_indicado'),
@@ -83,7 +76,6 @@ def lista_estudantes(request, processo_id=None):
         if request.user.is_staff:
             estudantes = Usuario.objects.all()
 
-    # Dados para o contexto
     context = {
         "estudantes": estudantes,
         "processo_selecionado": processo_id,
@@ -96,28 +88,24 @@ def lista_estudantes(request, processo_id=None):
 
 @login_required
 def alterar_status_tema(request, tema_id, novo_status):
-    # Logica para altercao de estatus !!
     if request.user.perfil not in ['tutor', 'cordenacao']:
         messages.error(request, "Acesso negado.")
         return redirect('lista_estudantes')
 
     tema = get_object_or_404(Tema, id=tema_id)
 
-    #
     if novo_status not in ['aprovado', 'rejeitado', 'pendente']:
         messages.error(request, "Status inválido.")
         if request.user.perfil == 'tutor':
             return redirect('dashboard_tutor')
         return redirect('lista_reprovados') 
 
-    # Lógica para TUTOR (altera apenas o status dele)
     if request.user.perfil == 'tutor':
         tema.status_tutor = novo_status
         tema.save()
         messages.success(request, f"Status do tutor atualizado para: {novo_status}")
         return redirect('lista_estudantes') 
 
-    # Lógica para COORDENAÇÃO (altera o status de coordenação)
     if request.user.perfil == 'cordenacao':
         
         tema.status_coordenacao = novo_status
@@ -132,10 +120,6 @@ def alterar_status_tema(request, tema_id, novo_status):
 
 
 def get_temas_filtrados(user, status_aprovado=True):
-    """
-    Função utilitária para centralizar a lógica de permissão e filtragem.
-    """
-    # Filtra por status usando uma condição booleana
     if status_aprovado:
         queryset = Tema.objects.filter(status_final='aprovado')
     else:
@@ -173,7 +157,6 @@ def alterar_status_multiplos(request):
 
     temas = Tema.objects.filter(id__in=ids)
 
-    # --- APENAS PARA APROVAR ---
     if acao == "aprovar":
         nao_aprovados = temas.exclude(status_tutor="aprovado")
 
@@ -199,7 +182,6 @@ def criar_ou_editar_tema(request):
     if request.method != "POST":
         return redirect("dashboard_estudante")
     
-    # 1. VALIDAÇÃO DE PROCESSO ABERTO
     hoje = timezone.now().date()
     if not request.user.curso:
         messages.error(request, "Você precisa estar vinculado a um curso para submeter temas.")
@@ -216,7 +198,6 @@ def criar_ou_editar_tema(request):
         messages.error(request, f"O período de submissão de temas para o curso {request.user.curso.nome} está fechado ou não foi iniciado.")
         return redirect("dashboard_estudante")
 
-    # 2. CAPTURA DE DADOS
     titulo = request.POST.get('titulo')
     descricao = request.POST.get('descricao')
     resumo = request.FILES.get('resumo')
@@ -237,12 +218,10 @@ def criar_ou_editar_tema(request):
 
     try:
         if tema_existente:
-            # Só permite editar se foi rejeitado pela coordenação
             if tema_existente.status_coordenacao != "rejeitado":
                 messages.error(request, "Não é possível modificar o tema enquanto ele não for rejeitado pela coordenação.")
                 return redirect("dashboard_estudante")
 
-            # Atualiza o tema existente
             tema_existente.titulo = titulo
             tema_existente.descricao = descricao
             if resumo:
@@ -253,12 +232,11 @@ def criar_ou_editar_tema(request):
             tema_existente.tutor_indicado = tutor
             tema_existente.status_tutor = 'pendente'
             tema_existente.status_coordenacao = 'pendente'
-            tema_existente.save() # O save() chamará o seu logic de status_final
+            tema_existente.save()
             
             messages.success(request, "Tema atualizado com sucesso e enviado para nova aprovação.")
         
         else:
-            # Cria novo tema
             Tema.objects.create(
                 estudante=request.user,
                 titulo=titulo,
@@ -272,7 +250,6 @@ def criar_ou_editar_tema(request):
             messages.success(request, "Tema enviado com sucesso.")
 
     except Exception as e:
-        # Captura qualquer ValidationError do model ou erro de upload
         messages.error(request, f"Erro ao processar: {e}")
     
     return redirect("dashboard_estudante")
@@ -285,7 +262,6 @@ def alterar_status_tema_tutor(request, tema_id, novo_status):
         return redirect('dashboard_tutor')
 
     tema = get_object_or_404(Tema, id=tema_id)
-    # Tutor so pode alterar o status do seu tutorando Tela Preta ...
     if request.user.perfil == 'tutor' and tema.tutor_indicado != request.user:
         messages.error(request, "Você não pode alterar status de temas que não são seus.")
         return redirect('dashboard_tutor')
@@ -346,7 +322,6 @@ def lista_todos_temas_geral(request):
 
 @login_required
 def adicionar_orientador(request, tema_id):
-    # Garante que apenas a coordenação acesse
     if request.user.perfil != 'cordenacao':
         messages.error(request, "Acesso negado. Apenas a coordenação pode atribuir orientadores.")
         return redirect('admink')
@@ -359,15 +334,13 @@ def adicionar_orientador(request, tema_id):
         if tutor_id:
             tutor = get_object_or_404(Usuario, id=tutor_id)
             
-            # Atribuição e Aprovação Automática
             tema.tutor_indicado = tutor
             tema.status_tutor = 'aprovado'
             tema.status_coordenacao = 'aprovado'
-            # O método save() do seu model já cuidará de definir o status_final como 'aprovado'
             tema.save()
             
             messages.success(request, f"Orientador {tutor.nome} atribuído e tema aprovado com sucesso!")
-            return redirect('lista_estudantes') # Ou a rota que desejar
+            return redirect('lista_estudantes')
         else:
             messages.error(request, "Por favor, selecione um orientador.")
 
@@ -388,12 +361,10 @@ def gerar_buffer_listagem_temas():
     elements = []
     styles = getSampleStyleSheet()
     
-    # Estilos Personalizados
     style_title = ParagraphStyle(name='Title_ISP', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=12, alignment=TA_CENTER)
     style_header_table = ParagraphStyle(name='HeaderTable', fontName='Helvetica-Bold', fontSize=9, leading=10, textColor=colors.whitesmoke)
     style_cell = ParagraphStyle(name='CellTable', fontName='Helvetica', fontSize=8, leading=10)
 
-    # --- Logotipo ---
     relative_path = 'imgs/icons/finalispbie.jpg'
     logo_path = finders.find(relative_path) or os.path.join(settings.STATIC_ROOT, relative_path)
     
@@ -409,8 +380,6 @@ def gerar_buffer_listagem_temas():
     elements.append(Paragraph("LISTAGEM DE ESTUDANTES E TEMAS APROVADOS", style_title))
     elements.append(Spacer(1, 0.8*cm))
 
-    # --- Tabela de Dados ---
-    # Cabeçalho da Tabela
     header = [
         Paragraph("Nº", style_header_table),
         Paragraph("Estudante", style_header_table),
@@ -420,7 +389,6 @@ def gerar_buffer_listagem_temas():
     
     dados_tabela = [header]
     
-    # Busca Temas Aprovados
     temas = Tema.objects.filter(status_final='aprovado').select_related('estudante', 'tutor_indicado').order_by('estudante__nome')
 
     for i, tema in enumerate(temas, 1):
@@ -434,22 +402,20 @@ def gerar_buffer_listagem_temas():
         ]
         dados_tabela.append(linha)
 
-    # Configuração das larguras das colunas (Total ~18cm para A4)
     tabela = Table(dados_tabela, colWidths=[1*cm, 5*cm, 8*cm, 4*cm])
     
     tabela.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')), # Cor de fundo do cabeçalho
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2c3e50')),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.white]) # Listras zebradas
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.white])
     ]))
     
     elements.append(tabela)
     
-    # Rodapé de Data
     elements.append(Spacer(1, 1*cm))
     data_hoje = timezone.now().strftime('%d/%m/%Y às %H:%M')
     elements.append(Paragraph(f"Relatório extraído em: {data_hoje}", style_cell))
@@ -462,16 +428,12 @@ def gerar_buffer_listagem_temas():
 
 @perfil_requerido(*PERFIS_GESTAO)
 def exportar_todos_temas_pdf(request):
-    """
-    View que gera o PDF e força o download imediato (attachment).
-    """
     pdf_conteudo = gerar_buffer_listagem_temas()
     
     response = HttpResponse(pdf_conteudo, content_type='application/pdf')
     data_str = timezone.now().strftime('%d_%m_%Y')
     nome_arq = f"Relatorio_Temas_Aprovados_{data_str}.pdf"
     
-    # O segredo está aqui: 'attachment' força o download pelo navegador
     response['Content-Disposition'] = f'attachment; filename="{nome_arq}"'
     
     return response
@@ -506,14 +468,6 @@ def despachar_para_cientifica(request):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def area_cientifica_temas(request):
-    """
-    View para listar temas aprovados agrupados por curso.
-    Filtra apenas temas onde o status_final é 'aprovado'.
-    """
-    
-    # 1. Recuperamos os temas aprovados
-    # É fundamental usar select_related para evitar múltiplas consultas ao banco (N+1)
-    # Ordenamos por curso para que o groupby funcione corretamente
     temas_aprovados = Tema.objects.filter(
         status_final='aprovado'
     ).select_related(
@@ -521,10 +475,8 @@ def area_cientifica_temas(request):
         'tutor_indicado'
     ).order_by('estudante__curso__nome', 'data_envio')
 
-    # 2. Agrupamos os temas por curso
     temas_por_curso = []
     
-    # O groupby agrupa itens consecutivos que possuem a mesma chave
     for curso_nome, grupo in groupby(temas_aprovados, lambda x: x.estudante.curso.nome if x.estudante.curso else "Sem Curso"):
         temas_por_curso.append({
             'curso': curso_nome,

@@ -1,7 +1,4 @@
-"""python manage.py backup_sgtf [--media] [--pasta CAMINHO]
-
-Cria uma cópia de segurança (ZIP) igual à da página de administração.
-"""
+"""python manage.py backup_sgtf [--media] [--pasta CAMINHO]"""
 
 from pathlib import Path
 

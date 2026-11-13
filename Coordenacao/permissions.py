@@ -1,14 +1,4 @@
-"""Controlo de acesso por perfil de utilizador.
-
-Uso:
-
-    @perfil_requerido(*PERFIS_GESTAO)
-    def minha_view(request): ...
-
-O decorador já inclui ``login_required``: utilizadores anónimos são
-redireccionados para o login e utilizadores sem o perfil adequado recebem
-uma página 403.
-"""
+"""Controlo de acesso por perfil de utilizador."""
 
 from functools import wraps
 
@@ -23,7 +13,7 @@ PERFIL_DAC = "dac"
 PERFIL_TUTOR = "tutor"
 PERFIL_ESTUDANTE = "estudante"
 
-# Perfis que utilizam o painel de gestão (admin/base.html).
+# perfis que usam o painel de gestão (admin/base.html)
 PERFIS_GESTAO = (
     PERFIL_COORDENACAO,
     PERFIL_PRESIDENTE,
@@ -34,15 +24,12 @@ PERFIS_GESTAO = (
 
 
 def tem_perfil(user, *perfis):
-    """True se o utilizador estiver autenticado e tiver um dos perfis (superuser passa sempre)."""
     if not user.is_authenticated:
         return False
     return user.is_superuser or user.perfil in perfis
 
 
 def perfil_requerido(*perfis):
-    """Restringe a view a utilizadores autenticados com um dos perfis indicados."""
-
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped(request, *args, **kwargs):
@@ -56,8 +43,6 @@ def perfil_requerido(*perfis):
 
 
 def superuser_requerido(view_func):
-    """Restringe a view ao superadministrador (ex.: cópias de segurança)."""
-
     @wraps(view_func)
     def _wrapped(request, *args, **kwargs):
         if not request.user.is_superuser:
@@ -68,6 +53,5 @@ def superuser_requerido(view_func):
 
 
 def garantir_acesso_estudante(user, estudante):
-    """Um estudante só acede aos seus próprios documentos; os restantes perfis acedem a todos."""
     if user.perfil == PERFIL_ESTUDANTE and not user.is_superuser and user.pk != estudante.pk:
         raise PermissionDenied("Só pode aceder aos seus próprios documentos.")

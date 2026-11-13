@@ -5,7 +5,6 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <!-- Cabeçalho da Página -->
         <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 pb-5 border-b border-gray-200">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
@@ -28,7 +27,6 @@
             </div>
         </div>
 
-        <!-- Lista de Notificações -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div class="divide-y divide-gray-100">
                 
@@ -54,7 +52,6 @@
                                     {{ notificacao.mensagem }}
                                 </p>
 
-                                <!-- Botão de Link (Adicionado) -->
                                 {% if notificacao.link %}
                                 <div class="pt-1">
                                     <a href="{{ notificacao.link }}" class="text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1">

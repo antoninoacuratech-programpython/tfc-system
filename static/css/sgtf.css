@@ -1,7 +1,3 @@
-/* ==========================================================================
-   SGTF — Identidade visual partilhada
-   Cores institucionais derivadas do logótipo do ISP-Bié.
-   ========================================================================== */
 
 :root {
   --sgtf-primary: #1f3a93;
@@ -26,13 +22,9 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
 .material-icons-sharp { font-size: 1.25rem; line-height: 1; vertical-align: middle; user-select: none; }
 
-/* --------------------------------------------------------------- Shell --- */
-/* Navegação adaptativa (modelo Material 3 / Flutter):
-   - Compacto  (< 768px):  barra de navegação inferior + menu deslizante (drawer)
-   - Médio     (768–1279): navigation rail só com ícones; expande sobre o conteúdo
-   - Expandido (>= 1280px): menu lateral completo e fixo                              */
 :root { --sgtf-rail-w: 5.5rem; --sgtf-bnav-h: 4.25rem; }
 
+/* estrutura: menu lateral, barra de topo e barra inferior no telemóvel */
 .sgtf-app { height: 100vh; height: 100dvh; overflow: hidden; }
 
 .sgtf-skip {
@@ -107,7 +99,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
   background: var(--sgtf-red); color: #fff; font-size: .6875rem; font-weight: 700; line-height: 1.25rem; text-align: center;
 }
 
-/* Barra superior (App Bar) */
 .sgtf-topbar {
   position: sticky; top: 0; z-index: 30; flex-shrink: 0;
   display: flex; align-items: center; justify-content: space-between; gap: .75rem;
@@ -131,7 +122,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
   font-size: .75rem; color: var(--sgtf-muted);
 }
 
-/* Barra de navegação inferior (NavigationBar) */
 .sgtf-bottom-nav {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
   display: flex; justify-content: space-around; align-items: stretch;
@@ -161,7 +151,7 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
   border-radius: 99px; background: var(--sgtf-red); color: #fff; font-size: .625rem; line-height: 1rem; text-align: center;
 }
 
-/* ---- Médio: navigation rail (768–1279px) ---- */
+/* a partir do tablet a barra inferior desaparece */
 @media (min-width: 768px) {
   .sgtf-bottom-nav { display: none; }
   .sgtf-topbar-logo { display: none; }
@@ -173,7 +163,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 
 }
 
-/* Regras específicas do rail (apenas tablet) */
 @media (min-width: 768px) and (max-width: 1279px) {
   .sgtf-sidebar:not(.is-open) { width: var(--sgtf-rail-w); }
   .sgtf-sidebar:not(.is-open) .sgtf-sidebar__brand { flex-direction: column; padding: 1rem .5rem .75rem; gap: .75rem; }
@@ -201,7 +190,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
   .sgtf-sidebar.is-open { width: var(--sgtf-sidebar-w); }
 }
 
-/* ---- Expandido: menu lateral completo (>= 1280px) ---- */
 @media (min-width: 1280px) {
   .sgtf-main { padding-left: var(--sgtf-sidebar-w); }
   .sgtf-sidebar, .sgtf-sidebar:not(.is-open) { width: var(--sgtf-sidebar-w); }
@@ -212,7 +200,7 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
   .sgtf-topbar { padding: 0 2rem; }
 }
 
-/* --------------------------------------------------------- Componentes --- */
+/* componentes */
 .sgtf-icon-btn {
   display: inline-flex; align-items: center; justify-content: center;
   width: 2.5rem; height: 2.5rem; border-radius: 999px; color: #475569; transition: background .15s, color .15s;
@@ -249,7 +237,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #d5dbe7; border-radius: 99px; }
 
-/* Alertas (mensagens do Django) */
 .sgtf-alerts { display: grid; gap: .625rem; margin-bottom: 1.25rem; }
 .sgtf-alert {
   display: flex; align-items: flex-start; gap: .75rem; padding: .85rem 1rem;
@@ -269,7 +256,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 @keyframes sgtf-page { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes sgtf-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
-/* Utilitários reutilizáveis nas páginas */
 .sgtf-card { background: #fff; border: 1px solid var(--sgtf-border); border-radius: var(--sgtf-radius); box-shadow: 0 1px 2px rgba(15,27,61,.04); }
 .sgtf-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
@@ -288,8 +274,7 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
 .sgtf-input:focus { outline: none; border-color: var(--sgtf-primary); box-shadow: 0 0 0 4px rgba(31, 58, 147, .12); }
 .sgtf-label { display: block; margin-bottom: .375rem; font-size: .8125rem; font-weight: 600; color: #334155; }
 
-
-/* ----------------------------------------------------- Autenticação --- */
+/* login e registo */
 .sgtf-auth {
   position: relative; min-height: 100vh; min-height: 100dvh; overflow: hidden;
   display: flex; align-items: center; justify-content: center;
@@ -300,7 +285,6 @@ body { font-family: 'Inter', ui-sans-serif, system-ui, sans-serif; }
     radial-gradient(600px 420px at 0% 100%, rgba(31, 168, 58, .16), transparent 65%),
     linear-gradient(165deg, #0b1533 0%, #13245a 55%, #1a3079 100%);
 }
-/* textura de pontos */
 .sgtf-auth::before {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image: radial-gradient(rgba(255,255,255,.07) 1px, transparent 1px);
@@ -362,11 +346,9 @@ button.sgtf-auth-icon:hover { color: var(--sgtf-primary); background: #f1f5f9; }
 
 .sgtf-auth .sgtf-alert { box-shadow: 0 4px 14px rgba(0,0,0,.18); }
 
-/* Ecrã dividido no computador: imagem à esquerda, formulário à direita */
 .sgtf-auth-shell { min-height: 100vh; min-height: 100dvh; display: grid; grid-template-columns: minmax(0, 1fr); background: #0b1533; }
 .sgtf-auth-hero { display: none; position: relative; overflow: hidden; }
 .sgtf-auth-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 62% 30%; }
-/* transição suave da foto para o painel escuro */
 .sgtf-auth-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 82%, rgba(11,21,51,.35)); }
 @media (min-width: 1024px) {
   .sgtf-auth-shell { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -380,43 +362,35 @@ button.sgtf-auth-icon:hover { color: var(--sgtf-primary); background: #f1f5f9; }
   .sgtf-auth__logo { width: 5rem; height: 5rem; }
 }
 
-/* ------------------------------------------- Conteúdo adaptativo --- */
-/* Regras globais que adaptam as páginas existentes a qualquer largura,
-   sem ter de alterar cada template. */
+/* ajustes gerais para as páginas antigas caberem em qualquer ecrã */
 .sgtf-content img, .sgtf-content video, .sgtf-content canvas { max-width: 100%; }
 .sgtf-content img { height: auto; }
 .sgtf-content [class*="w-["], .sgtf-content [class*="max-w-"] { max-width: 100%; }
 .sgtf-content pre { white-space: pre-wrap; overflow-wrap: anywhere; }
-/* Itens flexíveis podem encolher abaixo do tamanho do conteúdo (evita transbordo em linhas como a do chat) */
 .sgtf-content .flex-1, .sgtf-content .grow, .sgtf-content .flex-grow { min-width: 0; }
 .sgtf-content p, .sgtf-content h1, .sgtf-content h2, .sgtf-content h3, .sgtf-content td, .sgtf-content dd { overflow-wrap: anywhere; }
 
-/* Tabelas: rolagem horizontal suave quando não cabem */
 .sgtf-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-/* Janelas modais: nunca maiores que o ecrã */
 .fixed.inset-0 [class*="max-w-"], .fixed.inset-0 .rounded-2xl, .fixed.inset-0 .rounded-3xl {
   max-width: min(100%, calc(100vw - 1.5rem));
 }
 .fixed.inset-0 [class*="max-w-"] { max-height: calc(100dvh - 2rem); overflow-y: auto; }
 
 @media (max-width: 767px) {
-  /* Grelhas sem variante responsiva passam a uma coluna */
-  .sgtf-content [class~="grid-cols-2"]:not([class*=":grid-cols-"]),
+    .sgtf-content [class~="grid-cols-2"]:not([class*=":grid-cols-"]),
   .sgtf-content [class~="grid-cols-3"]:not([class*=":grid-cols-"]),
   .sgtf-content [class~="grid-cols-4"]:not([class*=":grid-cols-"]),
   .sgtf-content [class~="grid-cols-5"]:not([class*=":grid-cols-"]),
   .sgtf-content [class~="grid-cols-6"]:not([class*=":grid-cols-"]) { grid-template-columns: minmax(0, 1fr); }
   .sgtf-content [class*="col-span-"]:not([class*=":col-span-"]) { grid-column: auto; }
 
-  /* Cabeçalhos de página com título + botões: quebram linha em vez de transbordar */
-  .sgtf-content .flex.justify-between:not(.flex-nowrap):not(.flex-col) { flex-wrap: wrap; row-gap: .75rem; }
+    .sgtf-content .flex.justify-between:not(.flex-nowrap):not(.flex-col) { flex-wrap: wrap; row-gap: .75rem; }
   .sgtf-content .flex.items-center.gap-2:not(.flex-nowrap),
   .sgtf-content .flex.items-center.gap-3:not(.flex-nowrap),
   .sgtf-content .flex.items-center.gap-4:not(.flex-nowrap) { flex-wrap: wrap; }
 
-  /* Espaçamentos e títulos proporcionais ao ecrã */
-  .sgtf-content .p-12, .sgtf-content .p-10, .sgtf-content .p-8 { padding: 1.25rem; }
+    .sgtf-content .p-12, .sgtf-content .p-10, .sgtf-content .p-8 { padding: 1.25rem; }
   .sgtf-content .px-12, .sgtf-content .px-10, .sgtf-content .px-8 { padding-left: 1.25rem; padding-right: 1.25rem; }
   .sgtf-content .py-12, .sgtf-content .py-10 { padding-top: 1.5rem; padding-bottom: 1.5rem; }
   .sgtf-content .gap-8, .sgtf-content .gap-10 { gap: 1.25rem; }
@@ -428,16 +402,13 @@ button.sgtf-auth-icon:hover { color: var(--sgtf-primary); background: #f1f5f9; }
   .sgtf-content .whitespace-nowrap { white-space: normal; }
   .sgtf-content .min-h-screen { min-height: auto; }
 
-  /* Campos com 16px evitam o zoom automático no iPhone; alvos de toque >= 44px */
-  .sgtf-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    .sgtf-content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
   .sgtf-content select, .sgtf-content textarea { font-size: 16px; }
   .sgtf-content button, .sgtf-content a.inline-flex, .sgtf-content [type="submit"] { min-height: 2.5rem; }
 
-  /* Botões principais ocupam a largura em formulários */
-  .sgtf-content form:not(.flex) > [type="submit"]:not(td *):not(.fixed *), .sgtf-content form:not(.flex) > div > [type="submit"]:not(td *):not(.fixed *) { width: 100%; justify-content: center; }
+    .sgtf-content form:not(.flex) > [type="submit"]:not(td *):not(.fixed *), .sgtf-content form:not(.flex) > div > [type="submit"]:not(td *):not(.fixed *) { width: 100%; justify-content: center; }
 
-  /* ---- Tabelas transformadas em cartões (padrão de lista Material) ---- */
-  .sgtf-rtable, .sgtf-rtable tbody, .sgtf-rtable tr, .sgtf-rtable td { display: block; width: 100%; }
+    .sgtf-rtable, .sgtf-rtable tbody, .sgtf-rtable tr, .sgtf-rtable td { display: block; width: 100%; }
   .sgtf-rtable { min-width: 0 !important; border: 0 !important; background: transparent !important; }
   .sgtf-rtable thead { display: none; }
   .sgtf-rtable tbody { border: 0 !important; }
@@ -464,14 +435,12 @@ button.sgtf-auth-icon:hover { color: var(--sgtf-primary); background: #f1f5f9; }
   .sgtf-table-wrap:has(.sgtf-rtable), .overflow-x-auto:has(> .sgtf-rtable) { overflow: visible; border: 0 !important; box-shadow: none !important; background: transparent !important; }
 }
 
-/* Tablet: grelhas de 4+ colunas passam a 2 */
 @media (min-width: 768px) and (max-width: 1023px) {
   .sgtf-content [class~="grid-cols-4"]:not([class*="md:grid-cols-"]):not([class*="lg:grid-cols-"]),
   .sgtf-content [class~="grid-cols-5"]:not([class*="md:grid-cols-"]):not([class*="lg:grid-cols-"]),
   .sgtf-content [class~="grid-cols-6"]:not([class*="md:grid-cols-"]):not([class*="lg:grid-cols-"]) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Efeito de toque (ripple) */
 .sgtf-ripple-host { position: relative; overflow: hidden; }
 .sgtf-ripple {
   position: absolute; border-radius: 50%; pointer-events: none; transform: scale(0);
@@ -479,7 +448,6 @@ button.sgtf-auth-icon:hover { color: var(--sgtf-primary); background: #f1f5f9; }
 }
 @keyframes sgtf-ripple { to { transform: scale(2.6); opacity: 0; } }
 
-/* ------------------------------------------------------------ Impressão --- */
 @media print {
   .sgtf-sidebar, .sgtf-topbar, .sgtf-footer, .sgtf-alerts { display: none !important; }
   .sgtf-app, .sgtf-main, .sgtf-content { display: block; height: auto; overflow: visible; padding: 0; }

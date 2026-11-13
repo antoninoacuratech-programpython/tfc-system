@@ -11,7 +11,6 @@
     <p class="mt-1 text-sm text-slate-500">Descarregue uma cópia completa dos dados do sistema para guardar em local seguro.</p>
   </div>
 
-  <!-- O que vai na cópia -->
   <div class="grid grid-cols-2 gap-3 md:grid-cols-5">
     <div class="sgtf-card p-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Utilizadores</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.utilizadores }}</p></div>
     <div class="sgtf-card p-4"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Temas</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.temas }}</p></div>
@@ -20,7 +19,6 @@
     <div class="sgtf-card col-span-2 p-4 md:col-span-1"><p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Ficheiros</p><p class="mt-1 text-2xl font-extrabold text-slate-900">{{ resumo.ficheiros }}</p><p class="text-xs text-slate-500">{{ resumo.tamanho_media }}</p></div>
   </div>
 
-  <!-- Criar cópia -->
   <form method="post" action="{% url 'criar_backup' %}" class="sgtf-card p-5 md:p-6">
     {% csrf_token %}
     <div class="flex items-start gap-4">
@@ -49,7 +47,6 @@
     </div>
   </form>
 
-  <!-- Histórico -->
   <div class="sgtf-card overflow-hidden">
     <div class="flex items-center justify-between border-b border-slate-100 px-5 py-4">
       <h3 class="text-base font-bold text-slate-900">Histórico de cópias</h3>

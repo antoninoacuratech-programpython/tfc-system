@@ -4,7 +4,6 @@ from .models import NotificacaoFinal
 
 
 def notificacoes_usuario(request):
-    """Disponibiliza as notificações do utilizador autenticado para todos os templates."""
     if request.user.is_authenticated:
         notificacoes = NotificacaoFinal.objects.filter(usuario=request.user).order_by("-criada_em")
         return {
@@ -15,7 +14,6 @@ def notificacoes_usuario(request):
 
 
 def instituicao(request):
-    """Identidade institucional usada nos cabeçalhos, rodapés e títulos."""
     return {
         "INSTITUICAO_NOME": settings.INSTITUICAO_NOME,
         "INSTITUICAO_SIGLA": settings.INSTITUICAO_SIGLA,

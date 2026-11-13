@@ -12,11 +12,9 @@
         </div>
     </div>
 
-    <!-- Adicionado enctype="multipart/form-data" para permitir upload de arquivos -->
     <form method="POST" enctype="multipart/form-data" class="bg-white shadow-lg rounded-b-2xl border p-6 md:p-10 space-y-8">
         {% csrf_token %}
 
-        <!-- Informações do Aluno (Somente Leitura) -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-gray-100">
             <div class="space-y-1">
                 <label class="text-xs font-bold text-gray-400 uppercase">Nome Completo</label>
@@ -40,7 +38,6 @@
             </div>
         </div>
 
-        <!-- Campos de Texto e Seleção -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="space-y-2">
                 <label for="periodo" class="block text-sm font-bold text-gray-700">Período</label> 
@@ -72,7 +69,6 @@
             </div>
         </div>
 
-        <!-- SEÇÃO DE DOCUMENTOS -->
         <div class="pt-6 border-t border-gray-100">
             <h3 class="text-sm font-bold text-gray-400 uppercase mb-4">Documentação Necessária (PDF/Imagem)</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -101,7 +97,6 @@
                         class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary hover:file:bg-blue-100">
                 </div>
 
-                <!-- CAMPO ADICIONADO: BILHETE DE IDENTIDADE -->
                 <div class="space-y-2">
                     <label for="copia_bi" class="block text-sm font-bold text-gray-700">Cópia do Bilhete de Identidade (B.I.)</label>
                     <input type="file" name="copia_bi" id="copia_bi" required
@@ -111,7 +106,6 @@
             </div>
         </div>
 
-        <!-- Botões de Ação -->
         <div class="flex flex-col md:flex-row gap-4 pt-6">
             <button type="submit" 
                 class="flex-1 bg-primary hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition duration-300 flex items-center justify-center gap-2">

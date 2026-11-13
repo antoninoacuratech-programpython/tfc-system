@@ -2,7 +2,6 @@
 
 {% block content %}
 <div class="p-6 max-w-7xl mx-auto">
-    <!-- Cabeçalho com Navegação -->
     <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
             <nav class="flex items-center text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
@@ -14,7 +13,6 @@
                 Painel de Validação
             </h1>
 
- 
         </div>
         
         <div class="bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
@@ -34,7 +32,6 @@
             </a>
     </div>
 
-    <!-- Tabela de Pré-defesas -->
     <div class="bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -49,7 +46,6 @@
                 <tbody class="divide-y divide-gray-50">
                     {% for pre in predefesas %}
                     <tr class="hover:bg-blue-50/30 transition-colors group">
-                        <!-- Estudante e Tema -->
                         <td class="px-6 py-6">
                             <div class="flex items-center gap-4">
                                 <div class="h-12 w-12 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
@@ -62,7 +58,6 @@
                             </div>
                         </td>
 
-                        <!-- Mesa de Júri -->
                         <td class="px-6 py-6">
                             <div class="space-y-1">
                                 <div class="flex items-center gap-2">
@@ -76,7 +71,6 @@
                             </div>
                         </td>
 
-                        <!-- Agendamento -->
                         <td class="px-6 py-6 text-center">
                             <div class="inline-flex flex-col items-center bg-gray-50 px-4 py-2 rounded-2xl border border-gray-100">
                                 <span class="text-xs font-bold text-gray-800">{{ pre.data|date:"d/m/Y" }}</span>
@@ -84,7 +78,6 @@
                             </div>
                         </td>
 
-                        <!-- Ações -->
                         <td class="px-6 py-6 text-right">
                             <div class="flex justify-end gap-2">
                                 <a href="{% url 'pdf_predefesa' pre.id %}" target="_blank" class="p-2.5 bg-white border border-gray-200 text-gray-400 rounded-xl hover:text-red-600 hover:border-red-100 hover:bg-red-50 transition-all shadow-sm" title="Gerar Guia">

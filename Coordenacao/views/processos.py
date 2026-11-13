@@ -32,7 +32,6 @@ def criar_processo(request):
         data_termino = request.POST.get('data_termino')
         curso_id = request.POST.get('curso')
 
-        # Validação manual simples
         if data_termino < data_inicio:
             messages.error(request, "A data de término não pode ser menor que a de início.")
             return redirect('lista_processos')
@@ -65,7 +64,6 @@ def alternar_status_processo(request, pk):
 @perfil_requerido(*PERFIS_GESTAO)
 @require_POST
 def editar_processo(request, pk):
-    # 2. Corrija a chamada da função aqui
     processo = get_object_or_404(ProcessoEtapa, pk=pk)
     titulo = request.POST.get('titulo')
     curso_id = request.POST.get('curso')
@@ -89,7 +87,6 @@ def editar_processo(request, pk):
 @perfil_requerido(*PERFIS_GESTAO)
 @require_POST
 def eliminar_processo(request, pk):
-    # 3. Corrija a chamada da função aqui também
     processo = get_object_or_404(ProcessoEtapa, pk=pk)
     titulo = processo.titulo
     try:
@@ -103,9 +100,7 @@ def eliminar_processo(request, pk):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def gerir_calendarios(request):
-    # AÇÃO: CRIAR
     if request.method == 'POST' and 'criar' in request.POST:
-        # Captura e converte a data/hora para objeto datetime
         data_input = request.POST.get('data_aprovacao')
         try:
             data_formatada = datetime.fromisoformat(data_input)
@@ -115,7 +110,7 @@ def gerir_calendarios(request):
 
         CalendarioAprovacao.objects.create(
             titulo=request.POST.get('titulo'),
-            data_aprovacao=data_formatada, # Agora é um objeto datetime correto
+            data_aprovacao=data_formatada,
             periodo=request.POST.get('periodo'),
             curso_id=request.POST.get('curso_id'),
             ativo=True
@@ -123,7 +118,6 @@ def gerir_calendarios(request):
         messages.success(request, "Calendário criado e estudantes notificados!")
         return redirect('gerir_calendarios')
 
-    # AÇÃO: EXCLUIR
     if request.method == 'POST' and 'excluir' in request.POST:
         calendario_id = request.POST.get('calendario_id')
         calendario = get_object_or_404(CalendarioAprovacao, id=calendario_id)
@@ -131,7 +125,6 @@ def gerir_calendarios(request):
         messages.warning(request, "Calendário removido com sucesso.")
         return redirect('gerir_calendarios')
 
-    # LEITURA
     context = {
         'calendarios': CalendarioAprovacao.objects.all().order_by('-data_aprovacao'),
         'cursos': Curso.objects.all()

@@ -7,8 +7,6 @@
 </head>
 <body class="font-sans antialiased">
   <div class="sgtf-auth-shell">
-  <!-- Fotografia (apenas em ecrãs largos). Para trocar, substitua static/imgs/login-foto.jpg.
-       Foto: Unsplash (licença Unsplash), unsplash.com/photos/I4cO1on7mE8 -->
   <aside class="sgtf-auth-hero" aria-hidden="true">
     <img src="{% static 'imgs/login-foto.jpg' %}" alt="">
   </aside>
@@ -28,7 +26,6 @@
   </div>
 
   <script>
-    // Mostrar/ocultar senha: <button data-toggle-senha="idDoCampo">
     document.querySelectorAll("[data-toggle-senha]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const campo = document.getElementById(btn.dataset.toggleSenha);

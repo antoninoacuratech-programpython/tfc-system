@@ -17,7 +17,6 @@ ROTULOS_PERFIL = {
 
 @register.filter
 def rotulo_perfil(user):
-    """Nome legível do perfil do utilizador."""
     if getattr(user, "is_superuser", False) and not getattr(user, "perfil", ""):
         return "Administrador"
     return ROTULOS_PERFIL.get(getattr(user, "perfil", ""), "Utilizador")
@@ -25,7 +24,6 @@ def rotulo_perfil(user):
 
 @register.filter
 def iniciais(user):
-    """Iniciais do utilizador para o avatar (ex.: 'AM')."""
     nome = (getattr(user, "nome", "") or "").strip()
     sobrenome = (getattr(user, "sobrenome", "") or "").strip()
     letras = (nome[:1] + (sobrenome.split()[-1][:1] if sobrenome else "")).upper()

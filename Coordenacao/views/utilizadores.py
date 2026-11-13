@@ -26,12 +26,10 @@ from ..permissions import PERFIS_GESTAO, perfil_requerido
 
 @perfil_requerido(*PERFIS_GESTAO)
 def add_estudante(request):
-    # Passamos os cursos e os tipos de usuário para o template
     cursos = Curso.objects.select_related('departamento')
     tipos_usuario = Usuario.TIPOS_USUARIO
 
     if request.method == "POST":
-        # Captura de dados básicos
         nome = request.POST.get("nome", "").strip()
         sobrenome = request.POST.get("sobrenome", "").strip()
         email = request.POST.get("email", "").strip()
@@ -41,7 +39,6 @@ def add_estudante(request):
         senha = request.POST.get("senha")
         confirmar = request.POST.get("confirmar_senha")
 
-        # 1. Validações
         if senha != confirmar:
             messages.error(request, "As senhas não coincidem.")
             return render(request, "admin/add_estudante.html", {"cursos": cursos, "TIPOS_USUARIO": tipos_usuario})
@@ -50,7 +47,6 @@ def add_estudante(request):
             messages.error(request, "Este email já está registado.")
             return render(request, "admin/add_estudante.html", {"cursos": cursos, "TIPOS_USUARIO": tipos_usuario})
 
-        # 2. Lógica de Curso/Departamento
         curso = None
         departamento = None
         if curso_id:
@@ -61,10 +57,9 @@ def add_estudante(request):
                 messages.error(request, "Curso inválido.")
                 return render(request, "admin/add_estudante.html", {"cursos": cursos, "TIPOS_USUARIO": tipos_usuario})
 
-        # 3. Criação do usuário
         try:
             user = Usuario.objects.create_user(
-                username=email, # Adicionado pois AbstractUser exige username
+                username=email,
                 nome=nome,
                 sobrenome=sobrenome,
                 email=email,
@@ -76,7 +71,7 @@ def add_estudante(request):
                 password=senha
             )
             messages.success(request, f"{perfil.capitalize()} adicionado com sucesso!")
-            return redirect("add_usuario") # Ajuste para a URL correta
+            return redirect("add_usuario")
         except Exception as e:
             messages.error(request, f"Erro ao criar utilizador: {e}")
 
@@ -100,30 +95,25 @@ def alterar_estado_multiplos_usuarios(request):
 
 
 @login_required
-def gerar_pdf_declaracao_orientador(request, usuario_id): # Nome deve ser igual ao da URL
+def gerar_pdf_declaracao_orientador(request, usuario_id):
     try:
-        # 1. Busca do Estudante usando o ID que vem da URL
         estudante = get_object_or_404(Usuario, pk=usuario_id, perfil='estudante')
         
-        # 2. Busca do Tema aprovado
         tema = Tema.objects.filter(estudante=estudante, status_tutor='aprovado').last()
         
         if not tema:
             messages.error(request, "Não foi encontrado um tema aprovado para este estudante.")
             return redirect('lista_estudantes_tutor')
 
-        # 3. Dados do Orientador e Curso
         orientador = tema.tutor_indicado
         nome_curso = str(estudante.curso.nome).upper() if estudante.curso else "ENGENHARIA INFORMÁTICA"
         
-        # Tenta pegar o departamento (ajustado para o padrão comum)
         nome_depto = "ENGENHARIAS"
         if hasattr(estudante, 'departamento') and estudante.departamento:
             nome_depto = str(estudante.departamento.nome).upper()
         elif hasattr(estudante, 'depart') and estudante.depart:
             nome_depto = str(estudante.depart.nome).upper()
 
-        # 4. Preparação do Documento PDF
         buffer = io.BytesIO()
         doc = SimpleDocTemplate(
             buffer, 
@@ -132,13 +122,11 @@ def gerar_pdf_declaracao_orientador(request, usuario_id): # Nome deve ser igual 
         )
         elements = []
 
-        # Estilos
         style_inst_bold = ParagraphStyle('InstBold', fontSize=10, fontName='Helvetica-Bold', leading=12, alignment=TA_CENTER)
         style_dept = ParagraphStyle('Dept', fontSize=9, fontName='Helvetica-Bold', leading=11, alignment=TA_CENTER, textColor=colors.gray)
         style_titulo = ParagraphStyle('Titulo', fontSize=12, fontName='Helvetica-Bold', alignment=TA_CENTER, spaceBefore=20, spaceAfter=20)
         style_corpo = ParagraphStyle('Corpo', fontSize=11, fontName='Helvetica', leading=16, alignment=TA_JUSTIFY)
 
-        # 5. Logo e Cabeçalho
         relative_path = 'imgs/icons/finalispbie.jpg'
         logo_path = finders.find(relative_path)
         
@@ -162,7 +150,6 @@ def gerar_pdf_declaracao_orientador(request, usuario_id): # Nome deve ser igual 
         elements.append(Spacer(1, 5))
         elements.append(HRFlowable(width="100%", thickness=1, color=colors.black))
         
-        # 6. Texto da Declaração
         elements.append(Paragraph("DECLARAÇÃO DE RESPONSABILIDADE DO (A) ORIENTADOR (A)", style_titulo))
 
         nome_est_comp = f"{estudante.nome} {estudante.sobrenome}".upper()
@@ -179,13 +166,11 @@ def gerar_pdf_declaracao_orientador(request, usuario_id): # Nome deve ser igual 
         elements.append(Paragraph(texto, style_corpo))
         elements.append(Spacer(1, 20))
 
-        # Data
         hoje = date.today()
         meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
         data_str = f"Cuito, aos {hoje.day} de {meses[hoje.month-1]} de {hoje.year}"
         elements.append(Paragraph(data_str, ParagraphStyle('Date', alignment=TA_RIGHT, fontSize=11)))
         
-        # 7. Assinaturas
         elements.append(Spacer(1, 40))
         assinaturas = [
             [Paragraph("VISTO<br/>______/_________/20___", style_corpo), ""],
@@ -196,13 +181,11 @@ def gerar_pdf_declaracao_orientador(request, usuario_id): # Nome deve ser igual 
         ]
         elements.append(Table(assinaturas, colWidths=[8*cm, 8*cm]))
 
-        # Rodapé
         elements.append(Spacer(1, 40))
         rodape = Paragraph("Rua Padre Fidalgo entre Artur de Paiva e Francisco de Leite Cardoso S/N, Cidade do Cuito-Bié", 
                            ParagraphStyle('R', fontSize=7, alignment=TA_CENTER, textColor=colors.grey))
         elements.append(rodape)
 
-        # Gerar
         doc.build(elements)
         buffer.seek(0)
         return HttpResponse(buffer, content_type='application/pdf')
@@ -216,7 +199,6 @@ def gerar_pdf_declaracao_orientador(request, usuario_id): # Nome deve ser igual 
 def lista_estudantes_tutor(request):
     if request.user.perfil != 'tutor':
         return redirect("login")
-    # Apenas os estudantes cujo tema tem este tutor como orientador.
     estudantes_vinculados = (
         Usuario.objects.filter(perfil="estudante", temas__tutor_indicado=request.user)
         .select_related("curso")
@@ -233,13 +215,11 @@ def lista_estudantes_tutor(request):
 def gerenciar_professores(request):
     coordenador = request.user
 
-    # 1. FILTRAGEM DE SEGURANÇA: O coordenador só visualiza professores do seu curso OU departamento
     professores = Usuario.objects.filter(
         Q(perfil="presidente") & 
         (Q(curso=coordenador.curso) | Q(depart=coordenador.depart))
     ).order_by('-id')
 
-    # Restringe as opções do formulário apenas ao curso e departamento do coordenador logado
     cursos = Curso.objects.filter(id=coordenador.curso_id) if coordenador.curso_id else Curso.objects.none()
     departamentos = Departamento.objects.filter(id=coordenador.depart_id) if coordenador.depart_id else Departamento.objects.none()
     
@@ -257,8 +237,6 @@ def gerenciar_professores(request):
             return redirect('gerenciar_professores')
             
         try:
-            # 2. VALIDAÇÃO DE SEGURANÇA NO CADASTRO:
-            # Garante que o coordenador não force via HTML a ID de um curso/departamento que não seja o dele
             final_curso_id = curso_id if curso_id and int(curso_id) == coordenador.curso_id else coordenador.curso_id
             final_depart_id = depart_id if depart_id and int(depart_id) == coordenador.depart_id else coordenador.depart_id
 
@@ -267,11 +245,11 @@ def gerenciar_professores(request):
                 sobrenome=sobrenome,
                 email=email,
                 telefone=telefone,
-                perfil="presidente",  # "presidente" mapeia o perfil dos professores no seu modelo
+                perfil="presidente",
                 estado_user="activo",
                 curso_id=final_curso_id,
                 depart_id=final_depart_id,
-                is_staff=True  # Permite acesso à área administrativa se necessário
+                is_staff=True
             )
             
             if password:
@@ -300,7 +278,6 @@ def gerenciar_professores(request):
 def editar_professor(request, pk):
     coordenador = request.user
     
-    # Segurança: O coordenador só captura o professor se ele pertencer ao mesmo curso OU departamento
     professor = get_object_or_404(
         Usuario, 
         Q(pk=pk, perfil="presidente") & 
@@ -313,14 +290,12 @@ def editar_professor(request, pk):
         professor.email = request.POST.get('email')
         professor.telefone = request.POST.get('telefone')
         
-        # Regra de negócio: impede o coordenador de trocar o professor de curso/departamento para fora da sua alçada
         curso_id = request.POST.get('curso')
         depart_id = request.POST.get('depart')
         
         professor.curso_id = curso_id if curso_id else None
         professor.depart_id = depart_id if depart_id else None
         
-        # Atualiza a senha apenas se foi preenchida
         nova_senha = request.POST.get('password')
         if nova_senha and nova_senha.strip() != "":
             professor.password = make_password(nova_senha)
@@ -341,7 +316,6 @@ def editar_professor(request, pk):
 def alternar_status_professor(request, pk):
     coordenador = request.user
     
-    # Segurança: Filtro focado no escopo do coordenador logado
     professor = get_object_or_404(
         Usuario, 
         Q(pk=pk, perfil="presidente") & 
@@ -361,7 +335,6 @@ def alternar_status_professor(request, pk):
 def eliminar_professor(request, pk):
     coordenador = request.user
     
-    # Segurança: Filtro focado no escopo do coordenador logado
     professor = get_object_or_404(
         Usuario, 
         Q(pk=pk, perfil="presidente") & 
@@ -380,10 +353,8 @@ def eliminar_professor(request, pk):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def perfil_documental(request, estudante_id):
-    # Garante segurança no acesso
     estudante = get_object_or_404(Usuario, pk=estudante_id, perfil='estudante')
     
-    # Chama o método que centraliza todos os documentos
     lista_de_documentos = estudante.obter_todos_documentos()
     
     return render(request, 'admin/perfil_documental.html', {

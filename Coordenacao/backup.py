@@ -1,12 +1,4 @@
-"""Cópias de segurança do SGTF.
-
-Gera um ZIP com:
-  - dados.json   todos os dados (formato do `dumpdata` do Django)
-  - media/...    opcional: os ficheiros carregados (PDFs, fotografias)
-  - LEIAME.txt   como repor a cópia
-
-Usado pela página de administração (/backups/) e pelo comando `manage.py backup_sgtf`.
-"""
+"""Cópias de segurança do SGTF."""
 
 import io
 import json
@@ -18,7 +10,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.utils import timezone
 
-# Tabelas que o Django recria sozinho ou que não interessam numa cópia.
+# tabelas que o Django volta a criar sozinho
 EXCLUIR = ["contenttypes", "auth.permission", "sessions", "admin.logentry"]
 
 LEIAME = """SGTF — Cópia de segurança
@@ -44,7 +36,6 @@ def nome_ficheiro(agora=None):
 
 
 def exportar_dados():
-    """Devolve (json_texto, numero_de_registos)."""
     saida = io.StringIO()
     call_command(
         "dumpdata",
@@ -65,7 +56,6 @@ def ficheiros_media():
 
 
 def gerar_zip(incluir_media=False):
-    """Cria o ZIP em memória. Devolve (bytes, info)."""
     texto, n_registos = exportar_dados()
     media = ficheiros_media() if incluir_media else []
     raiz_media = Path(settings.MEDIA_ROOT)
@@ -101,7 +91,6 @@ def tamanho_legivel(n):
 
 
 def resumo_sistema():
-    """Números mostrados na página antes de criar a cópia."""
     from .models import InscricaoTFC, Predefesa, Tema, Usuario
 
     media = ficheiros_media()

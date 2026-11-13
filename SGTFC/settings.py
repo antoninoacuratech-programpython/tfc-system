@@ -1,10 +1,4 @@
-"""
-Configuração do SGTF — Sistema de Gestão de Trabalhos de Fim de Curso.
-
-Todos os valores sensíveis ou que mudam entre ambientes são lidos de variáveis
-de ambiente (ver ``.env.example``). Em desenvolvimento, crie um ficheiro ``.env``
-na raiz do projecto com ``DEBUG=True``.
-"""
+"""Configuração do SGTF — Sistema de Gestão de Trabalhos de Fim de Curso."""
 
 import os
 from pathlib import Path
@@ -14,7 +8,7 @@ from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-try:  # python-dotenv é opcional: carrega o ficheiro .env se existir.
+try:
     from dotenv import load_dotenv
 
     load_dotenv(BASE_DIR / ".env")
@@ -30,11 +24,9 @@ def env_list(name, default=""):
     return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
 
 
-# --------------------------------------------------------------------------- #
-# Núcleo
-# --------------------------------------------------------------------------- #
 DEBUG = env_bool("DEBUG", False)
 
+# em produção a chave vem sempre do ambiente (Render)
 SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     if DEBUG:
@@ -89,22 +81,17 @@ TEMPLATES = [
     },
 ]
 
-# --------------------------------------------------------------------------- #
-# Base de dados — PostgreSQL (Neon/Render) via DATABASE_URL, SQLite em local
-# --------------------------------------------------------------------------- #
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 DATABASES = {
     "default": dj_database_url.parse(
         DATABASE_URL,
         conn_max_age=600,
         conn_health_checks=True,
+        # a Neon pede SSL, o SQLite local não
         ssl_require=DATABASE_URL.startswith(("postgres://", "postgresql://")) and env_bool("DB_SSL", True),
     )
 }
 
-# --------------------------------------------------------------------------- #
-# Autenticação
-# --------------------------------------------------------------------------- #
 AUTH_USER_MODEL = "Coordenacao.Usuario"
 LOGIN_URL = "login"
 LOGOUT_REDIRECT_URL = "login"
@@ -116,28 +103,21 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 horas
+SESSION_COOKIE_AGE = 60 * 60 * 8
 SESSION_EXPIRE_AT_BROWSER_CLOSE = env_bool("SESSION_EXPIRE_AT_BROWSER_CLOSE", False)
 
-# --------------------------------------------------------------------------- #
-# Internacionalização (Angola)
-# --------------------------------------------------------------------------- #
 LANGUAGE_CODE = "pt"
 TIME_ZONE = os.environ.get("TIME_ZONE", "Africa/Luanda")
 USE_I18N = True
 USE_TZ = True
 
-# --------------------------------------------------------------------------- #
-# Ficheiros estáticos e media
-# --------------------------------------------------------------------------- #
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-# Em produção, os uploads devem idealmente ir para um armazenamento externo.
-# SERVE_MEDIA=True permite servi-los pelo próprio Django (útil no Render).
+# na Render não temos armazenamento externo, por isso é o Django que serve os uploads
 SERVE_MEDIA = env_bool("SERVE_MEDIA", DEBUG)
 
 STORAGES = {
@@ -156,9 +136,6 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# --------------------------------------------------------------------------- #
-# Segurança (activa automaticamente fora do modo DEBUG)
-# --------------------------------------------------------------------------- #
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 X_FRAME_OPTIONS = "SAMEORIGIN"
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -171,17 +148,11 @@ if not DEBUG:
     SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", 60 * 60 * 24 * 30))
     SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
 
-# --------------------------------------------------------------------------- #
-# Identidade da instituição (usada nos templates)
-# --------------------------------------------------------------------------- #
 INSTITUICAO_NOME = os.environ.get("INSTITUICAO_NOME", "Instituto Superior Politécnico do Bié")
 INSTITUICAO_SIGLA = os.environ.get("INSTITUICAO_SIGLA", "ISP-Bié")
 SISTEMA_NOME = os.environ.get("SISTEMA_NOME", "SGTF")
 SISTEMA_DESCRICAO = "Sistema de Gestão de Trabalhos de Fim de Curso"
 
-# --------------------------------------------------------------------------- #
-# Registos (logs)
-# --------------------------------------------------------------------------- #
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

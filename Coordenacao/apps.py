@@ -5,5 +5,4 @@ class CoordenacaoConfig(AppConfig):
     name = 'Coordenacao'
 
     def ready(self):
-        # Isso faz o Django registrar os gatilhos no momento que o servidor sobe
         import Coordenacao.signals

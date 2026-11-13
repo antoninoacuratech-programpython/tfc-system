@@ -25,7 +25,6 @@ body {
     align-items: center;
     padding: 70px 10% 0;
 }
-/*................. IMAGEM DO CSS DO CORPO DO LOGIN...................*/
 .home1
 {
     position: relative;
@@ -39,7 +38,6 @@ body {
     align-items: center;
     padding: 70px 10% 0;
 }
-
 
 .home-content{
     max-width: 600px;
@@ -125,5 +123,3 @@ height: auto;
 width: 100%;
 border-radius: 8px;
 }
-/*................. FIM DO CSS DO CORPO 1 DO MENU PRINCIPAL HOME...................*/
-/*................. IMAGEM DO CSS DO CORPO 2 DO MENU PRINCIPAL SERVICE...................*/

@@ -52,17 +52,14 @@ def criar_comunicado(request):
 def lista_comunicados(request):
     from django.db.models import Q
     
-    # Pega o termo de pesquisa do input name="q"
     query = request.GET.get('q', '')
     
     if query:
-        # Pesquisa por data_inicio ou data_fim que contenha o texto digitado
         comunicados = Comunicado.objects.filter(
             Q(data_inicio__icontains=query) | 
             Q(data_fim__icontains=query)
         ).order_by("-id")
     else:
-        # Se não houver pesquisa, mostra todos como você já fazia
         comunicados = Comunicado.objects.all().order_by("-id")
     
     return render(
@@ -107,7 +104,6 @@ def eliminar_comunicado(request, pk):
         messages.success(request, "Comunicado eliminado com sucesso.")
         return redirect("lista_comunicados")
     
-    # A eliminação só é feita via POST (confirmada na lista de comunicados).
     return redirect("lista_comunicados")
 
 
@@ -195,7 +191,6 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf,
 
     elementos = []
 
-    # --- CABEÇALHO INSTITUCIONAL (Logo + Texto) ---
     relative_path = "imgs/icons/finalispbie.jpg"
     logo_path = (
         finders.find(relative_path)
@@ -246,7 +241,6 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf,
     elementos.append(HRFlowable(width="100%", thickness=1, color=colors.grey))
     elementos.append(Spacer(1, 20))
 
-    # --- TÍTULO ---
     elementos.append(Paragraph(
         "COMUNICADO",
         ParagraphStyle(
@@ -258,15 +252,13 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf,
         )
     ))
 
-    # --- CORPO ---
-    from .utils import texto_comunicado_oficial  # ajusta se estiver noutro ficheiro
+    from .utils import texto_comunicado_oficial
 
     corpo = texto_comunicado_oficial(comunicado)
     for linha in corpo.split("\n"):
         if linha.strip():
             elementos.append(Paragraph(linha, style_normal))
 
-    # --- ASSINATURAS ---
     elementos.append(Spacer(1, 30))
 
     elementos.append(Paragraph(
@@ -285,7 +277,6 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf,
         styles["Normal"]
     ))
 
-    # --- RODAPÉ ---
     elementos.append(Spacer(1, 40))
     elementos.append(Paragraph(
         "Rua Padre Fidalgo entre Artur de Paiva e Francisco de Leite Cardoso S/N, "
@@ -308,30 +299,25 @@ def baixar_comunicado_pdf(request, id):
     comunicado = get_object_or_404(Comunicado, id=id)
     buffer = io.BytesIO()
 
-    # --- Configuração do Documento ---
-    # Margem esquerda de 3cm para seguir o padrão oficial
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2.0*cm, leftMargin=3.0*cm,
                             topMargin=1.5*cm, bottomMargin=1.5*cm)
     elementos = []
     
-    # --- Estilos Personalizados ---
     style_header = ParagraphStyle("Header", fontSize=10, fontName="Helvetica-Bold", alignment=TA_CENTER, leading=12)
     style_title = ParagraphStyle("Title", fontSize=14, fontName="Helvetica-Bold", alignment=TA_CENTER, spaceAfter=10, spaceBefore=10)
     style_body = ParagraphStyle("Body", fontSize=10.5, fontName="Helvetica", alignment=TA_JUSTIFY, leading=13, spaceAfter=8)
     style_footer_text = ParagraphStyle("Footer", fontSize=7.5, fontName="Helvetica", alignment=TA_CENTER, textColor=colors.black)
     style_homolog = ParagraphStyle("Homolog", fontSize=8.5, fontName="Helvetica", alignment=TA_LEFT, leading=10)
 
-    # --- 1. Estrutura de Cabeçalho Superior ---
     relative_path = 'imgs/icons/finalispbie.jpg'
     logo_path = finders.find(relative_path)
     
-    logo_w = 2.8*cm  # Largura fixa do logo e da homologação
+    logo_w = 2.8*cm
     try:
         logo_img = Image(logo_path, width=logo_w, height=2.8*cm)
     except:
         logo_img = Paragraph("<b>LOGO</b>", style_header)
 
-    # Conteúdo da Coluna da Esquerda (Logo + Homologação)
     col_esquerda = [
         logo_img,
         Spacer(1, 10),
@@ -343,16 +329,13 @@ def baixar_comunicado_pdf(request, id):
         Paragraph("<i>Professor Catedrático</i>", style_homolog),
     ]
 
-    # Conteúdo da Coluna da Direita (Nomes da Instituição)
     col_direita = [
-        Spacer(1, 0.5*cm), # Alinhamento vertical com o topo do logo
+        Spacer(1, 0.5*cm),
         Paragraph("INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ", style_header),
         Paragraph("DEPARTAMENTO DE INVESTIGAÇÃO CIENTÍFICA, INOVAÇÃO,", style_header),
         Paragraph("EMPREENDEDORISMO E PÓS-GRADUAÇÃO", style_header),
     ]
 
-    # Tabela Mestra do Cabeçalho
-    # Coluna 1: 3cm (Logo/Homolog) | Coluna 2: 12.5cm (Texto Institucional)
     header_master = Table([[col_esquerda, col_direita]], colWidths=[logo_w + 0.5*cm, 12.0*cm])
     header_master.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
@@ -363,10 +346,8 @@ def baixar_comunicado_pdf(request, id):
     elementos.append(header_master)
     elementos.append(Spacer(1, 10))
 
-    # --- 2. Título ---
     elementos.append(Paragraph("COMUNICADO", style_title))
 
-    # --- 3. Corpo do Texto ---
     data_fim_formatada = comunicado.data_fim.strftime('%d de %B de %Y') if comunicado.data_fim else "30 de Março de 2025"
     
     texto_corpo = f"""
@@ -384,16 +365,13 @@ def baixar_comunicado_pdf(request, id):
     """
     elementos.append(Paragraph(texto_corpo, style_body))
 
-    # Observação
     obs_text = f"<b>OBS:.</b> Todos finalistas que reúnam os requisitos acima poderão passar pelo Departamento em referência a partir da data da Publicação do presente comunicado no período compreendido entre as {comunicado.hora_inicio.strftime('%H:%M')} às {comunicado.hora_fim.strftime('%H:%M')} horas."
     elementos.append(Paragraph(obs_text, style_body))
 
-    # Local e Data
     data_extenso = comunicado.data_publicacao.strftime("%d de %B de %Y") if comunicado.data_publicacao else "26 de Fevereiro de 2025"
     elementos.append(Spacer(1, 5))
     elementos.append(Paragraph(f"Departamento de Investigação Científica, Inovação Empreendedorismo e Pós-Graduação do Instituto Superior Politécnico do Bié, no Cuito, aos {data_extenso}.", style_body))
 
-    # --- 4. Assinatura ---
     elementos.append(Spacer(1, 15))
     assinatura_chefe = [
         [Paragraph("<b>A Chefe do Departamento de Investigação Científica</b>", style_header)],
@@ -405,7 +383,6 @@ def baixar_comunicado_pdf(request, id):
     tab_chefe.setStyle(TableStyle([('ALIGN', (0,0), (-1,-1), 'CENTER')]))
     elementos.append(tab_chefe)
 
-    # --- 5. Rodapé Fixo ---
     elementos.append(Spacer(1, 10))
     elementos.append(HRFlowable(width="100%", thickness=0.5, color=colors.black))
     footer_text = """
@@ -414,7 +391,6 @@ def baixar_comunicado_pdf(request, id):
     """
     elementos.append(Paragraph(footer_text, style_footer_text))
 
-    # Construção do PDF
     doc.build(elementos)
     buffer.seek(0)
 

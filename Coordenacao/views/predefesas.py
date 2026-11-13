@@ -31,7 +31,6 @@ from ..permissions import PERFIS_GESTAO, perfil_requerido
 
 @perfil_requerido(*PERFIS_GESTAO)
 def agendar_predefesa(request):
-    # Pegamos o curso do coordenador logado
     curso_coordenador = request.user.curso
 
     if request.method == 'POST':
@@ -69,8 +68,6 @@ def agendar_predefesa(request):
         except Exception as e:
             messages.error(request, f"Erro inesperado: {e}")
 
-
-    # 1. Estudantes: Mesmo curso do coordenador + não ter pré-defesa agendada
     estudantes_disponiveis = Usuario.objects.filter(
         perfil='estudante',
         curso=curso_coordenador
@@ -110,19 +107,15 @@ def lista_predefesas(request):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def gerar_pdf_predefesa(request, pk):
-    # 1. Busca de Dados
     predefesa = get_object_or_404(Predefesa, pk=pk)
     estudante = predefesa.estudante
     
-    # Lógica para o cabeçalho dinâmico
     curso_obj = getattr(estudante, 'curso', None)
     nome_curso = curso_obj.nome.upper() if curso_obj else "ENGENHARIA INFORMÁTICA"
     nome_depto = nome_curso.split()[0] if nome_curso else "ENGENHARIA"
 
-    # 2. Configuração do Response/Buffer
     buffer = io.BytesIO()
     
-    # Definindo as margens para caber a tabela larga do modelo
     doc = SimpleDocTemplate(
         buffer, 
         pagesize=A4, 
@@ -130,7 +123,6 @@ def gerar_pdf_predefesa(request, pk):
     )
     elements = []
 
-    # --- 3. DEFINIÇÃO DE ESTILOS ---
     styles = getSampleStyleSheet()
     
     style_inst_center = ParagraphStyle(
@@ -146,7 +138,6 @@ def gerar_pdf_predefesa(request, pk):
     style_table_header = ParagraphStyle('TableHeader', fontSize=8, fontName='Helvetica-Bold', alignment=TA_CENTER, textColor=colors.whitesmoke)
     style_table_cell = ParagraphStyle('TableCell', fontSize=8, fontName='Helvetica', alignment=TA_CENTER)
 
-    # --- 4. CABEÇALHO INSTITUCIONAL (Logo + Texto) ---
     relative_path = 'imgs/icons/finalispbie.jpg'
     logo_path = finders.find(relative_path) or os.path.join(settings.STATIC_ROOT, relative_path)
     
@@ -171,7 +162,6 @@ def gerar_pdf_predefesa(request, pk):
     elements.append(HRFlowable(width="100%", thickness=1, color=colors.black))
     elements.append(Spacer(1, 15))
 
-    # --- 5. CORPO (Data fixa em Português conforme solicitado) ---
     data_hoje = "14 de Janeiro de 2026"
     elements.append(Paragraph(data_hoje, ParagraphStyle('Date', alignment=TA_RIGHT, fontSize=10)))
     elements.append(Spacer(1, 15))
@@ -181,7 +171,6 @@ def gerar_pdf_predefesa(request, pk):
     elements.append(Paragraph("<b>Assunto:</b> Proposta do Júri para a Predefesa dos estudantes.", styles['Normal']))
     elements.append(Spacer(1, 20))
 
-    # --- 6. TABELA DE JÚRI (Traduzido para Português) ---
     juri_html = (
         f"<b>Presidente:</b> {predefesa.presidente.nome}{predefesa.presidente.sobrenome}<br/>"
         f"<b>1º Vogal:</b> {predefesa.primeiro_vogal.nome} {predefesa.primeiro_vogal.sobrenome}<br/>"
@@ -218,13 +207,11 @@ def gerar_pdf_predefesa(request, pk):
     elements.append(tabela)
     elements.append(Spacer(1, 50))
 
-    # --- 7. ASSINATURA ---
     elements.append(Paragraph("O Coordenador", style_inst_center))
     elements.append(Spacer(1, 25))
     elements.append(Paragraph("_________________________", style_inst_center))
     elements.append(Paragraph("Daysel Labañino Griñan, MsC.", style_inst_center))
 
-    # Construir o PDF
     doc.build(elements)
     
     buffer.seek(0)
@@ -233,12 +220,10 @@ def gerar_pdf_predefesa(request, pk):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def gerar_pdf_todas_predefesas(request):
-    # 1. Busca todas as pré-defesas (ajuste o filtro se necessário, ex: .filter(ativo=True))
     predefesas = Predefesa.objects.select_related(
         'estudante', 'tema', 'presidente', 'primeiro_vogal', 'segundo_vogal', 'secretario'
     ).all().order_by('data', 'hora')
 
-    # 2. Configuração do Buffer
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, 
@@ -247,15 +232,12 @@ def gerar_pdf_todas_predefesas(request):
     )
     elements = []
 
-    # --- 3. DEFINIÇÃO DE ESTILOS ---
     styles = getSampleStyleSheet()
     style_inst_center = ParagraphStyle('InstCenter', fontSize=10, fontName='Helvetica-Bold', leading=14, alignment=TA_CENTER)
     style_dept_center = ParagraphStyle('DeptCenter', fontSize=9, fontName='Helvetica-Bold', leading=12, textColor=colors.HexColor("#64748b"), alignment=TA_CENTER)
     style_table_header = ParagraphStyle('TableHeader', fontSize=8, fontName='Helvetica-Bold', alignment=TA_CENTER, textColor=colors.whitesmoke)
     style_table_cell = ParagraphStyle('TableCell', fontSize=7, fontName='Helvetica', alignment=TA_CENTER)
 
-    # --- 4. CABEÇALHO INSTITUCIONAL ---
-    # Usamos os dados do primeiro estudante ou valores genéricos para o departamento/curso no topo
     nome_depto = "ENGENHARIA" 
     nome_curso = "LISTA GERAL DE PRÉ-DEFESAS"
 
@@ -282,7 +264,6 @@ def gerar_pdf_todas_predefesas(request):
     elements.append(HRFlowable(width="100%", thickness=1, color=colors.black))
     elements.append(Spacer(1, 15))
 
-    # --- 5. CORPO ---
     data_hoje = "14 de Janeiro de 2026"
     elements.append(Paragraph(data_hoje, ParagraphStyle('Date', alignment=TA_RIGHT, fontSize=10)))
     elements.append(Spacer(1, 15))
@@ -291,7 +272,6 @@ def gerar_pdf_todas_predefesas(request):
     elements.append(Paragraph("<b>Assunto:</b> Listagem Geral das Propostas de Júri para Pré-defesas.", styles['Normal']))
     elements.append(Spacer(1, 20))
 
-    # --- 6. TABELA COM TODAS AS LINHAS ---
     tabela_data = [
         [Paragraph("Nº", style_table_header), 
          Paragraph("Data", style_table_header), 
@@ -302,7 +282,6 @@ def gerar_pdf_todas_predefesas(request):
          Paragraph("Júri", style_table_header)]
     ]
 
-    # LOOP PARA ADICIONAR CADA PRÉ-DEFESA
     for i, p in enumerate(predefesas, 1):
         juri_html = (
             f"<b>Pres:</b> {p.presidente.nome}{p.presidente.sobrenome}<br/>"
@@ -322,7 +301,6 @@ def gerar_pdf_todas_predefesas(request):
         ]
         tabela_data.append(linha)
 
-    # Criar a tabela (colWidths ajustados para caber o texto menor)
     tabela = Table(tabela_data, colWidths=[0.7*cm, 1.1*cm, 1.1*cm, 3.2*cm, 4.8*cm, 3*cm, 5.1*cm], repeatRows=1)
     tabela.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#1e293b")),
@@ -334,7 +312,6 @@ def gerar_pdf_todas_predefesas(request):
     elements.append(tabela)
     elements.append(Spacer(1, 40))
 
-    # --- 7. ASSINATURA ---
     elements.append(Paragraph("O Coordenador", style_inst_center))
     elements.append(Spacer(1, 25))
     elements.append(Paragraph("_________________________", style_inst_center))
@@ -376,7 +353,7 @@ def despachar_predefesas_cientifica(request):
 
         if predefesas_a_enviar.exists():
             nova_lista = ListaPreDefesas.objects.create(
-                status='enviado' # Já define como enviado para liberar acesso
+                status='enviado'
             )
             
             nova_lista.predefesas.set(predefesas_a_enviar)
@@ -396,24 +373,21 @@ def despachar_predefesas_cientifica(request):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def lista_cursos_predefesas(request):
-    # 1. Buscamos todos os cursos
     todos_cursos = Curso.objects.all()
     
     cursos_com_dados = []
     
     for curso in todos_cursos:
-        # 2. Filtramos as pré-defesas deste curso que estão em listas com status 'enviado'
         predefesas_enviadas = Predefesa.objects.filter(
             estudante__curso=curso,
             listas__status='enviado'
         ).distinct()
         
-        # 3. Só adicionamos à lista se houver pré-defesas enviadas para este curso
         if predefesas_enviadas.exists():
             cursos_com_dados.append({
                 'curso': curso,
                 'quantidade': predefesas_enviadas.count(),
-                'ultimas_predefesas': predefesas_enviadas.order_by('-data')[:3] # Amostra
+                'ultimas_predefesas': predefesas_enviadas.order_by('-data')[:3]
             })
 
     context = {
@@ -426,7 +400,6 @@ def lista_cursos_predefesas(request):
 @perfil_requerido(*PERFIS_GESTAO)
 def predefesas_por_curso(request, curso_id):
     curso = Curso.objects.get(id=curso_id)
-    # Filtra as pré-defesas do curso que estão em remessas enviadas
     predefesas = Predefesa.objects.filter(
         estudante__curso=curso,
         listas__status='enviado'
@@ -441,36 +414,28 @@ def predefesas_por_curso(request, curso_id):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def editar_predefesa(request, pk):
-    """
-    View para editar data/hora ou a composição do júri.
-    """
     predefesa = get_object_or_404(Predefesa, pk=pk)
     tutores = Usuario.objects.filter(perfil='tutor')
 
     if request.method == 'POST':
         try:
-            # Captura de dados do formulário Tailwind
             data = request.POST.get('data')
             hora = request.POST.get('hora')
             
-            # Atualiza campos cronológicos
             if data: predefesa.data = data
             if hora: predefesa.hora = hora
 
-            # Atualiza IDs das chaves estrangeiras (Júri)
             predefesa.presidente_id = request.POST.get('presidente')
             predefesa.secretario_id = request.POST.get('secretario')
             predefesa.primeiro_vogal_id = request.POST.get('primeiro_vogal')
             predefesa.segundo_vogal_id = request.POST.get('segundo_vogal')
 
-            # O save() executa o full_clean() do Model (valida conflitos e orientador)
             predefesa.save()
             
             messages.success(request, "Agendamento atualizado com sucesso!")
-            return redirect('lista_predefesas') # Ajuste para sua rota principal
+            return redirect('lista_predefesas')
 
         except ValidationError as e:
-            # Captura erros do método clean() do seu Model
             messages.error(request, f"Erro de Validação: {e.message if hasattr(e, 'message') else e}")
         except Exception as e:
             messages.error(request, f"Ocorreu um erro inesperado: {str(e)}")

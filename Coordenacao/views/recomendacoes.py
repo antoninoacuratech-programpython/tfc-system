@@ -31,14 +31,12 @@ from ..permissions import garantir_acesso_estudante
 
 @login_required
 def adicionar_recomendacao(request, tema_id):
-    # Garantir que só tutores acessem
     if request.user.perfil != 'tutor':
         messages.error(request, "Acesso não autorizado.")
         return redirect('dashboard_tutor')
 
     tema = get_object_or_404(Tema, id=tema_id)
 
-    # Pega todas as recomendações do tema Tela preta ....
     recomendacoes = tema.recomendacoes.all().order_by('-data_criacao')
 
     if request.method == 'POST':
@@ -75,7 +73,6 @@ def todas_recomendacoes(request):
 
 @login_required
 def baixar_recomendacoes_pdf(request, estudante_id):
-    # 1. Busca de Dados
     estudante = get_object_or_404(Usuario, id=estudante_id)
     garantir_acesso_estudante(request.user, estudante)
     recomendacoes = Recomendacao.objects.filter(
@@ -86,12 +83,10 @@ def baixar_recomendacoes_pdf(request, estudante_id):
     nome_curso = curso_obj.nome.upper() if curso_obj else "NÃO INFORMADO"
     nome_depto = nome_curso.split()[0] if nome_curso else "GERAL"
 
-    # 2. Configuração do Response
     response = HttpResponse(content_type='application/pdf')
     nome_limpo = f"{estudante.nome}_{estudante.sobrenome}".replace(" ", "_")
     response['Content-Disposition'] = f'attachment; filename="Relatorio_{nome_limpo}.pdf"'
 
-    # 3. Configuração do Documento
     doc = SimpleDocTemplate(
         response, 
         pagesize=A4, 
@@ -99,10 +94,8 @@ def baixar_recomendacoes_pdf(request, estudante_id):
     )
     elements = []
 
-    # --- 4. DEFINIÇÃO DE ESTILOS ---
     styles = getSampleStyleSheet()
     
-    # Estilo do Cabeçalho CENTRALIZADO
     style_inst_center = ParagraphStyle(
         'InstCenter', 
         fontSize=10, 
@@ -128,7 +121,6 @@ def baixar_recomendacoes_pdf(request, estudante_id):
     style_rec_date = ParagraphStyle('RecDate', fontSize=8, fontName='Helvetica', textColor=colors.HexColor("#94a3b8"), alignment=TA_RIGHT)
     style_body = ParagraphStyle('Body', fontSize=10, fontName='Helvetica', leading=14, textColor=colors.HexColor("#334155"), alignment=TA_JUSTIFY)
 
-    # --- 5. CABEÇALHO REESTRUTURADO ---
     relative_path = 'imgs/icons/finalispbie.jpg'
     logo_path = finders.find(relative_path) or os.path.join(settings.STATIC_ROOT, relative_path)
     
@@ -137,18 +129,16 @@ def baixar_recomendacoes_pdf(request, estudante_id):
     except:
         logo = Paragraph("<b>ISPB</b>", style_inst_center)
 
-    # Texto do cabeçalho organizado em blocos
     header_text_content = [
         Paragraph("INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ", style_inst_center),
         Paragraph(f"DEPARTAMENTO DE {nome_depto}", style_dept_center),
         Paragraph(f"CURSO DE {nome_curso}", style_dept_center),
     ]
 
-    # Tabela de cabeçalho: Logo (Esquerda) | Texto (Centro)
     header_table = Table([[logo, header_text_content]], colWidths=[3*cm, 14*cm])
     header_table.setStyle(TableStyle([
         ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('LEFTPADDING', (1,0), (1,0), -1*cm), # Ajuste para centralizar melhor o texto ignorando o offset da logo
+        ('LEFTPADDING', (1,0), (1,0), -1*cm),
     ]))
     
     elements.append(header_table)
@@ -156,7 +146,6 @@ def baixar_recomendacoes_pdf(request, estudante_id):
     elements.append(HRFlowable(width="100%", thickness=0.5, color=colors.HexColor("#e2e8f0")))
     elements.append(Spacer(1, 20))
 
-    # --- 6. IDENTIFICAÇÃO DO ESTUDANTE ---
     elements.append(Paragraph("Relatório Académico", style_h1))
     elements.append(Spacer(1, 10))
     
@@ -180,7 +169,6 @@ def baixar_recomendacoes_pdf(request, estudante_id):
     elements.append(card_table)
     elements.append(Spacer(1, 35))
 
-    # --- 7. HISTÓRICO DE ORIENTAÇÕES ---
     elements.append(Paragraph("HISTÓRICO DE ORIENTAÇÕES", style_card_label))
     elements.append(Spacer(1, 12))
 
@@ -207,7 +195,6 @@ def baixar_recomendacoes_pdf(request, estudante_id):
             elements.append(KeepTogether(rec_table))
             elements.append(Spacer(1, 10))
 
-    # --- 8. RODAPÉ ---
     def footer(canvas, doc):
         canvas.saveState()
         canvas.setFont('Helvetica', 8)

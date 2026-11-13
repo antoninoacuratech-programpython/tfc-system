@@ -12,13 +12,11 @@
         <a href="{% url 'predefesas_por_curso' item.curso.id %}" class="group">
             <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-gray-100 hover:border-blue-300 hover:shadow-2xl hover:shadow-blue-100/50 transition-all duration-500 relative overflow-hidden h-full flex flex-col">
                 
-                <!-- Ícone de Pasta Decorativo -->
                 <div class="absolute -right-6 -bottom-6 text-blue-50/40 group-hover:text-blue-100/60 transition-colors">
                     <span class="material-icons-sharp text-[150px]">folder</span>
                 </div>
 
                 <div class="relative z-10 flex-grow">
-                    <!-- Cabeçalho do Card -->
                     <div class="flex justify-between items-start mb-6">
                         <div class="bg-blue-600 text-white p-4 rounded-2xl shadow-lg shadow-blue-100">
                             <span class="material-icons-sharp">school</span>
@@ -28,7 +26,6 @@
                         </div>
                     </div>
 
-                    <!-- Informações do Curso -->
                     <h3 class="text-xl font-extrabold text-gray-800 uppercase mb-3 group-hover:text-blue-600 transition-colors">
                         {{ item.curso.nome }}
                     </h3>
@@ -37,7 +34,6 @@
                     </p>
                 </div>
 
-                <!-- Rodapé do Card -->
                 <div class="mt-8 pt-6 border-t border-gray-50 relative z-10 flex items-center justify-between">
                     <span class="text-xs font-bold text-gray-400 uppercase tracking-tighter">Entrar na Pasta</span>
                     <div class="bg-gray-900 text-white p-2 rounded-xl group-hover:bg-blue-600 transition-colors shadow-md">

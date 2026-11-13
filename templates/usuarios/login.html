@@ -7,8 +7,7 @@
   <script src="{% static 'vendor/tailwind-3.4.js' %}"></script>
   <link rel="stylesheet" href="{% static 'css/login.css' %}">
   <style>
-    /* Loader tela cheia */
-    #loader {
+        #loader {
       position: fixed;
       inset: 0;
       background: linear-gradient(135deg, #0f766e, #14b8a6);
@@ -26,8 +25,7 @@
       opacity: 0;
       visibility: hidden;
     }
-    /* Logo */
-    #loader img {
+        #loader img {
       width: 100px;
       height: 100px;
       margin-bottom: 20px;
@@ -36,8 +34,7 @@
       padding: 8px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
-    /* Nome do sistema */
-    #loader h1 {
+        #loader h1 {
       font-size: 2rem;
       font-weight: 800;
       letter-spacing: 2px;
@@ -64,7 +61,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
 
-  <!-- Loader -->
   <div id="loader">
     <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="Logo">
     <h1>SGTFC</h1>
@@ -72,10 +68,8 @@
     <div class="spinner"></div>
   </div>
 
-  <!-- Conteúdo principal (apenas o formulário) -->
   <div id="loginContainer" class="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 opacity-0 transition-opacity duration-700">
-    
-    
+
       <div class="text-center mb-8">
       <img src="{% static 'imgs/icons/finalispbie.jpg' %}" alt="Login SGTFC"
            class="mx-auto w-28 h-28 rounded-full shadow-lg border-4 border-white-600 bg-black p-2">
@@ -127,9 +121,7 @@
     </p>
   </div>
 
-  <!-- Scripts -->
   <script>
-    // Mostrar/Ocultar senha
     const togglePwd = document.getElementById("togglePwd");
     const senhaInput = document.getElementById("senha");
     const iconEye = document.getElementById("iconEye");
@@ -146,7 +138,6 @@
       }
     });
 
-    // Loader → Login com transição
     window.addEventListener("load", () => {
       const loader = document.getElementById("loader");
       const login = document.getElementById("loginContainer");

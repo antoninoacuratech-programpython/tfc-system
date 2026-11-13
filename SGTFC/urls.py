@@ -10,12 +10,9 @@ admin.site.site_title = settings.SISTEMA_NOME
 admin.site.index_title = settings.SISTEMA_DESCRICAO
 
 
+# chamado pelo UptimeRobot / GitHub Actions; de propósito não toca na base de dados
 @never_cache
 def saude(request):
-    """Verificação de estado usada pelo UptimeRobot / GitHub Actions para manter o site acordado.
-
-    Não consulta a base de dados, para não gastar horas de computação da Neon.
-    """
     return JsonResponse({"estado": "ok", "sistema": settings.SISTEMA_NOME})
 
 

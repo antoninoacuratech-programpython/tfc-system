@@ -20,7 +20,6 @@ from ..permissions import PERFIS_GESTAO, perfil_requerido, garantir_acesso_estud
 
 @login_required
 def lista_inscricoes_tfc(request):
-    # 1. ELIMINAÇÃO/LIMPEZA DAS NOTIFICAÇÕES
     NotificacaoTFC.objects.filter(
         destinatario=request.user,
         destinatario_perfil='estudante',
@@ -28,7 +27,6 @@ def lista_inscricoes_tfc(request):
         inscricao__isnull=False
     ).update(lida=True)
 
-    # 2. BUSCA DOS DADOS PARA A LISTA
     inscricoes = InscricaoTFC.objects.filter(estudante=request.user).order_by('-id')
     
     return render(request, 'tfc/lista_inscricoes.html', {'inscricoes': inscricoes})
@@ -36,39 +34,31 @@ def lista_inscricoes_tfc(request):
 
 @login_required
 def gerar_ficha_tfc(request):
-    """
-    Processa a criação da ficha de inscrição com upload de documentos (incluindo BI).
-    """
-    # Busca o tema aprovado
     tema_aprovado = Tema.objects.filter(estudante=request.user, status_final='aprovado').first()
 
     if not tema_aprovado:
         messages.error(request, "Acesso negado: Você precisa de um Tema Aprovado pela Coordenação.")
         return redirect('dashboard_estudante')
 
-    # Verifica se já existe uma inscrição para este tema
     if InscricaoTFC.objects.filter(estudante=request.user, tema=tema_aprovado).exists():
         messages.warning(request, "Você já possui uma inscrição submetida para este tema.")
         return redirect('lista_inscricoes_tfc')
 
     if request.method == "POST":
         try:
-            # 1. Cria a Inscrição capturando POST e FILES
             inscricao = InscricaoTFC.objects.create(
                 estudante=request.user,
                 tema=tema_aprovado,
                 periodo=request.POST.get('periodo'),
                 endereco=request.POST.get('endereco'),
                 local_desenvolvimento=request.POST.get('local_desenvolvimento'),
-                # Ficheiros:
                 requerimento=request.FILES.get('requerimento'),
                 curriculum_academico=request.FILES.get('curriculum'),
                 ficha_reconfirmacao=request.FILES.get('ficha_reconfirmacao'),
                 comprovativo_pagamento=request.FILES.get('comprovativo_pagamento'),
-                copia_bi=request.FILES.get('copia_bi'),  # ADICIONADO CAMPO DO BI
+                copia_bi=request.FILES.get('copia_bi'),
             )
 
-            # 2. Cria a Notificação para a Área Científica
             NotificacaoTFC.objects.create(
                 remetente=request.user,
                 destinatario_perfil='area_cientifica',
@@ -87,9 +77,6 @@ def gerar_ficha_tfc(request):
 
 @login_required
 def editar_inscricao_tfc(request, pk):
-    """
-    Permite editar uma inscrição existente, incluindo a atualização do BI.
-    """
     inscricao = get_object_or_404(InscricaoTFC, pk=pk, estudante=request.user)
     
     if inscricao.status == 'aprovado':
@@ -97,12 +84,10 @@ def editar_inscricao_tfc(request, pk):
         return redirect('lista_inscricoes_tfc')
 
     if request.method == "POST":
-        # Atualização de campos de texto
         inscricao.periodo = request.POST.get('periodo')
         inscricao.endereco = request.POST.get('endereco')
         inscricao.local_desenvolvimento = request.POST.get('local_desenvolvimento')
 
-        # Atualização de ficheiros (apenas se novos forem enviados)
         if request.FILES.get('requerimento'):
             inscricao.requerimento = request.FILES.get('requerimento')
         
@@ -115,7 +100,7 @@ def editar_inscricao_tfc(request, pk):
         if request.FILES.get('comprovativo_pagamento'):
             inscricao.comprovativo_pagamento = request.FILES.get('comprovativo_pagamento')
 
-        if request.FILES.get('copia_bi'): # ADICIONADO CAMPO DO BI
+        if request.FILES.get('copia_bi'):
             inscricao.copia_bi = request.FILES.get('copia_bi')
 
         inscricao.save()
@@ -131,28 +116,23 @@ def editar_inscricao_tfc(request, pk):
 
 @login_required
 def baixar_pdf_tfc(request, pk):
-    # 1. Resgate de dados e tratamento de nulos
     inscricao = get_object_or_404(InscricaoTFC, pk=pk)
     estudante = inscricao.estudante
     garantir_acesso_estudante(request.user, estudante)
     tema = inscricao.tema
     
-    # Busca do Departamento (via Usuário ou Curso)
     depto_obj = estudante.depart or (estudante.curso.departamento if estudante.curso else None)
     nome_departamento = depto_obj.nome if depto_obj else ""
 
-    # Dados do Orientador (Nome + Sobrenome)
     orientador = tema.tutor_indicado if tema else None
     nome_orientador = f"{orientador.nome} {orientador.sobrenome}" if orientador else ""
 
     buffer = io.BytesIO()
     
-    # Configuração de Margens Word: Esquerda 3cm, Direita 2cm [cite: 1]
     doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2.0*cm, leftMargin=3.0*cm,
                             topMargin=1.5*cm, bottomMargin=1.5*cm)
     elementos = []
     
-    # --- ESTILOS ---
     style_header = ParagraphStyle("Header", fontSize=10, fontName="Helvetica-Bold", alignment=TA_CENTER, leading=12)
     style_label = ParagraphStyle("Label", fontSize=11, fontName="Helvetica", alignment=TA_LEFT, leading=18)
     style_title = ParagraphStyle("Title", fontSize=12, fontName="Helvetica-Bold", alignment=TA_CENTER, spaceAfter=20)
@@ -164,7 +144,6 @@ def baixar_pdf_tfc(request, pk):
         content = str(text) if text and str(text).strip() else width
         return f"<u>{content}</u>"
 
-    # 1. Cabeçalho Institucional [cite: 1]
     logo_path = finders.find('imgs/icons/finalispbie.jpg')
     header_content = [
         Paragraph("INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ", style_header),
@@ -181,11 +160,9 @@ def baixar_pdf_tfc(request, pk):
     elementos.append(header_tab)
     elementos.append(Spacer(1, 15))
 
-    # 2. Título da Ficha [cite: 1]
     num_ficha = str(inscricao.id).zfill(4)
     elementos.append(Paragraph(f"FICHA DE INSCRIÇÃO DO TRABALHO DE FIM DE CURSO Nº <u>{num_ficha}</u>.", style_title))
 
-    # 3. Dados Pessoais e Acadêmicos [cite: 2, 3]
     elementos.append(Paragraph(f"Nome completo: {underline(f'{estudante.nome} {estudante.sobrenome}', '________________________________________________________')};", style_label))
     
     p_reg = "<b>[X] regular</b>" if str(inscricao.periodo).lower() == 'regular' else "[ ] regular"
@@ -195,13 +172,11 @@ def baixar_pdf_tfc(request, pk):
     elementos.append(Paragraph(f"Ano Académico: {underline(inscricao.data_criacao.year, '_______')}; Nacionalidade: {underline(inscricao.nacionalidade, '___________')}, Endereço: {underline(inscricao.endereco)} Telefone: {underline(estudante.telefone, '___________/___________')};", style_label))
     elementos.append(Paragraph(f"Email: {underline(estudante.email, '________________________________________')}, Ano de conclusão do Plano Curricular: {underline(inscricao.ano_conclusao_curriculo, '_______')};", style_label))
 
-    # 4. Dados do TFC e Orientação [cite: 4, 5]
     elementos.append(Paragraph(f"Título do trabalho de fim de curso: {underline(tema.titulo if tema else '', '___________________________________________________________________________________')};", style_label))
     elementos.append(Paragraph(f"Local onde o trabalho será desenvolvido: {underline(inscricao.local_desenvolvimento, '_________________________________________')};", style_label))
     elementos.append(Paragraph(f"Orientador: {underline(nome_orientador, '_________________________')}; DEI {underline('', '________________________')};", style_label))
     elementos.append(Paragraph(f"Co-orientador: {underline('', '_________________________')}; DEI {underline('', '________________________')}.", style_label))
 
-    # 5. Local e Data [cite: 5]
     elementos.append(Spacer(1, 15))
     dt = inscricao.data_criacao
     elementos.append(Paragraph(f"Cuito, aos <u>{dt.day:02d}</u>/<u>{dt.month:02d}</u>/<u>{dt.year}</u>.", style_label))
@@ -211,7 +186,6 @@ def baixar_pdf_tfc(request, pk):
     nome_conf = f"{aprovador.nome} {aprovador.sobrenome}" if aprovador else ""
     nome_est = f"{estudante.nome} {estudante.sobrenome}"
 
-    # Tabela estruturada para alinhar o nome sob a linha de assinatura
     assinaturas_data = [
         [Paragraph("Conferido por:", style_sig_label), Paragraph(underline(nome_conf, "________________________________________"), style_sig_name)],
         ["", Paragraph("", style_sig_sub)],
@@ -228,11 +202,9 @@ def baixar_pdf_tfc(request, pk):
     ]))
     elementos.append(tab_ass)
 
-    # 7. Construção e Resposta de Download
     doc.build(elementos)
     buffer.seek(0)
     
-    # Força o navegador a baixar o arquivo em vez de tentar abri-lo
     response = HttpResponse(buffer, content_type='application/pdf')
     filename = f"Ficha_TFC_{estudante.id}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
@@ -246,7 +218,6 @@ def lista_inscricoes_pendentes(request):
         messages.error(request, "Acesso restrito à Área Científica.")
         return redirect('admink')
 
-    
     inscricoes = InscricaoTFC.objects.filter(status='pendente').order_by('-data_criacao')
     
     count = inscricoes.count()
@@ -262,9 +233,6 @@ def lista_inscricoes_pendentes(request):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def lista_cursos_fichas_pendentes(request):
-    """
-    1ª VIEW: Lista todos os cursos que possuem fichas/inscrições pendentes
-    """
     if request.user.perfil != "area_cientifica":
         messages.error(request, "Acesso restrito à Área Científica.")
         return redirect('admink')
@@ -302,18 +270,15 @@ def fichas_pendentes_por_curso(request, curso_id):
         'titulo_pagina': f"Inscrições Pendentes - {curso.nome}"
     }
     
-    # Substitua pelo caminho correto do seu template de listagem/tabela de fichas
     return render(request, 'Area_Cientifica/fichas_por_curso_detalhe.html', context)
 
 
 @perfil_requerido(*PERFIS_GESTAO)
 def historico_inscricoes(request):
-    # Pegamos todos os cursos
     cursos = Curso.objects.all()
     temas_por_curso = []
 
     for curso in cursos:
-        # Filtramos as inscrições processadas (aceites ou rejeitadas) para cada curso
         inscricoes = InscricaoTFC.objects.filter(
             estudante__curso=curso
         ).exclude(status='pendente').select_related('estudante', 'tema')
@@ -343,7 +308,7 @@ def aprovar_inscricao_tfc(request, inscricao_id):
     ).update(lida=True)
 
     NotificacaoTFC.objects.create(
-        remetente=request.user,             # Ususario que aprovs
+        remetente=request.user,
         destinatario=ficha.estudante,       
         destinatario_perfil='estudante',    
         mensagem=f"Sua ficha de inscrição para o tema '{ficha.tema.titulo}' foi aprovada com sucesso!",
@@ -405,17 +370,12 @@ def lista_inscricoes_aprovadas_coordenacao(request):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def enviar_para_coordenacao(request, curso_id):
-    """
-    Ação que a Área Científica executa para 'enviar' todas as fichas 
-    atualmente aprovadas daquele curso para a coordenação.
-    """
     if request.user.perfil != "area_cientifica":
         messages.error(request, "Acesso restrito.")
         return redirect('admink')
 
     curso = get_object_or_404(Curso, id=curso_id)
 
-    # Captura todas as inscrições aprovadas deste curso que ainda não foram enviadas
     fichas_para_enviar = InscricaoTFC.objects.filter(
         status='aprovado',
         estudante__curso=curso,
@@ -424,11 +384,9 @@ def enviar_para_coordenacao(request, curso_id):
 
     if fichas_para_enviar.exists():
         quantidade = fichas_para_enviar.count()
-        # Atualiza todas de uma vez para True
         fichas_para_enviar.update(enviado_para_coordenacao=True)
         messages.success(request, f"Sucesso! {quantidade} inscrições foram enviadas para a coordenação de {curso.nome}.")
     else:
         messages.warning(request, "Não existem novas inscrições aprovadas prontas para envio neste curso.")
 
-    # Redireciona de volta para a listagem de fichas do curso
     return redirect('fichas_por_curso_detalhe', curso_id=curso.id)

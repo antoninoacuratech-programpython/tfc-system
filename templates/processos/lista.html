@@ -14,7 +14,6 @@
 <div class="bg-gray-50 min-h-screen antialiased text-gray-900 font-sans">
     <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         
-        <!-- Mensagens de Feedback -->
         {% if messages %}
             {% for message in messages %}
                 <div class="mb-6 p-4 rounded-2xl border flex items-center gap-3 {% if message.tags == 'error' %}bg-red-50 border-red-200 text-red-700{% else %}bg-green-50 border-green-200 text-green-700{% endif %}">
@@ -26,7 +25,6 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            <!-- FORMULÁRIO DE CRIAÇÃO -->
             <div class="lg:col-span-4">
                 <div class="bg-white p-8 rounded-[2rem] shadow-xl border border-gray-100 sticky top-6">
                     <div class="flex items-center gap-3 mb-6">
@@ -71,7 +69,6 @@
                 </div>
             </div>
 
-            <!-- LISTAGEM DE PROCESSOS -->
             <div class="lg:col-span-8 space-y-6">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-2xl font-bold text-gray-800">Processos Atuais</h2>
@@ -82,7 +79,6 @@
                 <div class="bg-white rounded-[2rem] shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow group">
                     <div class="p-6 flex items-center justify-between">
                         <div class="flex items-center gap-5">
-                            <!-- Verificação baseada no seu método is_periodo_valido -->
                             <div class="w-14 h-14 rounded-2xl flex items-center justify-center {% if p.is_periodo_valido %}bg-green-50 text-green-600{% else %}bg-gray-100 text-gray-400{% endif %} transition-colors">
                                 <span class="material-icons-sharp text-3xl">folder_open</span>
                             </div>
@@ -111,14 +107,12 @@
                                 </button>
                             </form>
 
-                            <!-- Botão acionador do Modal de Edição (Passando os dados do objeto por parâmetro) -->
                             <button type="button" title="Editar dados"
                                 onclick="abrirModalEditar('{{ p.id }}', '{{ p.titulo }}', '{{ p.curso.id }}')"
                                 class="p-2 bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all border border-gray-100">
                                 <span class="material-icons-sharp text-sm block">edit</span>
                             </button>
 
-                            <!-- Botão acionador do Modal de Eliminação -->
                             <button type="button" title="Eliminar processo"
                                 onclick="abrirModalEliminar('{{ p.id }}', '{{ p.titulo }}')"
                                 class="p-2 bg-gray-50 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all border border-gray-100">
@@ -127,7 +121,6 @@
                         </div>
                     </div>
 
-                    <!-- Links de Ações Internas -->
                     <div class="bg-gray-50/50 border-t border-gray-50 p-3 grid grid-cols-1 md:grid-cols-3 gap-2">
                         <a href="{% url 'lista_aprovados' %}?processo={{ p.id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white hover:shadow-sm text-gray-600 hover:text-blue-600 font-semibold text-sm transition-all border border-transparent hover:border-blue-100">
                             <span class="material-icons-sharp text-lg">lightbulb</span> Lista de Temas Aprovados
@@ -160,7 +153,6 @@
     </div>
 </div>
 
-<!-- MODAL EDITAR PROCESSO -->
 <div id="modalEditar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
@@ -214,7 +206,6 @@
     </div>
 </div>
 
-<!-- MODAL ELIMINAR PROCESSO -->
 <div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity"></div>
@@ -252,7 +243,6 @@
 </div>
 
 <script>
-    // Gerenciamento Dinâmico do Modal de Edição
     function abrirModalEditar(id, titulo, cursoId, dataInicio, dataTermino) {
         const form = document.getElementById('formEditarProcesso');
         form.action = `${window.location.origin}/processo/editar/${id}/`;
@@ -269,7 +259,6 @@
         document.getElementById('modalEditar').classList.add('hidden');
     }
 
-    // Gerenciamento Dinâmico do Modal de Exclusão
     function abrirModalEliminar(id, titulo) {
         const form = document.getElementById('formEliminarProcesso');
         form.action = `${window.location.origin}/processo/eliminar/${id}/`;
@@ -284,5 +273,4 @@
 </script>
 {% endblock %}
 
-{# Esta página mostra as mensagens no seu próprio conteúdo. #}
 {% block mensagens %}{% endblock %}

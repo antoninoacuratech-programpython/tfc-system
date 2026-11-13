@@ -9,7 +9,6 @@
             <p class="text-gray-500 text-sm">Gerencie as Mesas de Juris e documentos oficiais.</p>
         </div>
         <div class="flex flex-col sm:flex-row gap-2">
-            <!-- BOTÃO DE ENVIAR (Apenas Coordenação) -->
             {% if request.user.perfil == "cordenacao" or request.user.is_superuser %}
             <form method="POST" action="{% url 'despachar_predefesas_cientifica' %}">
                 {% csrf_token %}
@@ -36,7 +35,6 @@
         </div>
     </div>
 
-    <!-- Mensagens -->
     {% if messages %}
     <div class="space-y-2">
         {% for message in messages %}
@@ -48,7 +46,6 @@
     </div>
     {% endif %}
 
-    <!-- MOBILE -->
     <div class="grid grid-cols-1 gap-4 md:hidden">
         {% for p in predefesas %}
         <div class="bg-white rounded-[1.5rem] p-5 shadow-sm border border-gray-100 space-y-4">
@@ -75,7 +72,6 @@
                 <p class="text-xs text-gray-500 mt-1 leading-relaxed">{{ p.tema.titulo }}</p>
             </div>
 
-            <!-- Botões de Ação Mobile -->
             <div class="pt-4 border-t border-gray-50 flex items-center justify-between">
                 <div class="flex gap-2">
                     <a href="" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all">
@@ -90,17 +86,14 @@
                     <span class="text-[10px] font-medium text-gray-600">{{ p.presidente.nome }}{{ p.presidente.sobrenome }}</span>
                     <span class="text-[9px] font-black text-blue-500">Vogais e secret.:</span>
                     <span class="text-[10px] font-medium text-gray-600">{{ p.primeiro_vogal.nome }}{{ p.primeiro_vogal.sobrenomenome }}, {{ p.segundo_vogal.nome }}{{ p.segundo_vogal.sobrenome }}, {{ p.secretario.nome }}{{ p.secretario.sobrenome }}</span>
-                    
-               
+
                 </div>
             </div>
         </div>
         {% empty %}
-        <!-- ... vazio ... -->
         {% endfor %}
     </div>
 
-    <!-- DESKTOP -->
     <div class="hidden md:block bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -144,15 +137,12 @@
 
                         <td class="px-6 py-5">
                             <div class="flex justify-center items-center gap-2">
-                                <!-- PDF -->
                                 <a href="{% url 'pdf_predefesa' p.id %}" class="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-sm" title="Baixar PDF">
                                     <span class="material-icons-sharp text-sm">picture_as_pdf</span>
                                 </a>
-                                <!-- EDITAR -->
                                 <a href="{% url 'editar_predefesa' p.id %}" class="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Editar Agendamento">
                                     <span class="material-icons-sharp text-sm">edit</span>
                                 </a>
-                                <!-- Botão que abre o Modal -->
 <button onclick="abrirModalEliminar('{{ p.id }}', '{{ p.estudante.nome }}')" 
         class="p-2 bg-gray-50 text-gray-400 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm group" 
         title="Eliminar">
@@ -162,20 +152,16 @@
                         </td>
                     </tr>
                     {% empty %}
-                    <!-- ... vazio ... -->
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-<!-- Modal de Confirmação -->
 <div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <!-- Overlay Escuro -->
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-40 transition-opacity" aria-hidden="true" onclick="fecharModalEliminar()"></div>
 
-        <!-- Conteúdo do Modal -->
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
         <div class="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
             <div class="bg-white px-8 pt-8 pb-6">
@@ -213,13 +199,10 @@
         const link = document.getElementById('linkConfirmarEliminar');
         const nomeDisplay = document.getElementById('nomeEstudanteModal');
 
-        // Define o nome do estudante no texto
         nomeDisplay.innerText = nome;
         
-        // Constrói a URL dinamicamente (ajuste o prefixo da URL se necessário)
         link.href = `/predefesa/eliminar/${id}/`; 
 
-        // Mostra o modal com animação suave
         modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden'; // Impede scroll ao fundo
     }
@@ -230,12 +213,10 @@
         document.body.style.overflow = 'auto'; // Reativa scroll
     }
 
-    // Fechar ao pressionar ESC
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') fecharModalEliminar();
     });
 </script>
 {% endblock %}
 
-{# Esta página mostra as mensagens no seu próprio conteúdo. #}
 {% block mensagens %}{% endblock %}

@@ -39,7 +39,6 @@
         {% endfor %}
     {% endif %}
 
-    <!-- LAYOUT MOBILE -->
     <div class="grid grid-cols-1 gap-4 sm:hidden">
         {% for despacho in despachos %}
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
@@ -67,7 +66,6 @@
 
             <div class="mt-5 flex flex-col gap-2">
                 
-                <!-- Ações de fluxo no Mobile -->
                 {% if request.user.perfil == 'presidente' and despacho.status == 'enviado' %}
                     <a href="{% url 'assinar_despacho' despacho.id %}" onclick="desabilitarCliqueLink(this)"
                        class="w-full flex items-center justify-center py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition shadow-md">
@@ -99,7 +97,6 @@
         {% endfor %}
     </div>
 
-    <!-- LAYOUT DESKTOP -->
     <div class="hidden sm:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <table class="w-full text-left border-collapse">
             <thead class="bg-gray-50 border-b border-gray-100">
@@ -142,7 +139,6 @@
                     <td class="px-6 py-4">
                         <div class="flex justify-center items-center gap-2">
                             
-                            <!-- Botão de Enviar para a Presidência (Área Científica) -->
                             {% if request.user.perfil == 'area_cientifica' and despacho.status == 'pendente' %}
                             <form action="{% url 'enviar_despacho_presidencia' despacho.id %}" method="POST" style="display:inline;" class="form-envio">
                                 {% csrf_token %}
@@ -152,7 +148,6 @@
                             </form>
                             {% endif %}
 
-                            <!-- Botão para o Presidente Revisar e Assinar (Apenas se estiver Enviado) -->
                             {% if request.user.perfil == 'presidente' and despacho.status == 'enviado' %}
                             <a href="{% url 'assinar_despacho' despacho.id %}" onclick="desabilitarCliqueLink(this)"
                                class="p-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition shadow-sm" title="Revisar e Assinar">
@@ -191,7 +186,6 @@
     </div>
 </div>
 
-<!-- MODAL ELIMINAR -->
 <div id="modalEliminar" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-40 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
@@ -226,16 +220,13 @@
 <script>
     let despachoIdParaEliminar = null;
 
-    // Monitora a submissão dos formulários de envio à presidência
     document.querySelectorAll('.form-envio').forEach(form => {
         form.addEventListener('submit', function(e) {
             const btn = this.querySelector('.btn-submeter');
             if (btn) {
-                // Previne múltiplos envios desabilitando o botão
                 btn.disabled = true;
                 btn.classList.add('opacity-50', 'cursor-not-allowed');
                 
-                // Se for o botão com texto (Mobile) altera a legenda
                 if(btn.innerText.trim() === "Enviar para Presidência") {
                     btn.innerText = "Enviando despacho...";
                 }
@@ -243,7 +234,6 @@
         });
     });
 
-    // Função para evitar duplo clique em botões de link normais (Tag <a>)
     function desabilitarCliqueLink(elemento) {
         elemento.style.pointerEvents = 'none';
         elemento.classList.add('opacity-50', 'cursor-not-allowed');
@@ -264,7 +254,6 @@
 
     document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
         if (despachoIdParaEliminar) {
-            // Desabilita o botão do modal também para evitar envio duplo ao excluir
             this.disabled = true;
             this.innerText = "Eliminando...";
 
@@ -285,5 +274,4 @@
 </script>
 {% endblock %}
 
-{# Esta página mostra as mensagens no seu próprio conteúdo. #}
 {% block mensagens %}{% endblock %}

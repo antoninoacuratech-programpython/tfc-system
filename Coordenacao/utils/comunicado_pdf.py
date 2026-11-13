@@ -57,7 +57,6 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf, logo_path,
 
     elementos = []
 
-    # ---------------- CABEÇALHO ----------------
     try:
         logo = Image(logo_path, width=2.2*cm, height=2.2*cm)
     except:
@@ -96,7 +95,6 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf, logo_path,
     elementos.append(header_table)
     elementos.append(Spacer(1, 20))
 
-    # ---------------- TÍTULO ----------------
     elementos.append(
         Paragraph("<b>COMUNICADO</b>",
                   ParagraphStyle(
@@ -108,13 +106,11 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf, logo_path,
                   ))
     )
 
-    # ---------------- CORPO ----------------
     corpo = texto_comunicado_oficial(comunicado)
     for linha in corpo.split("\n"):
         if linha.strip():
             elementos.append(Paragraph(linha, style_normal))
 
-    # ---------------- ASSINATURAS ----------------
     elementos.append(Spacer(1, 20))
 
     elementos.append(Paragraph(
@@ -133,7 +129,6 @@ def gerar_comunicado_pdf(comunicado, caminho_pdf, logo_path,
         styles["Normal"]
     ))
 
-    # ---------------- RODAPÉ ----------------
     elementos.append(Spacer(1, 40))
     elementos.append(Paragraph(
         "Rua Padre Fidalgo entre Artur de Paiva e Francisco de Leite Cardoso S/N,"
