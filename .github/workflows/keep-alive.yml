@@ -1,7 +1,7 @@
 # Mantém o site da Render acordado: visita /saude/ a cada 10 minutos.
-# O endereço vem da variável do repositório SITE_URL
-# (GitHub → Settings → Secrets and variables → Actions → Variables),
-# por exemplo: https://o-seu-servico.onrender.com
+# Endereço: https://isp-bie-tfc.onrender.com
+# (pode ser trocado sem mexer no código criando a variável do repositório SITE_URL
+#  em GitHub → Settings → Secrets and variables → Actions → Variables)
 name: Manter site acordado
 
 on:
@@ -16,7 +16,7 @@ jobs:
     steps:
       - name: Visitar /saude/
         env:
-          SITE_URL: ${{ vars.SITE_URL }}
+          SITE_URL: ${{ vars.SITE_URL || 'https://isp-bie-tfc.onrender.com' }}
         run: |
           if [ -z "$SITE_URL" ]; then
             echo "::warning::Defina a variável SITE_URL do repositório com o endereço do site na Render."
