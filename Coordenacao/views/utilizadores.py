@@ -241,15 +241,3 @@ def eliminar_professor(request, pk):
         messages.error(request, f"Erro ao eliminar: {str(e)}")
         
     return redirect('gerenciar_professores')
-
-
-@perfil_requerido(*PERFIS_GESTAO)
-def perfil_documental(request, estudante_id):
-    estudante = get_object_or_404(Usuario, pk=estudante_id, perfil='estudante')
-    
-    lista_de_documentos = estudante.obter_todos_documentos()
-    
-    return render(request, 'admin/perfil_documental.html', {
-        'estudante': estudante,
-        'documentos': lista_de_documentos
-    })

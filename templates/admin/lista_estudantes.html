@@ -44,6 +44,7 @@
                         <th class="p-3 text-left text-xs font-bold uppercase text-gray-600">Estudante</th>
                         <th class="p-3 text-left text-xs font-bold uppercase text-gray-600">Curso</th>
                         <th class="p-3 text-left text-xs font-bold uppercase text-gray-600">Estado</th>
+                        <th class="p-3 text-right text-xs font-bold uppercase text-gray-600">Processo</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -64,10 +65,13 @@
                                 {{ estudante.estado_user|upper }}
                             </span>
                         </td>
+                        <td class="p-3 text-right">
+                            <a href="{% url 'processo_estudante' estudante.id %}" class="sgtf-btn sgtf-btn--ghost px-3 py-1.5 text-xs" title="Ver tudo sobre o estudante e descarregar o ZIP"><span class="material-icons-sharp text-[16px]">folder_shared</span> Processo</a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="p-10 text-center text-gray-400">Nenhum estudante na lista.</td>
+                        <td colspan="5" class="p-10 text-center text-gray-400">Nenhum estudante na lista.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

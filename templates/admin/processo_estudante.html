@@ -1,0 +1,170 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Processo de {{ estudante.nome }} {{ estudante.sobrenome }}{% endblock %}
+{% block titulo_pagina %}Processo do estudante{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl space-y-5">
+  <a href="{% url 'lista_estudantes' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-primary"><span class="material-icons-sharp text-[18px]">arrow_back</span> Lista de estudantes</a>
+
+  {# cabeçalho #}
+  <div class="sgtf-card overflow-hidden">
+    <div class="flex flex-wrap items-center gap-5 bg-slate-900 p-5 md:p-7">
+      {% if estudante.imagem %}
+        <img src="{{ estudante.imagem.url }}" alt="" class="h-16 w-16 rounded-2xl object-cover ring-2 ring-white/20">
+      {% else %}
+        <span class="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-xl font-extrabold text-white">{{ estudante.nome|slice:":1" }}{{ estudante.sobrenome|slice:":1" }}</span>
+      {% endif %}
+      <div class="min-w-0 flex-1">
+        <p class="text-[11px] font-bold uppercase tracking-widest text-blue-300">Processo do estudante</p>
+        <h2 class="text-xl font-extrabold text-white md:text-2xl">{{ estudante.nome }} {{ estudante.sobrenome }}</h2>
+        <p class="text-sm text-slate-300">{{ estudante.curso.nome|default:"Sem curso" }} · {{ estudante.email }}{% if estudante.telefone %} · {{ estudante.telefone }}{% endif %}</p>
+      </div>
+      <a href="{% url 'processo_estudante_zip' estudante.pk %}" class="sgtf-btn bg-white text-slate-900 hover:bg-slate-100"><span class="material-icons-sharp text-[18px]">folder_zip</span> Descarregar tudo (ZIP)</a>
+    </div>
+    <div class="grid grid-cols-2 divide-x divide-y divide-slate-100 md:grid-cols-5 md:divide-y-0">
+      <div class="p-4"><p class="text-[11px] font-semibold uppercase text-slate-400">Tema</p><p class="mt-1 text-sm font-bold text-slate-800">{% if tema %}{{ tema.get_status_final_display }}{% else %}Sem tema{% endif %}</p></div>
+      <div class="p-4"><p class="text-[11px] font-semibold uppercase text-slate-400">Progresso</p><p class="mt-1 text-sm font-bold text-slate-800">{% if etapas %}{{ progresso.percentagem }}% · {{ progresso.rotulo }}{% else %}Sem plano{% endif %}</p></div>
+      <div class="p-4"><p class="text-[11px] font-semibold uppercase text-slate-400">Pré-defesa</p><p class="mt-1 text-sm font-bold text-slate-800">{% with p=predefesas|last %}{% if p %}{% if p.resultado %}{{ p.get_resultado_display }}{% else %}{{ p.data|date:"d/m/Y" }}{% endif %}{% else %}Não agendada{% endif %}{% endwith %}</p></div>
+      <div class="p-4"><p class="text-[11px] font-semibold uppercase text-slate-400">Recomendações</p><p class="mt-1 text-sm font-bold text-slate-800">{% if melhorias %}{{ cumpridas }}/{{ melhorias|length }} cumpridas{% else %}—{% endif %}</p></div>
+      <div class="p-4"><p class="text-[11px] font-semibold uppercase text-slate-400">Documentos</p><p class="mt-1 text-sm font-bold text-slate-800">{{ documentos|length }} + resumo</p></div>
+    </div>
+  </div>
+
+  <div class="grid gap-5 lg:grid-cols-[1fr_22rem]">
+    <div class="space-y-5">
+      {# tema #}
+      <section class="sgtf-card p-5">
+        <h3 class="mb-3 flex items-center gap-2 font-bold text-slate-900"><span class="material-icons-sharp text-primary">topic</span> Tema{% if temas|length > 1 %}s ({{ temas|length }}){% endif %}</h3>
+        {% for t in temas reversed %}
+          <div class="{% if not forloop.first %}mt-3 border-t border-slate-100 pt-3 opacity-70{% endif %}">
+            <p class="font-semibold text-slate-900">{{ t.titulo }}</p>
+            <p class="mt-1 text-xs text-slate-500">
+              {% if t.processo %}{{ t.processo.titulo }} · {% endif %}submetido a {{ t.data_envio|date:"d/m/Y" }}
+              {% if t.tutor_indicado %} · Orientador: {{ t.tutor_indicado.nome }} {{ t.tutor_indicado.sobrenome }}{% endif %}
+            </p>
+            <div class="mt-2 flex flex-wrap gap-1.5 text-[11px] font-bold">
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">Tutor: {{ t.get_status_tutor_display }}</span>
+              <span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">Coordenação: {{ t.get_status_coordenacao_display }}</span>
+              <span class="rounded-full px-2 py-0.5 {% if t.status_final == 'aprovado' %}bg-green-50 text-green-700{% elif t.status_final == 'rejeitado' %}bg-red-50 text-red-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ t.get_status_final_display }}</span>
+            </div>
+          </div>
+        {% empty %}
+          <p class="text-sm text-slate-400">O estudante ainda não submeteu tema.</p>
+        {% endfor %}
+      </section>
+
+      {# inscrição #}
+      {% if inscricoes %}
+        <section class="sgtf-card p-5">
+          <h3 class="mb-3 flex items-center gap-2 font-bold text-slate-900"><span class="material-icons-sharp text-primary">assignment_turned_in</span> Inscrição do TFC</h3>
+          {% for i in inscricoes %}
+            <dl class="grid gap-x-4 gap-y-1 text-sm sm:grid-cols-2">
+              <div><dt class="inline text-slate-500">Estado:</dt> <dd class="inline font-semibold text-slate-800">{{ i.get_status_display }}</dd></div>
+              <div><dt class="inline text-slate-500">Período:</dt> <dd class="inline text-slate-800">{{ i.periodo }}</dd></div>
+              <div><dt class="inline text-slate-500">Local:</dt> <dd class="inline text-slate-800">{{ i.local_desenvolvimento }}</dd></div>
+              <div><dt class="inline text-slate-500">Data:</dt> <dd class="inline text-slate-800">{{ i.data_criacao|date:"d/m/Y" }}</dd></div>
+            </dl>
+          {% endfor %}
+        </section>
+      {% endif %}
+
+      {# progresso #}
+      <section class="sgtf-card p-5">
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <h3 class="flex items-center gap-2 font-bold text-slate-900"><span class="material-icons-sharp text-primary">timeline</span> Progresso do trabalho</h3>
+          {% if tema and etapas %}<a href="{% url 'progresso_tema' tema.pk %}" class="text-xs font-semibold text-primary hover:underline">Ver detalhe</a>{% endif %}
+        </div>
+        {% if etapas %}
+          {% with info=progresso %}{% include "progresso/_barra.html" %}{% endwith %}
+          <ol class="mt-3 space-y-1.5 text-sm">
+            {% for e in etapas %}
+              <li class="flex items-center justify-between gap-2">
+                <span class="text-slate-700">{{ e.ordem }}. {{ e.titulo }}</span>
+                <span class="shrink-0 text-xs {% if e.estado == 'aprovada' %}text-green-700{% elif e.atrasada %}text-red-600{% else %}text-slate-500{% endif %}">{{ e.get_estado_display }} · {{ e.prazo|date:"d/m/Y" }}</span>
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p class="text-sm text-slate-400">O orientador ainda não definiu as etapas.</p>
+        {% endif %}
+      </section>
+
+      {# pré-defesas e defesa #}
+      <section class="sgtf-card p-5">
+        <h3 class="mb-3 flex items-center gap-2 font-bold text-slate-900"><span class="material-icons-sharp text-primary">gavel</span> Pré-defesa e defesa</h3>
+        {% for p in predefesas %}
+          <div class="{% if not forloop.first %}mt-4 border-t border-slate-100 pt-4{% endif %}">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="font-semibold text-slate-900">Pré-defesa de {{ p.data|date:"d/m/Y" }} às {{ p.hora|time:"H:i" }}</p>
+              <a href="{% url 'sessao_predefesa' p.pk %}" class="text-xs font-semibold text-primary hover:underline">Sessão e recomendações</a>
+            </div>
+            <ul class="mt-2 grid gap-1 text-sm text-slate-600 sm:grid-cols-2">
+              {% for f, c, d in p.mesa %}{% if d %}<li><span class="text-slate-400">{{ f }}:</span> {{ d.nome }} {{ d.sobrenome }}</li>{% endif %}{% endfor %}
+            </ul>
+            <div class="mt-2 flex flex-wrap gap-1.5 text-[11px] font-bold">
+              {% if p.resultado %}<span class="rounded-full px-2 py-0.5 {% if p.resultado == 'nao_apto' %}bg-red-50 text-red-700{% elif p.resultado == 'apto' %}bg-green-50 text-green-700{% else %}bg-amber-50 text-amber-700{% endif %}">{{ p.get_resultado_display }}</span>
+              {% elif p.aberta_em %}<span class="rounded-full bg-sky-50 px-2 py-0.5 text-sky-700">Sessão em curso</span>
+              {% else %}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-500">Sessão por realizar</span>{% endif %}
+              {% if p.despacho %}<span class="rounded-full bg-slate-100 px-2 py-0.5 text-slate-600">Despacho {{ p.despacho.numero_despacho }} · {{ p.despacho.get_status_display }}</span>{% endif %}
+              {% if p.solicitacao %}<span class="rounded-full bg-primary-50 px-2 py-0.5 text-primary">Defesa a {{ p.solicitacao.data_defesa|date:"d/m/Y" }}</span>{% endif %}
+              {% if p.acta %}<span class="rounded-full bg-green-50 px-2 py-0.5 text-green-700">Acta {{ p.acta.numero_acta }} · nota {{ p.acta.avaliacao_final }}</span>{% endif %}
+            </div>
+          </div>
+        {% empty %}
+          <p class="text-sm text-slate-400">Ainda não tem pré-defesa agendada.</p>
+        {% endfor %}
+      </section>
+
+      {# recomendações #}
+      {% if recomendacoes %}
+        <section class="sgtf-card p-5">
+          <h3 class="mb-3 flex items-center gap-2 font-bold text-slate-900"><span class="material-icons-sharp text-primary">rate_review</span> Recomendações ({{ recomendacoes|length }})</h3>
+          <ul class="space-y-2">
+            {% for r in recomendacoes %}
+              <li class="rounded-xl border border-slate-100 p-3 text-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span class="font-semibold text-slate-500">{% if r.autor %}{{ r.autor.nome }} {{ r.autor.sobrenome }}{% elif r.tutor %}{{ r.tutor.nome }} {{ r.tutor.sobrenome }}{% endif %} · {{ r.funcao_autor|default:"Orientador" }}{% if r.predefesa %} · pré-defesa{% endif %}</span>
+                  {% if r.tipo == "forte" %}<span class="font-bold text-green-700">Ponto forte</span>{% else %}<span class="font-bold {% if r.estado == 'cumprida' %}text-green-700{% elif r.estado == 'resolvida' %}text-sky-700{% else %}text-amber-700{% endif %}">{{ r.get_estado_display }}</span>{% endif %}
+                </div>
+                <p class="mt-1 text-slate-800">{{ r.texto }}</p>
+              </li>
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+    </div>
+
+    {# documentos #}
+    <aside class="space-y-5">
+      <section class="sgtf-card p-5 lg:sticky lg:top-24">
+        <h3 class="mb-1 flex items-center gap-2 font-bold text-slate-900"><span class="material-icons-sharp text-primary">folder</span> Documentos</h3>
+        <p class="mb-4 text-xs text-slate-500">Organizados pelas pastas do ZIP.</p>
+        {% for pasta, docs in pastas %}
+          <p class="mt-3 text-[11px] font-bold uppercase tracking-wide text-slate-400">{{ pasta }}</p>
+          <ul class="mt-1 space-y-1">
+            {% for d in docs %}
+              <li><a href="{{ d.url }}" target="_blank" rel="noopener" class="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-primary">
+                <span class="material-icons-sharp text-[18px] {% if d.gerar %}text-red-500{% else %}text-slate-400{% endif %}">{% if d.gerar %}picture_as_pdf{% else %}description{% endif %}</span>
+                <span class="flex-1">{{ d.nome }}</span>
+              </a></li>
+            {% endfor %}
+          </ul>
+        {% empty %}
+          <p class="text-sm text-slate-400">Ainda não há documentos.</p>
+        {% endfor %}
+        {% if assinaturas %}
+          <p class="mt-4 text-[11px] font-bold uppercase tracking-wide text-slate-400">Assinaturas digitais</p>
+          {% for a in assinaturas %}
+            <a href="{% url 'verificar_documento' a.codigo %}" target="_blank" rel="noopener" class="mt-1 flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs text-slate-600 hover:bg-slate-50">
+              <span class="material-icons-sharp text-[16px] {% if a.valido %}text-green-600{% else %}text-slate-300{% endif %}">verified</span>
+              <span class="font-mono">{{ a.codigo }}</span>{% if not a.valido %} <span class="text-slate-400">(anulada)</span>{% elif a.visto_em %} <span class="text-green-700">· com visto</span>{% endif %}
+            </a>
+          {% endfor %}
+        {% endif %}
+        <a href="{% url 'processo_estudante_zip' estudante.pk %}" class="sgtf-btn sgtf-btn--primary mt-5 w-full"><span class="material-icons-sharp text-[18px]">folder_zip</span> Descarregar tudo (ZIP)</a>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

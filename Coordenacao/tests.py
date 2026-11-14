@@ -1,5 +1,7 @@
 """Testes de acesso e renderização das páginas principais do SGTF."""
 
+import io
+
 from django.test import TestCase
 from django.urls import reverse
 
@@ -693,3 +695,74 @@ class SessaoPredefesaTests(BaseTestCase):
     def test_outro_tutor_nao_ve_recomendacoes(self):
         self.client.force_login(self.v1)
         self.assertEqual(self.client.get(reverse("tutor_recomendacao", args=[self.tema.pk])).status_code, 403)
+
+
+
+class ProcessoEstudanteTests(BaseTestCase):
+    def setUp(self):
+        import tempfile
+        from datetime import time, timedelta
+        from django.core.files.base import ContentFile
+        from django.utils import timezone
+        from .models import Predefesa, ProcessoEtapa, Tema
+        self.media = self.settings(MEDIA_ROOT=tempfile.mkdtemp())
+        self.media.enable()
+        hoje = timezone.localdate()
+        ProcessoEtapa.objects.create(titulo="TFC 2026", curso=self.curso, coordenador=self.coordenacao,
+                                     data_inicio=hoje - timedelta(days=1), data_termino=hoje + timedelta(days=30), ativo=True)
+        self.tema = Tema.objects.create(estudante=self.estudante, titulo="Monitorização de falhas", descricao="x",
+                                        tutor_indicado=self.tutor, status_tutor="aprovado", status_coordenacao="aprovado")
+        self.tema.resumo.save("resumo.pdf", ContentFile(b"%PDF-1.4 resumo"))
+
+        def docente(n):
+            return Usuario.objects.create_user(email=f"j{n}@ispb.ao", password="SenhaForte#2026", nome=f"J{n}", sobrenome="T",
+                                               telefone="923000000", perfil="tutor", estado_user="activo")
+        a, b, c, d = (docente(i) for i in range(4))
+        Predefesa.objects.create(estudante=self.estudante, data=hoje, hora=time(9, 0),
+                                 presidente=a, secretario=b, primeiro_vogal=c, segundo_vogal=d)
+
+    def tearDown(self):
+        self.media.disable()
+
+    def test_pagina_mostra_tudo(self):
+        self.client.force_login(self.coordenacao)
+        r = self.client.get(reverse("processo_estudante", args=[self.estudante.pk]))
+        self.assertContains(r, "Monitorização de falhas")
+        self.assertContains(r, "Convocatoria da pre-defesa")
+        self.assertContains(r, "Resumo do tema")
+
+    def test_zip_tem_resumo_ficheiros_e_pdfs_gerados(self):
+        import zipfile
+        self.client.force_login(self.coordenacao)
+        r = self.client.get(reverse("processo_estudante_zip", args=[self.estudante.pk]))
+        self.assertEqual(r["Content-Type"], "application/zip")
+        nomes = zipfile.ZipFile(io.BytesIO(r.content)).namelist()
+        self.assertIn("00_Resumo_do_processo.pdf", nomes)
+        self.assertIn("02_Tema/Resumo_do_tema.pdf", nomes)
+        self.assertIn("05_Predefesa/Convocatoria_da_pre-defesa.pdf", nomes)
+        self.assertIn("08_Declaracao/Declaracao_do_orientador.pdf", nomes)
+
+    def test_ficheiro_perdido_nao_estraga_o_zip(self):
+        import os
+        import zipfile
+        os.remove(self.tema.resumo.path)
+        self.client.force_login(self.coordenacao)
+        r = self.client.get(reverse("processo_estudante_zip", args=[self.estudante.pk]))
+        nomes = zipfile.ZipFile(io.BytesIO(r.content)).namelist()
+        self.assertIn("LEIA-ME_documentos_em_falta.txt", nomes)
+        self.assertNotIn("02_Tema/Resumo_do_tema.pdf", nomes)
+
+    def test_coordenacao_de_outro_curso_e_estudantes_nao_acedem(self):
+        from .models import Curso
+        outro = Curso.objects.create(nome="Contabilidade", departamento=self.departamento)
+        coord2 = Usuario.objects.create_user(email="c2@ispb.ao", password="SenhaForte#2026", nome="C", sobrenome="2",
+                                             telefone="923000000", perfil="cordenacao", estado_user="activo", curso=outro)
+        self.client.force_login(coord2)
+        self.assertEqual(self.client.get(reverse("processo_estudante_zip", args=[self.estudante.pk])).status_code, 403)
+        self.client.force_login(self.outro_estudante)
+        self.assertEqual(self.client.get(reverse("processo_estudante", args=[self.estudante.pk])).status_code, 403)
+
+    def test_antigo_dossie_redireciona(self):
+        self.client.force_login(self.coordenacao)
+        r = self.client.get(reverse("dossie_estudante", args=[self.estudante.pk]))
+        self.assertRedirects(r, reverse("processo_estudante", args=[self.estudante.pk]))

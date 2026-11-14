@@ -42,7 +42,6 @@ from .utilizadores import (  # noqa: F401
     editar_professor,
     alternar_status_professor,
     eliminar_professor,
-    perfil_documental,
     lista_estudantes_tutor,
 )
 from .estrutura import (  # noqa: F401
@@ -174,4 +173,9 @@ from .sessao_predefesa import (  # noqa: F401
     registar_recomendacao_banca,
     eliminar_recomendacao_banca,
     encerrar_sessao_predefesa,
+)
+from .processo_estudante import (  # noqa: F401
+    processo_estudante,
+    processo_estudante_zip,
+    perfil_documental,
 )
