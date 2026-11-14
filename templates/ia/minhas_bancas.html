@@ -1,0 +1,36 @@
+{% extends "tutor/base.html" %}
+
+{% block titulo %}As minhas bancas{% endblock %}
+{% block titulo_pagina %}As minhas bancas{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">As minhas bancas</h2>
+    <p class="mt-1 text-sm text-slate-500">Pré-defesas em que faz parte do júri. Abra o resumo para preparar a avaliação.</p>
+  </div>
+  <div class="space-y-3">
+    {% for b in bancas %}
+      <div class="sgtf-card flex flex-wrap items-center justify-between gap-4 p-5 {% if b.data < hoje %}opacity-70{% endif %}">
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="rounded-full bg-primary-50 px-2.5 py-0.5 font-bold text-primary">{{ b.funcao }}</span>
+            <span class="text-slate-500">{{ b.data|date:"d/m/Y" }} às {{ b.hora|time:"H:i" }}</span>
+            {% if b.data < hoje %}<span class="text-slate-400">· realizada</span>{% endif %}
+          </div>
+          <h3 class="mt-2 text-base font-bold text-slate-900">{{ b.tema.titulo|default:"Tema não definido" }}</h3>
+          <p class="text-sm text-slate-500">{{ b.estudante.nome }} {{ b.estudante.sobrenome }} · {{ b.estudante.curso.nome|default:"" }}</p>
+        </div>
+        {% if b.tema_id %}
+          <a href="{% url 'resumo_juri' b.tema_id %}" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">auto_awesome</span> Resumo para o júri</a>
+        {% endif %}
+      </div>
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+        <span class="material-icons-sharp text-4xl text-slate-300">gavel</span>
+        Ainda não foi indicado para nenhuma banca.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

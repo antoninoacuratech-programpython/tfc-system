@@ -141,3 +141,9 @@ from .sugestoes import (  # noqa: F401
     sugestoes_estudante,
     escolher_sugestao,
 )
+from .ia import (  # noqa: F401
+    ia_proposta,
+    ia_analise,
+    resumo_juri,
+    minhas_bancas,
+)

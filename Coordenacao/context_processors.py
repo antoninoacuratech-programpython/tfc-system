@@ -19,4 +19,5 @@ def instituicao(request):
         "INSTITUICAO_SIGLA": settings.INSTITUICAO_SIGLA,
         "SISTEMA_NOME": settings.SISTEMA_NOME,
         "SISTEMA_DESCRICAO": settings.SISTEMA_DESCRICAO,
+        "IA_DISPONIVEL": bool(settings.ANTHROPIC_API_KEY),
     }

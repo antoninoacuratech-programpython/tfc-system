@@ -21,6 +21,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from ..models import ListaTemasAprovados, ProcessoEtapa, Tema, Usuario
+from ..similaridade import temas_semelhantes
 from ..permissions import PERFIL_COORDENACAO, PERFIL_TUTOR, PERFIS_GESTAO, perfil_requerido
 
 
@@ -253,7 +254,12 @@ def criar_ou_editar_tema(request):
 
     except Exception as e:
         messages.error(request, f"Erro ao processar: {e}")
-    
+    else:
+        parecidos = temas_semelhantes(titulo, descricao, excluir_estudante_id=request.user.pk, limite=1, minimo=0.75)
+        if parecidos:
+            p = parecidos[0]
+            messages.warning(request, f"Atenção: o seu tema é {p['percentagem']}% parecido com «{p['titulo']}» ({p['autor']}). O tutor e a coordenação vão ter isso em conta.")
+
     return redirect("dashboard_estudante")
 
 

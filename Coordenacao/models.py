@@ -957,3 +957,17 @@ class TemaSugerido(models.Model):
     @property
     def disponivel(self):
         return self.estado == "aberto" and not self.escolhido
+
+
+class ResumoIA(models.Model):
+    tema = models.OneToOneField(Tema, on_delete=models.CASCADE, related_name="resumo_ia")
+    conteudo = models.JSONField()
+    gerado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
+    gerado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Resumo para o júri (IA)"
+        verbose_name_plural = "Resumos para o júri (IA)"
+
+    def __str__(self):
+        return f"Resumo IA — {self.tema.titulo}"

@@ -1,0 +1,95 @@
+{% extends base_template %}
+
+{% block titulo %}Resumo para o júri{% endblock %}
+{% block titulo_pagina %}Resumo para o júri{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl space-y-5">
+  <div class="flex flex-wrap items-start justify-between gap-3 print:hidden">
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Ficha de leitura · Assistente de IA</p>
+      <h2 class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">{{ tema.titulo }}</h2>
+    </div>
+    <div class="flex gap-2">
+      {% if resumo %}
+        <button type="button" onclick="window.print()" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">print</span> Imprimir</button>
+      {% endif %}
+      {% if IA_DISPONIVEL %}
+        <form method="post"
+              {% if resumo %}data-confirm="O resumo atual será substituído por um novo, gerado de novo pela IA." data-confirm-titulo="Gerar novamente?" data-confirm-ok="Gerar"{% endif %}>
+          {% csrf_token %}
+          <button type="submit" class="sgtf-btn sgtf-btn--primary" data-loading>
+            <span class="material-icons-sharp text-[18px]">auto_awesome</span>
+            {% if resumo %}Gerar novamente{% else %}Gerar resumo com IA{% endif %}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="sgtf-card p-5 md:p-6 print:border-0 print:p-0 print:shadow-none">
+    <div class="hidden print:block mb-4 border-b pb-3">
+      <p class="text-xs font-bold uppercase tracking-wider text-slate-500">{{ INSTITUICAO_NOME }} · Ficha de leitura para o júri</p>
+      <h1 class="mt-1 text-xl font-extrabold">{{ tema.titulo }}</h1>
+    </div>
+
+    <dl class="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+      <div><dt class="font-semibold text-slate-500">Estudante</dt><dd class="text-slate-900">{{ tema.estudante.nome }} {{ tema.estudante.sobrenome }}</dd></div>
+      <div><dt class="font-semibold text-slate-500">Curso</dt><dd class="text-slate-900">{{ tema.estudante.curso.nome|default:"—" }}</dd></div>
+      <div><dt class="font-semibold text-slate-500">Orientador</dt><dd class="text-slate-900">{% if tema.tutor_indicado %}{{ tema.tutor_indicado.nome }} {{ tema.tutor_indicado.sobrenome }}{% else %}—{% endif %}</dd></div>
+      {% if predefesa %}
+        <div><dt class="font-semibold text-slate-500">Pré-defesa</dt><dd class="text-slate-900">{{ predefesa.data|date:"d/m/Y" }} às {{ predefesa.hora|time:"H:i" }}</dd></div>
+        <div class="sm:col-span-2"><dt class="font-semibold text-slate-500">Júri</dt>
+          <dd class="text-slate-900">Presidente: {{ predefesa.presidente.nome }} {{ predefesa.presidente.sobrenome }} · Secretário: {{ predefesa.secretario.nome }} {{ predefesa.secretario.sobrenome }} · Vogais: {{ predefesa.primeiro_vogal.nome }} {{ predefesa.primeiro_vogal.sobrenome }}, {{ predefesa.segundo_vogal.nome }} {{ predefesa.segundo_vogal.sobrenome }}</dd></div>
+      {% endif %}
+    </dl>
+
+    {% if resumo %}
+      {% with r=resumo.conteudo %}
+      <div class="mt-6 space-y-5 text-sm leading-relaxed text-slate-700">
+        <section>
+          <h3 class="mb-1 text-base font-bold text-slate-900">Síntese</h3>
+          <p>{{ r.sintese }}</p>
+        </section>
+        <div class="grid gap-5 md:grid-cols-2">
+          <section>
+            <h3 class="mb-1 text-base font-bold text-slate-900">Objetivos</h3>
+            <ul class="list-disc space-y-1 pl-5">{% for o in r.objetivos %}<li>{{ o }}</li>{% endfor %}</ul>
+          </section>
+          <section>
+            <h3 class="mb-1 text-base font-bold text-slate-900">Metodologia</h3>
+            <p>{{ r.metodologia }}</p>
+          </section>
+          <section>
+            <h3 class="mb-1 text-base font-bold text-slate-900">Contributos</h3>
+            <ul class="list-disc space-y-1 pl-5">{% for c in r.contributos %}<li>{{ c }}</li>{% endfor %}</ul>
+          </section>
+          <section>
+            <h3 class="mb-1 text-base font-bold text-amber-700">Pontos de atenção</h3>
+            <ul class="list-disc space-y-1 pl-5">{% for p in r.pontos_de_atencao %}<li>{{ p }}</li>{% endfor %}</ul>
+          </section>
+        </div>
+        <section class="rounded-xl bg-primary-50 p-4 print:bg-transparent print:p-0">
+          <h3 class="mb-2 text-base font-bold text-primary">Perguntas sugeridas ao estudante</h3>
+          <ol class="list-decimal space-y-1 pl-5">{% for q in r.perguntas_sugeridas %}<li>{{ q }}</li>{% endfor %}</ol>
+        </section>
+      </div>
+      <p class="mt-6 border-t pt-3 text-xs text-slate-400">
+        Gerado por IA em {{ resumo.gerado_em|date:"d/m/Y H:i" }}{% if resumo.gerado_por %} a pedido de {{ resumo.gerado_por.nome }} {{ resumo.gerado_por.sobrenome }}{% endif %}
+        a partir {% if r.fonte == "pdf" %}do PDF do resumo e da descrição do tema{% else %}da descrição do tema (não havia PDF){% endif %}.
+        Serve de apoio à leitura e não substitui a leitura do trabalho.
+      </p>
+      {% endwith %}
+    {% else %}
+      <div class="mt-6 flex flex-col items-center gap-2 rounded-xl border border-dashed border-slate-300 p-10 text-center text-sm text-slate-500">
+        <span class="material-icons-sharp text-4xl text-slate-300">auto_awesome</span>
+        {% if IA_DISPONIVEL %}
+          Ainda não foi gerado um resumo para este tema. Clique em «Gerar resumo com IA».
+        {% else %}
+          O assistente de IA ainda não está configurado neste servidor.
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

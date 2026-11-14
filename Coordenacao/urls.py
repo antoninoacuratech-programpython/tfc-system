@@ -141,6 +141,10 @@ urlpatterns = [
    path('sugestoes/<int:pk>/eliminar/', views.eliminar_sugestao, name='eliminar_sugestao'),
    path('estudante/sugestoes/', views.sugestoes_estudante, name='sugestoes_estudante'),
    path('estudante/sugestoes/<int:pk>/escolher/', views.escolher_sugestao, name='escolher_sugestao'),
+   path('ia/proposta/', views.ia_proposta, name='ia_proposta'),
+   path('ia/analise/', views.ia_analise, name='ia_analise'),
+   path('temas/<int:tema_id>/resumo-ia/', views.resumo_juri, name='resumo_juri'),
+   path('tutor/bancas/', views.minhas_bancas, name='minhas_bancas'),
    path('backups/', views.backups, name='backups'),
    path('backups/criar/', views.criar_backup, name='criar_backup'),
 ]

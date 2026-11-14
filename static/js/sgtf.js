@@ -187,11 +187,12 @@
   const PALAVRAS_PERIGO = /eliminar|excluir|apagar|desativar|remover|rejeitar/i;
 
   function confirmar(el) {
-    const mensagem = el.getAttribute("data-confirm") || "Tem a certeza?";
-    const tituloDado = el.getAttribute("data-confirm-titulo") || "";
-    const perigo = el.getAttribute("data-confirm-tipo") === "perigo" || PALAVRAS_PERIGO.test(mensagem + " " + tituloDado);
+    const ler = (n) => (typeof el.getAttribute === "function" ? el.getAttribute(n) : el[n]);
+    const mensagem = ler("data-confirm") || "Tem a certeza?";
+    const tituloDado = ler("data-confirm-titulo") || "";
+    const perigo = ler("data-confirm-tipo") === "perigo" || PALAVRAS_PERIGO.test(mensagem + " " + tituloDado);
     const titulo = tituloDado || (perigo ? "Confirmar eliminação" : "Confirmar");
-    const ok = el.getAttribute("data-confirm-ok") || (perigo ? "Sim, continuar" : "Confirmar");
+    const ok = ler("data-confirm-ok") || (perigo ? "Sim, continuar" : "Confirmar");
 
     return new Promise((resolver) => {
       const fundo = document.createElement("div");

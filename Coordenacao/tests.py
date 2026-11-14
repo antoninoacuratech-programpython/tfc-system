@@ -257,3 +257,125 @@ class SugestoesTests(BaseTestCase):
         self.client.force_login(self.coordenacao)
         self.client.post(reverse("eliminar_sugestao", args=[s.pk]))
         self.assertTrue(TemaSugerido.objects.filter(pk=s.pk).exists())
+
+
+class IATests(BaseTestCase):
+    def setUp(self):
+        import json
+        from types import SimpleNamespace
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import ProcessoEtapa, Tema
+        self.json = json
+        self.ns = SimpleNamespace
+        hoje = timezone.now().date()
+        ProcessoEtapa.objects.create(titulo="TFC 2026", curso=self.curso, coordenador=self.coordenacao,
+                                     data_inicio=hoje - timedelta(days=1), data_termino=hoje + timedelta(days=30), ativo=True)
+        self.tema_existente = Tema.objects.create(
+            estudante=self.outro_estudante, titulo="Sistema de gestão de stock para a cantina universitária",
+            descricao="Controlo de entradas e saídas de produtos da cantina com alertas de stock mínimo.",
+            tutor_indicado=self.tutor,
+        )
+
+    def _cliente_falso(self, dados=None, stop_reason="end_turn"):
+        from unittest import mock
+        resposta = self.ns(stop_reason=stop_reason, content=[self.ns(type="text", text=self.json.dumps(dados or {}))])
+        cliente = mock.MagicMock()
+        cliente.beta.messages.create.return_value = resposta
+        return mock.patch("Coordenacao.ia._cliente", return_value=cliente), cliente
+
+    def _post(self, nome, dados, **kw):
+        return self.client.post(reverse(nome, **kw), self.json.dumps(dados), content_type="application/json")
+
+    def test_analise_encontra_tema_parecido_e_sugere_tutor(self):
+        self.client.force_login(self.estudante)
+        d = self._post("ia_analise", {"titulo": "Gestão de stock da cantina", "descricao": "Alertas de stock mínimo e controlo de produtos da cantina"}).json()
+        self.assertTrue(d["semelhantes"])
+        self.assertGreaterEqual(d["semelhantes"][0]["percentagem"], 50)
+        self.assertEqual(d["tutores"][0]["id"], self.tutor.pk)
+
+    def test_analise_nao_compara_com_o_proprio_estudante(self):
+        self.client.force_login(self.outro_estudante)
+        d = self._post("ia_analise", {"titulo": "Sistema de gestão de stock para a cantina universitária", "descricao": ""}).json()
+        self.assertEqual(d["semelhantes"], [])
+
+    def test_proposta_sem_chave(self):
+        self.client.force_login(self.estudante)
+        with self.settings(ANTHROPIC_API_KEY=""):
+            r = self._post("ia_proposta", {"ideia": "Uma aplicação para marcar atendimento na secretaria."})
+        self.assertEqual(r.status_code, 503)
+
+    def test_proposta_com_ia(self):
+        dados = {
+            "titulo": "Aplicação de marcação de atendimento na secretaria do ISP-Bié",
+            "problema": "Os estudantes perdem horas em filas.", "objetivo_geral": "Desenvolver uma aplicação de marcação.",
+            "objetivos_especificos": ["Levantar requisitos", "Implementar", "Avaliar"],
+            "metodologia": "Desenvolvimento iterativo com testes de usabilidade.", "palavras_chave": ["marcação", "filas"],
+        }
+        patch, cliente = self._cliente_falso(dados)
+        self.client.force_login(self.estudante)
+        with self.settings(ANTHROPIC_API_KEY="teste"), patch:
+            d = self._post("ia_proposta", {"ideia": "Uma aplicação para marcar atendimento na secretaria."}).json()
+        self.assertTrue(d["ok"])
+        self.assertEqual(d["titulo"], dados["titulo"])
+        self.assertIn("Objetivos específicos", d["descricao"])
+        self.assertLessEqual(len(d["descricao"].split()), 250)
+        kwargs = cliente.beta.messages.create.call_args.kwargs
+        self.assertEqual(kwargs["output_config"]["format"]["type"], "json_schema")
+        self.assertEqual(kwargs["fallbacks"], "default")
+
+    def test_proposta_recusada(self):
+        patch, _ = self._cliente_falso(stop_reason="refusal")
+        self.client.force_login(self.estudante)
+        with self.settings(ANTHROPIC_API_KEY="teste"), patch:
+            r = self._post("ia_proposta", {"ideia": "Uma ideia qualquer para o meu trabalho de fim de curso."})
+        self.assertEqual(r.status_code, 400)
+        self.assertFalse(r.json()["ok"])
+
+    def test_limite_por_hora(self):
+        from django.core.cache import cache
+        cache.clear()
+        dados = {"titulo": "T", "problema": "P", "objetivo_geral": "O", "objetivos_especificos": ["a"], "metodologia": "M", "palavras_chave": []}
+        patch, _ = self._cliente_falso(dados)
+        self.client.force_login(self.estudante)
+        with self.settings(ANTHROPIC_API_KEY="teste", IA_LIMITE_POR_HORA=1), patch:
+            self.assertEqual(self._post("ia_proposta", {"ideia": "Primeira ideia com detalhe suficiente."}).status_code, 200)
+            self.assertEqual(self._post("ia_proposta", {"ideia": "Segunda ideia com detalhe suficiente."}).status_code, 429)
+        cache.clear()
+
+    def _predefesa(self):
+        from datetime import date, time
+        from .models import Predefesa, Usuario
+        juri = [Usuario.objects.create_user(email=f"j{i}@ispb.ao", password="x", nome="Juri", sobrenome=str(i),
+                                            telefone="923000000", perfil="tutor", estado_user="activo") for i in range(4)]
+        Predefesa.objects.bulk_create([Predefesa(
+            data=date(2026, 12, 1), hora=time(10, 0), estudante=self.outro_estudante, tema=self.tema_existente,
+            presidente=juri[0], secretario=juri[1], primeiro_vogal=juri[2], segundo_vogal=juri[3],
+        )])
+        return juri
+
+    def test_resumo_juri_permissoes_e_geracao(self):
+        from .models import ResumoIA
+        juri = self._predefesa()
+        url = reverse("resumo_juri", args=[self.tema_existente.pk])
+        for user, esperado in [(self.estudante, 403), (self.coordenacao, 200), (juri[2], 200), (self.tutor, 200)]:
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(url).status_code, esperado, user.email)
+
+        conteudo = {"sintese": "S", "objetivos": ["o"], "metodologia": "m", "contributos": ["c"],
+                    "pontos_de_atencao": ["p"], "perguntas_sugeridas": ["q?"]}
+        patch, _ = self._cliente_falso(conteudo)
+        self.client.force_login(self.coordenacao)
+        with self.settings(ANTHROPIC_API_KEY="teste"), patch:
+            self.client.post(url)
+        r = ResumoIA.objects.get(tema=self.tema_existente)
+        self.assertEqual(r.conteudo["fonte"], "descricao")
+        self.client.force_login(juri[0])
+        self.assertContains(self.client.get(url), "Perguntas sugeridas")
+
+    def test_minhas_bancas(self):
+        juri = self._predefesa()
+        self.client.force_login(juri[1])
+        r = self.client.get(reverse("minhas_bancas"))
+        self.assertContains(r, "Secretário")
+        self.assertContains(r, self.tema_existente.titulo)

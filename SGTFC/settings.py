@@ -153,6 +153,11 @@ INSTITUICAO_SIGLA = os.environ.get("INSTITUICAO_SIGLA", "ISP-Bié")
 SISTEMA_NOME = os.environ.get("SISTEMA_NOME", "SGTF")
 SISTEMA_DESCRICAO = "Sistema de Gestão de Trabalhos de Fim de Curso"
 
+# assistente de IA (Claude); sem chave, só ficam as funções locais (temas parecidos e tutores)
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+IA_MODELO = os.environ.get("IA_MODELO", "claude-opus-5-5")
+IA_LIMITE_POR_HORA = int(os.environ.get("IA_LIMITE_POR_HORA", 10))
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
