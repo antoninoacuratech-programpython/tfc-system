@@ -1,12 +1,15 @@
 {% extends 'Estudante/base.html' %}
 {% load static %}
 
+{% block titulo %}Temas disponíveis{% endblock %}
+{% block titulo_pagina %}Temas disponíveis{% endblock %}
+
 {% block content %}
 
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 px-4 sm:px-0">
   <div>
     <h2 class="text-2xl font-bold text-gray-800">Relatório de Temas</h2>
-    <p class="text-sm text-gray-500 mt-1">Consulta geral de projetos, estudantes e recomendações de tutoria.</p>
+    <p class="text-sm text-gray-500 mt-1">Consulta geral dos temas de TFC, com o tutor e o processo de cada um.</p>
   </div>
 </div>
 
@@ -16,7 +19,7 @@
     <input
       type="text"
       id="filterText"
-      placeholder="Buscar por estudante ou tema..."
+      placeholder="Buscar por estudante, tema ou tutor..."
       class="w-full rounded-lg border-gray-300 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
     />
 
@@ -50,13 +53,14 @@
 
 <div class="bg-white shadow-lg rounded-xl p-4 overflow-x-auto">
 
-    <table class="hidden md:table w-full border-collapse">
+    <table class="hidden md:table w-full border-collapse" data-sem-cartoes>
         <thead>
             <tr class="bg-gray-50 border-b">
-                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500">Estudante / Curso</th>
-                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500">Título do Tema</th>
-                <th class="p-3 text-center text-xs font-semibold uppercase text-gray-500">Status</th>
-                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500">Última Recomendação</th>
+                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500 w-[22%]">Estudante / Curso</th>
+                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500">Título do tema</th>
+                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500 w-[18%]">Tutor</th>
+                <th class="p-3 text-left text-xs font-semibold uppercase text-gray-500 w-[18%]">Processo</th>
+                <th class="p-3 text-center text-xs font-semibold uppercase text-gray-500 w-[110px]">Estado</th>
             </tr>
         </thead>
 
@@ -65,36 +69,34 @@
         <tr class="border-b hover:bg-gray-50 transition tema-row"
             data-nome="{{ tema.estudante.nome }} {{ tema.estudante.sobrenome }}"
             data-curso="{{ tema.estudante.curso.nome|default:'' }}"
-            data-tema="{{ tema.titulo }}"
+            data-tema="{{ tema.titulo }} {{ tema.tutor_indicado.nome|default:'' }} {{ tema.tutor_indicado.sobrenome|default:'' }}"
             data-status="{{ tema.status_final }}">
 
-            <td class="p-3">
+            <td class="p-3 align-top">
                 <div class="text-sm font-medium text-gray-800">{{ tema.estudante.nome }} {{ tema.estudante.sobrenome }}</div>
                 <div class="text-[10px] font-bold text-indigo-500 uppercase">{{ tema.estudante.curso.nome|default:"—" }}</div>
             </td>
 
-            <td class="p-3 text-sm text-gray-700 leading-snug max-w-xs">
-                {{ tema.titulo }}
+            <td class="p-3 align-top text-sm text-gray-700 leading-snug">{{ tema.titulo }}</td>
+
+            <td class="p-3 align-top text-sm text-gray-700">
+                {% if tema.tutor_indicado %}{{ tema.tutor_indicado.nome }} {{ tema.tutor_indicado.sobrenome }}{% else %}<span class="text-gray-300">Por atribuir</span>{% endif %}
             </td>
 
-            <td class="p-3 text-center">
-                <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+            <td class="p-3 align-top text-sm text-gray-700">
+                {% if tema.processo_mostrado %}
+                    <div class="font-medium">{{ tema.processo_mostrado.titulo }}</div>
+                    <div class="text-[11px] text-gray-400">{{ tema.processo_mostrado.data_inicio|date:"d/m/Y" }} – {{ tema.processo_mostrado.data_termino|date:"d/m/Y" }}</div>
+                {% else %}<span class="text-gray-300">—</span>{% endif %}
+            </td>
+
+            <td class="p-3 align-top text-center">
+                <span class="inline-block whitespace-nowrap px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
                     {% if tema.status_final == 'aprovado' %}bg-green-100 text-green-700
                     {% elif tema.status_final == 'rejeitado' %}bg-red-100 text-red-700
                     {% else %}bg-amber-100 text-amber-700{% endif %}">
                     {{ tema.get_status_final_display }}
                 </span>
-            </td>
-
-            <td class="p-3">
-                {% with ultima=tema.recomendacoes.all|first %}
-                    {% if ultima %}
-                        <div class="text-[11px] text-gray-600 italic line-clamp-1">"{{ ultima.texto }}"</div>
-                        <div class="text-[9px] text-gray-400 font-bold uppercase mt-1">Tutor: {{ ultima.tutor.nome }}</div>
-                    {% else %}
-                        <span class="text-xs text-gray-300">Sem recomendações</span>
-                    {% endif %}
-                {% endwith %}
             </td>
         </tr>
         {% endfor %}
@@ -106,32 +108,28 @@
     <div class="rounded-xl border bg-gray-50 p-4 shadow-sm tema-card"
          data-nome="{{ tema.estudante.nome }} {{ tema.estudante.sobrenome }}"
          data-curso="{{ tema.estudante.curso.nome|default:'' }}"
-         data-tema="{{ tema.titulo }}"
+         data-tema="{{ tema.titulo }} {{ tema.tutor_indicado.nome|default:'' }} {{ tema.tutor_indicado.sobrenome|default:'' }}"
          data-status="{{ tema.status_final }}">
 
-        <div class="flex justify-between items-start border-b pb-2 mb-2">
-            <div>
+        <div class="flex justify-between items-start gap-3 border-b pb-2 mb-2">
+            <div class="min-w-0">
                 <p class="font-semibold text-gray-800">{{ tema.estudante.nome }} {{ tema.estudante.sobrenome }}</p>
                 <p class="text-[10px] font-bold text-indigo-500 uppercase">{{ tema.estudante.curso.nome|default:"Sem curso" }}</p>
             </div>
-            <span class="px-2 py-1 rounded-md text-[9px] font-black uppercase
+            <span class="shrink-0 whitespace-nowrap px-2 py-1 rounded-md text-[9px] font-black uppercase
                 {% if tema.status_final == 'aprovado' %}bg-green-100 text-green-700
                 {% elif tema.status_final == 'rejeitado' %}bg-red-100 text-red-700
                 {% else %}bg-amber-100 text-amber-700{% endif %}">
-                {{ tema.status_final }}
+                {{ tema.get_status_final_display }}
             </span>
         </div>
 
-        <p class="text-sm text-gray-700 mb-3"><strong>Tema:</strong> {{ tema.titulo }}</p>
-        
-        {% with ultima=tema.recomendacoes.all|first %}
-            {% if ultima %}
-            <div class="p-2 bg-white rounded border border-gray-200 text-[11px] text-gray-500 italic">
-                <strong>Última Rec:</strong> {{ ultima.texto|truncatechars:80 }}
-            </div>
-            {% endif %}
-        {% endwith %}
+        <p class="text-sm text-gray-700"><strong>Tema:</strong> {{ tema.titulo }}</p>
+        <p class="mt-1 text-sm text-gray-600"><strong>Tutor:</strong> {% if tema.tutor_indicado %}{{ tema.tutor_indicado.nome }} {{ tema.tutor_indicado.sobrenome }}{% else %}por atribuir{% endif %}</p>
+        <p class="mt-1 text-sm text-gray-600"><strong>Processo:</strong> {% if tema.processo_mostrado %}{{ tema.processo_mostrado.titulo }} ({{ tema.processo_mostrado.data_inicio|date:"d/m/Y" }} – {{ tema.processo_mostrado.data_termino|date:"d/m/Y" }}){% else %}—{% endif %}</p>
     </div>
+    {% empty %}
+    <p class="py-8 text-center text-sm text-gray-400">Ainda não há temas registados.</p>
     {% endfor %}
     </div>
 
@@ -190,13 +188,5 @@ filterCurso.addEventListener("change", applyFilters);
 filterStatus.addEventListener("change", applyFilters);
 </script>
 
-<style>
-    .line-clamp-1 {
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-</style>
 
 {% endblock %}

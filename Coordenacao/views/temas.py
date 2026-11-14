@@ -230,6 +230,7 @@ def criar_ou_editar_tema(request):
                 tema_existente.requerimento = requerimento
             
             tema_existente.tutor_indicado = tutor
+            tema_existente.processo = processo
             tema_existente.status_tutor = 'pendente'
             tema_existente.status_coordenacao = 'pendente'
             tema_existente.save()
@@ -244,6 +245,7 @@ def criar_ou_editar_tema(request):
                 resumo=resumo,
                 requerimento=requerimento,
                 tutor_indicado=tutor,
+                processo=processo,
                 status_tutor='pendente',
                 status_coordenacao='pendente',
             )
@@ -312,12 +314,21 @@ def alterar_status_multiplos_tutor(request):
 
 @login_required
 def lista_todos_temas_geral(request):
-    temas = Tema.objects.select_related('estudante', 'estudante__curso').prefetch_related('recomendacoes').all()
-    
-    context = {
-        'temas': temas
-    }
-    return render(request, 'Estudante/lista_geral_temas.html', context)
+    temas = list(
+        Tema.objects.select_related('estudante', 'estudante__curso', 'tutor_indicado', 'processo')
+        .order_by('estudante__curso__nome', 'titulo')
+    )
+    processos = list(ProcessoEtapa.objects.all())
+    for tema in temas:
+        tema.processo_mostrado = tema.processo
+        if not tema.processo_mostrado and tema.estudante.curso_id and tema.data_envio:
+            # temas antigos não guardavam o processo: deduz-se pela data de envio
+            data = timezone.localtime(tema.data_envio).date()
+            tema.processo_mostrado = next(
+                (p for p in processos if p.curso_id == tema.estudante.curso_id and p.data_inicio <= data <= p.data_termino),
+                None,
+            )
+    return render(request, 'Estudante/lista_geral_temas.html', {'temas': temas})
 
 
 @login_required
