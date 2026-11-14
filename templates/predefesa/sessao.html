@@ -1,0 +1,147 @@
+{% extends base %}
+
+{% block titulo %}Sessão de pré-defesa{% endblock %}
+{% block titulo_pagina %}Sessão de pré-defesa{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-5xl space-y-5">
+  <div class="sgtf-card overflow-hidden">
+    <div class="bg-slate-900 p-5 md:p-7">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-[11px] font-bold uppercase tracking-widest text-blue-300">Pré-defesa · {{ p.data|date:"d/m/Y" }} às {{ p.hora|time:"H:i" }}{% if p.tema.processo %} · {{ p.tema.processo.titulo }}{% endif %}</p>
+          <h2 class="mt-1 text-lg font-bold leading-snug text-white md:text-xl">{{ p.tema.titulo|default:"Tema não definido" }}</h2>
+          <p class="mt-1 text-sm text-slate-300">{{ p.estudante.nome }} {{ p.estudante.sobrenome }} · {{ p.estudante.curso.nome|default:"" }}{% if p.tema.tutor_indicado %} · Orientador: {{ p.tema.tutor_indicado.nome }} {{ p.tema.tutor_indicado.sobrenome }}{% endif %}</p>
+        </div>
+        {% if p.encerrada_em %}
+          <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">Encerrada · {{ p.get_resultado_display }}</span>
+        {% elif p.aberta_em %}
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-green-500/20 px-3 py-1 text-xs font-bold text-green-300"><span class="h-2 w-2 animate-pulse rounded-full bg-green-400"></span> Em curso desde {{ p.aberta_em|time:"H:i" }}</span>
+        {% else %}
+          <span class="rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-slate-200">Por abrir</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if minha_funcao %}<p class="px-5 py-3 text-sm text-slate-600 md:px-7">A sua função nesta banca: <b>{{ minha_funcao }}</b></p>{% endif %}
+  </div>
+
+  {# 1. abertura: o secretário apresenta a mesa e confirma presenças #}
+  {% if not p.aberta_em %}
+    {% if conduz %}
+      <form method="post" action="{% url 'abrir_sessao_predefesa' p.pk %}" class="sgtf-card space-y-4 p-5 md:p-6">
+        {% csrf_token %}
+        <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">campaign</span> Abertura da sessão</h3>
+        <p class="text-sm text-slate-500">Apresente os membros da banca e confirme quem está presente. Depois de aberta, cada membro regista as suas recomendações.</p>
+        <div class="grid gap-2 sm:grid-cols-2">
+          {% for m in mesa %}
+            <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 p-3 hover:bg-slate-50">
+              <input type="checkbox" name="presentes" value="{{ m.chave }}" checked class="h-4 w-4 accent-[#1d4ed8]">
+              <span><b class="block text-sm text-slate-900">{{ m.docente.nome }} {{ m.docente.sobrenome }}</b><span class="text-xs text-slate-500">{{ m.funcao }}</span></span>
+            </label>
+          {% endfor %}
+        </div>
+        <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">play_arrow</span> Abrir sessão</button>
+      </form>
+    {% else %}
+      <div class="sgtf-alert sgtf-alert--info"><span class="material-icons-sharp">schedule</span><p>A sessão ainda não foi aberta. O secretário da banca abre-a no dia da pré-defesa.</p></div>
+    {% endif %}
+  {% endif %}
+
+  {# 2. registo das recomendações #}
+  {% if pode_registar %}
+    <form method="post" action="{% url 'registar_recomendacao_banca' p.pk %}" class="sgtf-card space-y-4 p-5 md:p-6">
+      {% csrf_token %}
+      <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">add_comment</span> Registar recomendação</h3>
+      <div class="grid gap-3 md:grid-cols-2">
+        {% if conduz %}
+          <div>
+            <label class="sgtf-label" for="membro">Membro da banca</label>
+            <select id="membro" name="membro" class="sgtf-input">
+              {% for m in mesa %}{% if m.presente %}<option value="{{ m.chave }}" {% if m.docente.pk == request.user.pk %}selected{% endif %}>{{ m.funcao }} — {{ m.docente.nome }} {{ m.docente.sobrenome }}</option>{% endif %}{% endfor %}
+            </select>
+          </div>
+        {% endif %}
+        <div>
+          <span class="sgtf-label">Tipo</span>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5 text-sm has-[:checked]:border-amber-400 has-[:checked]:bg-amber-50"><input type="radio" name="tipo" value="melhoria" checked class="accent-amber-500"> A melhorar</label>
+            <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-2.5 text-sm has-[:checked]:border-green-400 has-[:checked]:bg-green-50"><input type="radio" name="tipo" value="forte" class="accent-green-600"> Ponto forte</label>
+          </div>
+        </div>
+      </div>
+      <textarea name="texto" rows="3" required class="sgtf-input" placeholder="Ex.: Rever a metodologia do capítulo 3 e justificar a escolha da base de dados."></textarea>
+      <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">add</span> Registar</button>
+    </form>
+  {% endif %}
+
+  {# mesa e recomendações por membro #}
+  <div class="flex flex-wrap items-center justify-between gap-2">
+    <h3 class="text-sm font-bold uppercase tracking-wide text-slate-400">Mesa de júri</h3>
+    <span class="text-xs font-semibold text-slate-500">{{ total_melhorias }} a melhorar · {{ total_fortes }} pontos fortes</span>
+  </div>
+  <div class="grid gap-4 md:grid-cols-2">
+    {% for m in mesa %}
+      <section id="membro-{{ m.docente.pk }}" class="sgtf-card p-5 {% if p.aberta_em and not m.presente %}opacity-60{% endif %}">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <p class="font-bold text-slate-900">{{ m.docente.nome }} {{ m.docente.sobrenome }}</p>
+            <p class="text-xs text-slate-500">{{ m.funcao }}</p>
+          </div>
+          {% if p.aberta_em %}
+            {% if m.presente %}<span class="rounded-full bg-green-50 px-2.5 py-0.5 text-[11px] font-bold text-green-700">Presente</span>
+            {% else %}<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500">Ausente</span>{% endif %}
+          {% endif %}
+        </div>
+        {% if m.melhorias or m.fortes %}
+          <ul class="mt-3 space-y-2">
+            {% for r in m.melhorias %}
+              <li class="flex items-start gap-2 rounded-lg bg-amber-50/60 p-2.5 text-sm text-slate-800">
+                <span class="material-icons-sharp mt-0.5 text-[16px] text-amber-500">build</span>
+                <span class="flex-1 whitespace-pre-line">{{ r.texto }}</span>
+                {% if em_curso and r.autor_id == request.user.pk or em_curso and conduz %}
+                  <form method="post" action="{% url 'eliminar_recomendacao_banca' p.pk r.pk %}">{% csrf_token %}<button class="text-slate-400 hover:text-red-600" title="Retirar"><span class="material-icons-sharp text-[16px]">close</span></button></form>
+                {% endif %}
+              </li>
+            {% endfor %}
+            {% for r in m.fortes %}
+              <li class="flex items-start gap-2 rounded-lg bg-green-50/60 p-2.5 text-sm text-slate-800">
+                <span class="material-icons-sharp mt-0.5 text-[16px] text-green-600">thumb_up</span>
+                <span class="flex-1 whitespace-pre-line">{{ r.texto }}</span>
+                {% if em_curso and r.autor_id == request.user.pk or em_curso and conduz %}
+                  <form method="post" action="{% url 'eliminar_recomendacao_banca' p.pk r.pk %}">{% csrf_token %}<button class="text-slate-400 hover:text-red-600" title="Retirar"><span class="material-icons-sharp text-[16px]">close</span></button></form>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% elif p.aberta_em %}
+          <p class="mt-3 text-sm text-slate-400">Sem recomendações registadas.</p>
+        {% endif %}
+      </section>
+    {% endfor %}
+  </div>
+
+  {# 3. encerramento #}
+  {% if em_curso and conduz %}
+    <form method="post" action="{% url 'encerrar_sessao_predefesa' p.pk %}" class="sgtf-card space-y-4 border-slate-300 p-5 md:p-6"
+          data-confirm="Depois de encerrada, as recomendações seguem para o estudante e o orientador e já não podem ser alteradas." data-confirm-titulo="Encerrar a sessão?" data-confirm-ok="Encerrar">
+      {% csrf_token %}
+      <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">gavel</span> Encerramento</h3>
+      <div>
+        <span class="sgtf-label">Resultado da pré-defesa</span>
+        <div class="grid gap-2 sm:grid-cols-3">
+          {% for valor, rotulo in resultados %}
+            <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 p-3 text-sm font-semibold has-[:checked]:border-primary has-[:checked]:bg-primary-50"><input type="radio" name="resultado" value="{{ valor }}" required {% if valor == 'apto_recomendacoes' %}checked{% endif %}> {{ rotulo }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <textarea name="observacoes" rows="2" class="sgtf-input" placeholder="Observações gerais da banca (opcional)"></textarea>
+      <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">lock</span> Encerrar sessão e enviar recomendações</button>
+    </form>
+  {% elif p.encerrada_em %}
+    <div class="sgtf-card p-5 text-sm text-slate-600">
+      <p><b>Sessão</b> aberta às {{ p.aberta_em|time:"H:i" }} e encerrada às {{ p.encerrada_em|time:"H:i" }} de {{ p.encerrada_em|date:"d/m/Y" }}. Resultado: <b>{{ p.get_resultado_display }}</b>.</p>
+      {% if p.observacoes_sessao %}<p class="mt-2"><b>Observações:</b> {{ p.observacoes_sessao }}</p>{% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

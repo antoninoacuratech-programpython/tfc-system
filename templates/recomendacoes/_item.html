@@ -1,0 +1,48 @@
+<li id="rec-{{ r.pk }}" class="rounded-xl border p-4 {% if r.tipo == 'forte' %}border-green-100 bg-green-50/40{% elif r.estado == 'cumprida' %}border-slate-100 bg-slate-50{% elif r.estado == 'resolvida' %}border-sky-200 bg-sky-50/40{% else %}border-slate-200 bg-white{% endif %}">
+  <div class="flex flex-wrap items-start justify-between gap-2">
+    <p class="text-xs font-semibold text-slate-500">
+      {% if r.autor %}{{ r.autor.nome }} {{ r.autor.sobrenome }}{% elif r.tutor %}{{ r.tutor.nome }} {{ r.tutor.sobrenome }}{% endif %}
+      {% if r.funcao_autor %}<span class="text-slate-400">· {{ r.funcao_autor }}</span>{% endif %}
+      <span class="text-slate-400">· {{ r.data_criacao|date:"d/m/Y" }}</span>
+    </p>
+    {% if r.tipo == "forte" %}
+      <span class="rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-bold text-green-700">Ponto forte</span>
+    {% elif r.estado == "cumprida" %}
+      <span class="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-[11px] font-bold text-green-700"><span class="material-icons-sharp text-[14px]">check</span> Cumprida</span>
+    {% elif r.estado == "resolvida" %}
+      <span class="rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-bold text-sky-700">Resolvida · {% if modo == "tutor" %}confirme{% else %}aguarda o orientador{% endif %}</span>
+    {% else %}
+      <span class="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">Por cumprir</span>
+    {% endif %}
+  </div>
+  <p class="mt-2 whitespace-pre-line text-sm leading-relaxed {% if r.estado == 'cumprida' and r.tipo != 'forte' %}text-slate-500{% else %}text-slate-800{% endif %}">{{ r.texto }}</p>
+  {% if r.nota_estudante %}<p class="mt-2 rounded-lg bg-white/70 p-2.5 text-xs text-slate-600"><b>Nota do estudante:</b> {{ r.nota_estudante }}</p>{% endif %}
+
+  {% if r.tipo == "melhoria" %}
+    {% if modo == "tutor" %}
+      <div class="mt-3 flex flex-wrap gap-2">
+        {% if r.estado != "cumprida" %}
+          <form method="post" action="{% url 'mudar_estado_recomendacao' r.pk %}">{% csrf_token %}
+            <input type="hidden" name="acao" value="cumprir">
+            <button class="sgtf-btn sgtf-btn--primary px-3 py-1.5 text-xs"><span class="material-icons-sharp text-[16px]">task_alt</span> Marcar como cumprida</button>
+          </form>
+        {% endif %}
+        {% if r.estado != "pendente" %}
+          <form method="post" action="{% url 'mudar_estado_recomendacao' r.pk %}">{% csrf_token %}
+            <input type="hidden" name="acao" value="reabrir">
+            <button class="sgtf-btn sgtf-btn--ghost px-3 py-1.5 text-xs text-amber-700"><span class="material-icons-sharp text-[16px]">undo</span> Ainda não está cumprida</button>
+          </form>
+        {% endif %}
+      </div>
+    {% elif modo == "estudante" and r.estado == "pendente" %}
+      <details class="mt-3">
+        <summary class="inline-flex cursor-pointer list-none items-center gap-1 text-xs font-semibold text-primary"><span class="material-icons-sharp text-[16px]">done</span> Já resolvi</summary>
+        <form method="post" action="{% url 'mudar_estado_recomendacao' r.pk %}" class="mt-2 space-y-2">{% csrf_token %}
+          <input type="hidden" name="acao" value="resolver">
+          <textarea name="nota" rows="2" class="sgtf-input text-sm" placeholder="O que foi feito (opcional). Ex.: capítulo 2 revisto, página 14."></textarea>
+          <button class="sgtf-btn sgtf-btn--primary px-3 py-1.5 text-xs">Enviar ao orientador</button>
+        </form>
+      </details>
+    {% endif %}
+  {% endif %}
+</li>

@@ -1,0 +1,28 @@
+{% for s in sessoes %}
+  <section class="sgtf-card overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-5 py-4">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Recomendações da banca</p>
+        <h3 class="font-bold text-slate-900">Pré-defesa de {{ s.predefesa.data|date:"d/m/Y" }}{% if s.predefesa.tema.processo %} <span class="font-normal text-slate-500">· {{ s.predefesa.tema.processo.titulo }}</span>{% endif %}</h3>
+      </div>
+      {% if s.predefesa.resultado %}
+        <span class="rounded-full px-3 py-1 text-xs font-bold {% if s.predefesa.resultado == 'apto' %}bg-green-100 text-green-700{% elif s.predefesa.resultado == 'nao_apto' %}bg-red-100 text-red-700{% else %}bg-amber-100 text-amber-700{% endif %}">{{ s.predefesa.get_resultado_display }}</span>
+      {% endif %}
+    </div>
+    <div class="space-y-5 p-5">
+      {% if s.melhorias %}
+        <div>
+          <h4 class="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-800"><span class="material-icons-sharp text-[18px] text-amber-500">build</span> A melhorar ({{ s.melhorias|length }})</h4>
+          <ul class="space-y-2">{% for r in s.melhorias %}{% include "recomendacoes/_item.html" %}{% endfor %}</ul>
+        </div>
+      {% endif %}
+      {% if s.fortes %}
+        <div>
+          <h4 class="mb-2 flex items-center gap-1.5 text-sm font-bold text-slate-800"><span class="material-icons-sharp text-[18px] text-green-600">thumb_up</span> Pontos fortes ({{ s.fortes|length }})</h4>
+          <ul class="space-y-2">{% for r in s.fortes %}{% include "recomendacoes/_item.html" %}{% endfor %}</ul>
+        </div>
+      {% endif %}
+      {% if s.predefesa.observacoes_sessao %}<p class="rounded-xl bg-slate-50 p-3 text-sm text-slate-600"><b>Observações da banca:</b> {{ s.predefesa.observacoes_sessao }}</p>{% endif %}
+    </div>
+  </section>
+{% endfor %}

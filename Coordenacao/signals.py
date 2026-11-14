@@ -63,12 +63,14 @@ def notificar_mudanca_status_tema(sender, instance, created, **kwargs):
 def notificar_nova_recomendacao(sender, instance, created, **kwargs):
     if kwargs.get('raw', False):
         return
-    if created:
+    # as da banca são avisadas de uma vez, quando a sessão de pré-defesa é encerrada
+    if created and not instance.predefesa_id:
+        nome = instance.tutor.nome if instance.tutor else "O seu orientador"
         NotificacaoFinal.objects.create(
             usuario=instance.tema.estudante,
             titulo="Nova Recomendação",
-            mensagem=f"O orientador {instance.tutor.nome} deixou correções no seu tema.",
-            link=reverse('dashboard_estudante')
+            mensagem=f"{nome} deixou uma recomendação no seu tema.",
+            link=reverse('todas_recomendacoes')
         )
 
 from django.db.models.signals import post_save

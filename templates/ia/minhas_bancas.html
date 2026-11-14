@@ -7,7 +7,7 @@
 <div class="space-y-5">
   <div>
     <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">As minhas bancas</h2>
-    <p class="mt-1 text-sm text-slate-500">Pré-defesas em que faz parte do júri. Abra o resumo para preparar a avaliação.</p>
+    <p class="mt-1 text-sm text-slate-500">Pré-defesas em que faz parte do júri. Prepare-se com o resumo e, no dia, registe as recomendações na sessão.</p>
   </div>
   <div class="space-y-3">
     {% for b in bancas %}
@@ -21,9 +21,12 @@
           <h3 class="mt-2 text-base font-bold text-slate-900">{{ b.tema.titulo|default:"Tema não definido" }}</h3>
           <p class="text-sm text-slate-500">{{ b.estudante.nome }} {{ b.estudante.sobrenome }} · {{ b.estudante.curso.nome|default:"" }}</p>
         </div>
-        {% if b.tema_id %}
-          <a href="{% url 'resumo_juri' b.tema_id %}" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">auto_awesome</span> Resumo para o júri</a>
-        {% endif %}
+        <div class="flex flex-wrap gap-2">
+          {% if b.tema_id %}
+            <a href="{% url 'resumo_juri' b.tema_id %}" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">auto_awesome</span> Resumo para o júri</a>
+          {% endif %}
+          <a href="{% url 'sessao_predefesa' b.pk %}" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">groups</span> {% if b.encerrada_em %}Ver sessão{% elif b.aberta_em %}Sessão em curso{% else %}Sessão da pré-defesa{% endif %}</a>
+        </div>
       </div>
     {% empty %}
       <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">

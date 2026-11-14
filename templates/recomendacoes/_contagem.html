@@ -1,0 +1,16 @@
+{% if contagem.total %}
+  <div class="sgtf-card p-5">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Cumprimento das recomendações</p>
+        <p class="mt-1 text-2xl font-extrabold text-slate-900">{{ contagem.cumpridas }} de {{ contagem.total }} <span class="text-base font-semibold text-slate-400">({{ contagem.percentagem }}%)</span></p>
+      </div>
+      <div class="flex flex-wrap gap-2 text-xs font-semibold">
+        <span class="rounded-full bg-amber-50 px-2.5 py-1 text-amber-700">{{ contagem.pendentes }} por cumprir</span>
+        <span class="rounded-full bg-sky-50 px-2.5 py-1 text-sky-700">{{ contagem.resolvidas }} a confirmar</span>
+        <span class="rounded-full bg-green-50 px-2.5 py-1 text-green-700">{{ contagem.cumpridas }} cumpridas</span>
+      </div>
+    </div>
+    <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100"><div class="h-full rounded-full bg-green-500" style="width: {{ contagem.percentagem }}%"></div></div>
+  </div>
+{% endif %}

@@ -272,14 +272,39 @@ class Recomendacao(models.Model):
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_atualizacao = models.DateTimeField(auto_now=True)
 
+    TIPOS = (("melhoria", "A melhorar"), ("forte", "Ponto forte"))
+    ESTADOS = (("pendente", "Pendente"), ("resolvida", "Resolvida pelo estudante"), ("cumprida", "Cumprida"))
+
+    # recomendações da banca ficam ligadas à pré-defesa; as do tutor não têm pré-defesa
+    predefesa = models.ForeignKey('Predefesa', on_delete=models.CASCADE, null=True, blank=True, related_name='recomendacoes')
+    autor = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True, related_name='recomendacoes_autor')
+    funcao_autor = models.CharField(max_length=30, blank=True)
+    tipo = models.CharField(max_length=10, choices=TIPOS, default="melhoria")
+    estado = models.CharField(max_length=10, choices=ESTADOS, default="pendente")
+    nota_estudante = models.TextField(blank=True)
+    resolvida_em = models.DateTimeField(null=True, blank=True)
+    cumprida_em = models.DateTimeField(null=True, blank=True)
+    cumprida_por = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+
     class Meta:
         ordering = ['-data_criacao']
         verbose_name = "Recomendação"
         verbose_name_plural = "Recomendações"
 
+    @property
+    def cumprida(self):
+        return self.estado == "cumprida"
+
+    @property
+    def acompanhavel(self):
+        return self.tipo == "melhoria"
+
     def clean(self):
         super().clean()
-        
+
+        # só se exige processo aberto para o tutor criar recomendações novas
+        if not self._state.adding or self.predefesa_id:
+            return
         if self.tema and self.tema.estudante and self.tema.estudante.curso:
             hoje = timezone.now().date()
             curso_do_tema = self.tema.estudante.curso
@@ -347,6 +372,33 @@ class Predefesa(models.Model):
         'Usuario', on_delete=models.CASCADE, 
         limit_choices_to={'perfil': 'tutor'}, related_name='vogal2_atuacoes'
     )
+
+    RESULTADOS = (
+        ("apto", "Apto"),
+        ("apto_recomendacoes", "Apto com recomendações"),
+        ("nao_apto", "Não apto"),
+    )
+    # sessão: alterada com update() para não voltar a validar o agendamento
+    aberta_em = models.DateTimeField(null=True, blank=True)
+    presentes = models.JSONField(default=list, blank=True)
+    encerrada_em = models.DateTimeField(null=True, blank=True)
+    resultado = models.CharField(max_length=20, choices=RESULTADOS, blank=True)
+    observacoes_sessao = models.TextField(blank=True)
+
+    def mesa(self):
+        """Lista (função, chave, docente) pela ordem de apresentação."""
+        return [
+            ("Presidente", "presidente", self.presidente),
+            ("Secretário", "secretario", self.secretario),
+            ("1.º vogal", "primeiro_vogal", self.primeiro_vogal),
+            ("2.º vogal", "segundo_vogal", self.segundo_vogal),
+        ]
+
+    def funcao_de(self, usuario):
+        for nome, _, docente in self.mesa():
+            if docente and usuario and docente.pk == usuario.pk:
+                return nome
+        return ""
 
     def clean(self):
         super().clean()

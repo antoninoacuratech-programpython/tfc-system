@@ -591,3 +591,105 @@ class AssinaturaTests(BaseTestCase):
 
     def test_codigo_inexistente(self):
         self.assertContains(self.client.get(reverse("verificar_documento", args=["AAAA-BBBB-CCCC"])), "pode ser falso")
+
+
+
+class SessaoPredefesaTests(BaseTestCase):
+    def setUp(self):
+        from datetime import time, timedelta
+        from django.utils import timezone
+        from .models import Predefesa, ProcessoEtapa, Tema
+        hoje = timezone.localdate()
+        ProcessoEtapa.objects.create(titulo="TFC 2026", curso=self.curso, coordenador=self.coordenacao,
+                                     data_inicio=hoje - timedelta(days=1), data_termino=hoje + timedelta(days=30), ativo=True)
+        self.tema = Tema.objects.create(estudante=self.estudante, titulo="Monitorização de rede", descricao="x",
+                                        tutor_indicado=self.tutor, status_tutor="aprovado", status_coordenacao="aprovado")
+
+        def docente(n):
+            return Usuario.objects.create_user(email=f"juri{n}@ispb.ao", password="SenhaForte#2026", nome=f"Juri{n}",
+                                               sobrenome="Teste", telefone="923000000", perfil="tutor", estado_user="activo")
+        self.pres, self.sec, self.v1, self.v2 = (docente(i) for i in range(4))
+        self.p = Predefesa.objects.create(estudante=self.estudante, data=hoje, hora=time(10, 0), presidente=self.pres,
+                                          secretario=self.sec, primeiro_vogal=self.v1, segundo_vogal=self.v2)
+
+    def _abrir(self):
+        self.client.force_login(self.sec)
+        self.client.post(reverse("abrir_sessao_predefesa", args=[self.p.pk]),
+                         {"presentes": ["presidente", "secretario", "primeiro_vogal", "segundo_vogal"]})
+
+    def test_fluxo_completo_da_sessao(self):
+        from .models import NotificacaoFinal, Recomendacao
+        self._abrir()
+        self.client.force_login(self.v1)
+        self.client.post(reverse("registar_recomendacao_banca", args=[self.p.pk]), {"tipo": "melhoria", "texto": "Rever a metodologia."})
+        self.client.force_login(self.sec)
+        self.client.post(reverse("registar_recomendacao_banca", args=[self.p.pk]),
+                         {"tipo": "forte", "texto": "Sistema funcional.", "membro": "presidente"})
+
+        rec_v1 = Recomendacao.objects.get(texto="Rever a metodologia.")
+        self.assertEqual((rec_v1.autor, rec_v1.funcao_autor, rec_v1.predefesa_id), (self.v1, "1.º vogal", self.p.pk))
+        self.assertEqual(Recomendacao.objects.get(tipo="forte").autor, self.pres)
+
+        # antes de encerrar, o estudante ainda não vê nada
+        self.client.force_login(self.estudante)
+        self.assertNotContains(self.client.get(reverse("todas_recomendacoes")), "Rever a metodologia")
+
+        self.client.force_login(self.sec)
+        self.client.post(reverse("encerrar_sessao_predefesa", args=[self.p.pk]), {"resultado": "apto_recomendacoes"})
+        self.p.refresh_from_db()
+        self.assertEqual(self.p.resultado, "apto_recomendacoes")
+        self.assertTrue(NotificacaoFinal.objects.filter(usuario=self.tutor, titulo="Recomendações da pré-defesa").exists())
+
+        self.client.force_login(self.estudante)
+        self.assertContains(self.client.get(reverse("todas_recomendacoes")), "Rever a metodologia")
+
+    def test_so_o_secretario_abre_e_quem_nao_e_da_banca_nao_regista(self):
+        self.client.force_login(self.v1)
+        self.assertEqual(self.client.post(reverse("abrir_sessao_predefesa", args=[self.p.pk]), {"presentes": ["presidente"]}).status_code, 403)
+        self._abrir()
+        self.client.force_login(self.outro_estudante)
+        r = self.client.post(reverse("registar_recomendacao_banca", args=[self.p.pk]), {"tipo": "melhoria", "texto": "x"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_depois_de_encerrar_nao_se_altera(self):
+        from .models import Recomendacao
+        self._abrir()
+        self.client.post(reverse("registar_recomendacao_banca", args=[self.p.pk]), {"tipo": "melhoria", "texto": "A"})
+        self.client.post(reverse("encerrar_sessao_predefesa", args=[self.p.pk]), {"resultado": "apto"})
+        rec = Recomendacao.objects.get()
+        self.client.post(reverse("eliminar_recomendacao_banca", args=[self.p.pk, rec.pk]))
+        self.client.post(reverse("registar_recomendacao_banca", args=[self.p.pk]), {"tipo": "melhoria", "texto": "B"})
+        self.assertEqual(Recomendacao.objects.count(), 1)
+
+    def test_tutor_acompanha_cumprimento(self):
+        from .models import Recomendacao
+        self._abrir()
+        self.client.post(reverse("registar_recomendacao_banca", args=[self.p.pk]), {"tipo": "melhoria", "texto": "Corrigir referências"})
+        self.client.post(reverse("encerrar_sessao_predefesa", args=[self.p.pk]), {"resultado": "apto_recomendacoes"})
+        rec = Recomendacao.objects.get()
+
+        self.client.force_login(self.estudante)
+        self.client.post(reverse("mudar_estado_recomendacao", args=[rec.pk]), {"acao": "resolver", "nota": "Feito na p. 40"})
+        rec.refresh_from_db()
+        self.assertEqual((rec.estado, rec.nota_estudante), ("resolvida", "Feito na p. 40"))
+        # o estudante não pode dar como cumprida
+        self.assertEqual(self.client.post(reverse("mudar_estado_recomendacao", args=[rec.pk]), {"acao": "cumprir"}).status_code, 403)
+
+        self.client.force_login(self.tutor)
+        r = self.client.get(reverse("tutor_recomendacao", args=[self.tema.pk]))
+        self.assertContains(r, "Corrigir referências")
+        self.client.post(reverse("mudar_estado_recomendacao", args=[rec.pk]), {"acao": "cumprir"})
+        rec.refresh_from_db()
+        self.assertEqual(rec.estado, "cumprida")
+
+    def test_recomendacao_do_tutor_e_vazia(self):
+        from .models import Recomendacao
+        self.client.force_login(self.tutor)
+        r = self.client.post(reverse("tutor_recomendacao", args=[self.tema.pk]), {"texto": "  "}, follow=True)
+        self.assertContains(r, "Escreva a recomendação")
+        self.client.post(reverse("tutor_recomendacao", args=[self.tema.pk]), {"texto": "Rever o resumo"})
+        self.assertEqual(Recomendacao.objects.get().autor, self.tutor)
+
+    def test_outro_tutor_nao_ve_recomendacoes(self):
+        self.client.force_login(self.v1)
+        self.assertEqual(self.client.get(reverse("tutor_recomendacao", args=[self.tema.pk])).status_code, 403)

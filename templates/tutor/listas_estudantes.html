@@ -19,6 +19,9 @@
           <p class="mt-1 text-sm text-slate-600">{% if l.tema %}{{ l.tema.titulo }}{% else %}<span class="italic text-slate-400">Sem tema submetido</span>{% endif %}</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+          {% if l.tema %}
+            <a href="{% url 'tutor_recomendacao' l.tema.pk %}" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">rate_review</span> Recomendações</a>
+          {% endif %}
           {% if l.tema and l.tema.status_tutor == "aprovado" %}
             {% if l.documento %}
               <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700"><span class="material-icons-sharp text-[16px]">verified</span> Assinada{% if l.documento.visto_em %} · com visto{% endif %}</span>

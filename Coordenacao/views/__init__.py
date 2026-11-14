@@ -167,3 +167,11 @@ from .assinaturas import (  # noqa: F401
     minha_rubrica,
     verificar_documento,
 )
+from .recomendacoes import mudar_estado_recomendacao  # noqa: F401
+from .sessao_predefesa import (  # noqa: F401
+    sessao_predefesa,
+    abrir_sessao_predefesa,
+    registar_recomendacao_banca,
+    eliminar_recomendacao_banca,
+    encerrar_sessao_predefesa,
+)
