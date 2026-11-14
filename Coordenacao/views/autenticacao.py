@@ -78,6 +78,35 @@ def login_view(request):
 
 
 @login_required
+def definir_senha(request):
+    user = request.user
+    if request.method == "POST":
+        senha = request.POST.get("nova_senha") or ""
+        if senha != (request.POST.get("confirmar_senha") or ""):
+            messages.error(request, "As senhas não coincidem.")
+        elif user.check_password(senha):
+            messages.error(request, "Escolha uma senha diferente da temporária.")
+        else:
+            try:
+                validate_password(senha, user)
+            except ValidationError as erro:
+                for m in erro.messages:
+                    messages.error(request, m)
+            else:
+                user.set_password(senha)
+                user.deve_mudar_senha = False
+                user.save()
+                update_session_auth_hash(request, user)
+                messages.success(request, "Senha definida. Bem-vindo ao sistema!")
+                if len(user.perfis_disponiveis) > 1:
+                    return redirect("escolher_perfil")
+                return redirect(pagina_inicial(user) or "login")
+    elif not user.deve_mudar_senha:
+        return redirect(pagina_inicial(user) or "login")
+    return render(request, "usuarios/definir_senha.html")
+
+
+@login_required
 def escolher_perfil(request):
     user = request.user
     disponiveis = user.perfis_disponiveis

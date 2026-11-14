@@ -34,3 +34,20 @@ class PerfilAtivoMiddleware:
                 # o perfil foi retirado entretanto: volta ao principal
                 request.session.pop(SESSAO_PERFIL, None)
         return self.get_response(request)
+
+
+class SenhaTemporariaMiddleware:
+    """Contas importadas entram com senha temporária: até a trocarem, só vêem a página para a definir."""
+
+    LIVRES = ("/definir-senha/", "/sair/", "/static/", "/saude/")
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if (user is not None and user.is_authenticated and getattr(user, "deve_mudar_senha", False)
+                and not request.path.startswith(self.LIVRES)):
+            from django.shortcuts import redirect
+            return redirect("definir_senha")
+        return self.get_response(request)

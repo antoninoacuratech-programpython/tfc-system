@@ -69,6 +69,9 @@ class Usuario(AbstractUser):
 
     username = None
     email = models.EmailField(unique=True)
+    # vindos da importação do sistema de gestão escolar
+    numero_estudante = models.CharField(max_length=30, blank=True, db_index=True)
+    deve_mudar_senha = models.BooleanField(default=False)
     nome = models.CharField(max_length=100)
     sobrenome = models.CharField(max_length=100)
     imagem = models.ImageField(

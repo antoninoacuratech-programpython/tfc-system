@@ -1,0 +1,27 @@
+{% extends "layouts/autenticacao.html" %}
+
+{% block titulo %}Definir senha{% endblock %}
+
+{% block conteudo %}
+<div class="space-y-4 rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+  <div>
+    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Bem-vindo, {{ request.user.nome }}</h1>
+    <p class="mt-1 text-sm text-slate-500">A sua conta foi criada pela coordenação com uma senha temporária. Antes de continuar, escolha a sua senha pessoal.</p>
+  </div>
+  {% include "partials/_mensagens.html" %}
+  <form method="post" class="space-y-3">
+    {% csrf_token %}
+    <div>
+      <label class="sgtf-label" for="nova_senha">Nova senha</label>
+      <input id="nova_senha" type="password" name="nova_senha" required minlength="8" autocomplete="new-password" class="sgtf-input">
+    </div>
+    <div>
+      <label class="sgtf-label" for="confirmar_senha">Confirmar a nova senha</label>
+      <input id="confirmar_senha" type="password" name="confirmar_senha" required minlength="8" autocomplete="new-password" class="sgtf-input">
+    </div>
+    <p class="text-xs text-slate-400">Pelo menos 8 caracteres, sem ser só números nem parecida com o seu nome ou e-mail.</p>
+    <button class="sgtf-btn sgtf-btn--primary w-full"><span class="material-icons-sharp text-[18px]">lock</span> Guardar e entrar</button>
+  </form>
+  <a href="{% url 'sair' %}" class="block text-center text-xs font-semibold text-slate-400 hover:text-red-600">Terminar sessão</a>
+</div>
+{% endblock %}

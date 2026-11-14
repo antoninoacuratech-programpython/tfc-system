@@ -5,6 +5,7 @@ from .autenticacao import (  # noqa: F401
     cadastro,
     atualizar_perfil,
     escolher_perfil,
+    definir_senha,
 )
 from .dashboards import (  # noqa: F401
     admink,
@@ -181,3 +182,4 @@ from .processo_estudante import (  # noqa: F401
     perfil_documental,
 )
 from .utilizadores import funcoes_acumuladas  # noqa: F401
+from .importacao import importar_estudantes, modelo_importacao  # noqa: F401

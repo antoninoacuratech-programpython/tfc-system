@@ -1,0 +1,48 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Importar estudantes{% endblock %}
+{% block titulo_pagina %}Importar estudantes{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Importar estudantes</h2>
+    <p class="mt-1 text-sm text-slate-500">Traga os estudantes do sistema de gestão escolar. As contas ficam logo activas e cada estudante recebe uma senha temporária, que troca no primeiro acesso.</p>
+  </div>
+
+  <ol class="grid gap-3 text-sm sm:grid-cols-3">
+    <li class="sgtf-card p-4"><b class="text-primary">1.</b> Exporte a lista do sistema de gestão escolar para Excel ou CSV.</li>
+    <li class="sgtf-card p-4"><b class="text-primary">2.</b> Carregue-a aqui e confira a pré-visualização.</li>
+    <li class="sgtf-card p-4"><b class="text-primary">3.</b> Confirme e entregue as senhas temporárias aos estudantes.</li>
+  </ol>
+
+  <form method="post" enctype="multipart/form-data" class="sgtf-card space-y-5 p-5 md:p-6">
+    {% csrf_token %}
+    <input type="hidden" name="acao" value="analisar">
+    <div>
+      <label class="sgtf-label" for="ficheiro">Ficheiro (Excel .xlsx ou CSV)</label>
+      <input id="ficheiro" type="file" name="ficheiro" required accept=".xlsx,.csv,.txt" class="block w-full rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary">
+      <p class="mt-1.5 text-xs text-slate-400">Até {{ max_linhas }} estudantes por ficheiro. Colunas reconhecidas: n.º de estudante (ou matrícula / processo), nome, sobrenome (ou nome completo), e-mail, telefone{% if request.user.is_superuser %}, curso{% endif %}.</p>
+    </div>
+    <div>
+      <label class="sgtf-label" for="curso">Curso</label>
+      <select id="curso" name="curso" class="sgtf-input" {% if cursos|length == 1 %}disabled{% endif %}>
+        {% if cursos|length > 1 %}<option value="">Escolha o curso…</option>{% endif %}
+        {% for c in cursos %}<option value="{{ c.pk }}" {% if cursos|length == 1 %}selected{% endif %}>{{ c.nome }}</option>{% endfor %}
+      </select>
+      {% if cursos|length == 1 %}<input type="hidden" name="curso" value="{{ cursos.0.pk }}"><p class="mt-1.5 text-xs text-slate-400">Os estudantes ficam no curso que coordena.</p>{% endif %}
+      {% if request.user.is_superuser %}
+        <label class="mt-3 flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" name="usar_coluna_curso" value="1" class="accent-[#1d4ed8]"> Usar a coluna «curso» do ficheiro (vários cursos de uma vez)</label>
+      {% endif %}
+    </div>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <a href="{% url 'modelo_importacao' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"><span class="material-icons-sharp text-[18px]">download</span> Descarregar modelo (CSV)</a>
+      <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">preview</span> Pré-visualizar</button>
+    </div>
+  </form>
+
+  <div class="sgtf-alert sgtf-alert--info"><span class="material-icons-sharp">info</span>
+    <p>Quem já tem conta (mesmo e-mail ou mesmo n.º de estudante) não é duplicado. Quando o sistema de gestão escolar disponibilizar uma ligação directa, a importação poderá passar a ser automática.</p>
+  </div>
+</div>
+{% endblock %}

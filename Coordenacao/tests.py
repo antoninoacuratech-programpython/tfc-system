@@ -831,3 +831,81 @@ class PerfisAcumuladosTests(BaseTestCase):
         self.assertFalse(PerfilAdicional.objects.filter(usuario=self.tutor, perfil="area_cientifica").exists())
         self.client.post(url, {"usuario": self.presidente.pk, "perfil": "tutor", "acao": "remover"})
         self.assertFalse(PerfilAdicional.objects.filter(usuario=self.presidente).exists())
+
+
+
+class ImportacaoEstudantesTests(BaseTestCase):
+    CSV = (
+        "Nº Estudante;Nome completo;E-mail;Contacto\n"
+        "20230145;Antonino Calado Jacob Teodoro;Antonino.Teodoro@ispb.ao;+244 923 000 111\n"
+        "20230146;Maria Joana Lopes;maria.lopes@ispb.ao;923000222\n"
+        "20230147;Sem Email;;923000333\n"
+        "20230148;Repetido;maria.lopes@ispb.ao;\n"
+        "20230149;Ja Existe;estudante@ispb.ao;\n"
+    )
+
+    def _enviar(self, conteudo=None, nome="alunos.csv"):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        ficheiro = SimpleUploadedFile(nome, (conteudo or self.CSV).encode("utf-8"))
+        return self.client.post(reverse("importar_estudantes"),
+                                {"acao": "analisar", "curso": self.curso.pk, "ficheiro": ficheiro})
+
+    def test_previsualizacao_classifica_linhas(self):
+        self.client.force_login(self.coordenacao)
+        r = self._enviar()
+        self.assertContains(r, "2 novos")
+        self.assertContains(r, "E-mail em falta")
+        self.assertContains(r, "E-mail repetido no ficheiro")
+        self.assertContains(r, "Já tem conta no sistema")
+
+    def test_importa_contas_activas_com_senha_temporaria(self):
+        self.client.force_login(self.coordenacao)
+        self._enviar()
+        r = self.client.post(reverse("importar_estudantes"), {"acao": "confirmar"})
+        self.assertEqual(r["Cache-Control"], "no-store")
+        u = Usuario.objects.get(email="antonino.teodoro@ispb.ao")
+        self.assertEqual((u.nome, u.sobrenome, u.numero_estudante, u.telefone), ("Antonino", "Calado Jacob Teodoro", "20230145", "923000111"))
+        self.assertEqual((u.perfil, u.estado_user, u.curso, u.deve_mudar_senha), ("estudante", "activo", self.curso, True))
+        senha = next(s for reg, s in r.context["criados"] if reg["email"] == u.email)
+        self.assertTrue(u.check_password(senha))
+        # repetir a confirmação não duplica nada
+        self.assertEqual(self.client.post(reverse("importar_estudantes"), {"acao": "confirmar"}).status_code, 302)
+        self.assertEqual(Usuario.objects.filter(email="maria.lopes@ispb.ao").count(), 1)
+
+    def test_primeiro_acesso_obriga_a_trocar_a_senha(self):
+        self.client.force_login(self.coordenacao)
+        self._enviar()
+        r = self.client.post(reverse("importar_estudantes"), {"acao": "confirmar"})
+        senha = next(s for reg, s in r.context["criados"] if reg["email"] == "maria.lopes@ispb.ao")
+        self.client.logout()
+        self.client.post(reverse("login"), {"username": "maria.lopes@ispb.ao", "senha": senha})
+        self.assertRedirects(self.client.get(reverse("dashboard_estudante")), reverse("definir_senha"))
+        self.client.post(reverse("definir_senha"), {"nova_senha": "Bie#Seguro2026", "confirmar_senha": "Bie#Seguro2026"})
+        u = Usuario.objects.get(email="maria.lopes@ispb.ao")
+        self.assertFalse(u.deve_mudar_senha)
+        self.assertEqual(self.client.get(reverse("dashboard_estudante")).status_code, 200)
+
+    def test_excel_e_cabecalhos_separados(self):
+        from openpyxl import Workbook
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        livro = Workbook()
+        folha = livro.active
+        folha.append(["Matrícula", "Nome", "Apelido", "Email"])
+        folha.append([20240001, "Rui", "Sapalo", "rui.sapalo@ispb.ao"])
+        buf = io.BytesIO()
+        livro.save(buf)
+        self.client.force_login(self.coordenacao)
+        ficheiro = SimpleUploadedFile("alunos.xlsx", buf.getvalue())
+        r = self.client.post(reverse("importar_estudantes"), {"acao": "analisar", "curso": self.curso.pk, "ficheiro": ficheiro})
+        self.assertContains(r, "1 novo")
+        registo = r.context["registos"][0]
+        self.assertEqual((registo["numero"], registo["sobrenome"]), ("20240001", "Sapalo"))
+
+    def test_sem_coluna_de_email_e_recusado(self):
+        self.client.force_login(self.coordenacao)
+        r = self._enviar("nome;telefone\nAna;923000000\n")
+        self.assertContains(r, "não tem a coluna de e-mail")
+
+    def test_tutores_e_estudantes_nao_importam(self):
+        self.client.force_login(self.tutor)
+        self.assertEqual(self.client.get(reverse("importar_estudantes")).status_code, 403)

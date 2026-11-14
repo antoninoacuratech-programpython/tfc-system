@@ -57,6 +57,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "Coordenacao.middleware.PerfilAtivoMiddleware",
+    "Coordenacao.middleware.SenhaTemporariaMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "Coordenacao.middleware.AlertasProgressoMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
