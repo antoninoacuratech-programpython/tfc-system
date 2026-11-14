@@ -448,6 +448,38 @@ button.sgtf-auth-icon:hover { color: var(--sgtf-primary); background: #f1f5f9; }
 }
 @keyframes sgtf-ripple { to { transform: scale(2.6); opacity: 0; } }
 
+/* janela de confirmação */
+.sgtf-modal {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 1rem;
+  background: rgba(15, 27, 61, .55); backdrop-filter: blur(3px); animation: sgtf-fade .18s ease-out;
+}
+.sgtf-modal.is-a-fechar { opacity: 0; transition: opacity .16s; }
+.sgtf-modal__caixa {
+  width: 100%; max-width: 26rem; padding: 1.75rem 1.5rem 1.25rem; text-align: center;
+  background: #fff; border-radius: 1.25rem; box-shadow: 0 24px 60px rgba(15, 27, 61, .3);
+  animation: sgtf-modal-in .22s cubic-bezier(.2, 0, 0, 1);
+}
+.sgtf-modal.is-a-fechar .sgtf-modal__caixa { transform: scale(.96); transition: transform .16s; }
+.sgtf-modal__icone {
+  width: 3.5rem; height: 3.5rem; margin: 0 auto; border-radius: 999px; display: grid; place-items: center;
+  background: var(--sgtf-surface); color: var(--sgtf-primary);
+}
+.sgtf-modal__icone .material-icons-sharp { font-size: 1.9rem; }
+.sgtf-modal__icone.is-perigo { background: #fef2f2; color: #dc2626; }
+.sgtf-modal__titulo { margin-top: 1rem; font-size: 1.15rem; font-weight: 800; color: var(--sgtf-text); }
+.sgtf-modal__texto { margin-top: .5rem; font-size: .925rem; line-height: 1.55; color: var(--sgtf-muted); overflow-wrap: anywhere; }
+.sgtf-modal__acoes { margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: .625rem; }
+.sgtf-modal__acoes .sgtf-btn { width: 100%; min-height: 2.75rem; }
+.sgtf-btn--perigo { background: #dc2626; color: #fff; box-shadow: 0 1px 2px rgba(220, 38, 38, .35); }
+.sgtf-btn--perigo:hover { background: #b91c1c; }
+@keyframes sgtf-modal-in { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+@media (max-width: 480px) {
+  .sgtf-modal { place-items: end center; padding: 0; }
+  .sgtf-modal__caixa { max-width: none; border-radius: 1.25rem 1.25rem 0 0; padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
+  .sgtf-modal__acoes { grid-template-columns: 1fr; }
+  .sgtf-modal__acoes [data-acao="sim"] { order: -1; }
+}
+
 @media print {
   .sgtf-sidebar, .sgtf-topbar, .sgtf-footer, .sgtf-alerts { display: none !important; }
   .sgtf-app, .sgtf-main, .sgtf-content { display: block; height: auto; overflow: visible; padding: 0; }

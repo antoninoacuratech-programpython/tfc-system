@@ -182,13 +182,89 @@
   atualizarExclusivos();
   window.SGTF = Object.assign(window.SGTF || {}, { atualizarExclusivos });
 
+  // janela de confirmação do sistema (em vez do confirm() do browser)
+  // uso: data-confirm="mensagem" e, opcionalmente, data-confirm-titulo, data-confirm-ok, data-confirm-tipo="perigo"
+  const PALAVRAS_PERIGO = /eliminar|excluir|apagar|desativar|remover|rejeitar/i;
+
+  function confirmar(el) {
+    const mensagem = el.getAttribute("data-confirm") || "Tem a certeza?";
+    const tituloDado = el.getAttribute("data-confirm-titulo") || "";
+    const perigo = el.getAttribute("data-confirm-tipo") === "perigo" || PALAVRAS_PERIGO.test(mensagem + " " + tituloDado);
+    const titulo = tituloDado || (perigo ? "Confirmar eliminação" : "Confirmar");
+    const ok = el.getAttribute("data-confirm-ok") || (perigo ? "Sim, continuar" : "Confirmar");
+
+    return new Promise((resolver) => {
+      const fundo = document.createElement("div");
+      fundo.className = "sgtf-modal";
+      fundo.innerHTML = `
+        <div class="sgtf-modal__caixa" role="alertdialog" aria-modal="true" aria-labelledby="sgtfModalTitulo" aria-describedby="sgtfModalTexto">
+          <div class="sgtf-modal__icone ${perigo ? "is-perigo" : ""}"><span class="material-icons-sharp">${perigo ? "warning" : "help_outline"}</span></div>
+          <h2 id="sgtfModalTitulo" class="sgtf-modal__titulo"></h2>
+          <p id="sgtfModalTexto" class="sgtf-modal__texto"></p>
+          <div class="sgtf-modal__acoes">
+            <button type="button" class="sgtf-btn sgtf-btn--ghost" data-acao="nao">Cancelar</button>
+            <button type="button" class="sgtf-btn ${perigo ? "sgtf-btn--perigo" : "sgtf-btn--primary"}" data-acao="sim"></button>
+          </div>
+        </div>`;
+      fundo.querySelector(".sgtf-modal__titulo").textContent = titulo;
+      fundo.querySelector(".sgtf-modal__texto").textContent = mensagem;
+      fundo.querySelector('[data-acao="sim"]').textContent = ok;
+      const anterior = document.activeElement;
+
+      const fechar = (resposta) => {
+        fundo.classList.add("is-a-fechar");
+        document.removeEventListener("keydown", teclas, true);
+        setTimeout(() => { fundo.remove(); anterior?.focus?.(); }, 160);
+        resolver(resposta);
+      };
+      const teclas = (e) => {
+        if (e.key === "Escape") { e.preventDefault(); fechar(false); }
+        if (e.key === "Tab") {
+          const botoes = [...fundo.querySelectorAll("button")];
+          const i = botoes.indexOf(document.activeElement);
+          e.preventDefault();
+          botoes[(i + (e.shiftKey ? botoes.length - 1 : 1)) % botoes.length].focus();
+        }
+      };
+      fundo.addEventListener("click", (e) => {
+        if (e.target === fundo) return fechar(false);
+        const b = e.target.closest("[data-acao]");
+        if (b) fechar(b.dataset.acao === "sim");
+      });
+      document.addEventListener("keydown", teclas, true);
+      document.body.appendChild(fundo);
+      fundo.querySelector(perigo ? '[data-acao="nao"]' : '[data-acao="sim"]').focus();
+    });
+  }
+  window.SGTF.confirmar = confirmar;
+
   document.addEventListener("click", (e) => {
     const el = e.target.closest("a[data-confirm], button[data-confirm]");
-    if (el && !window.confirm(el.getAttribute("data-confirm"))) { e.preventDefault(); e.stopPropagation(); }
-  });
+    if (!el || el.dataset.confirmado) return;
+    e.preventDefault();
+    e.stopPropagation();
+    confirmar(el).then((sim) => {
+      if (!sim) return;
+      if (el.tagName === "A") { window.location.href = el.href; return; }
+      el.dataset.confirmado = "1";
+      if (el.form) el.form.requestSubmit(el.type === "submit" ? el : undefined); else el.click();
+      delete el.dataset.confirmado;
+    });
+  }, true);
+
   document.addEventListener("submit", (e) => {
     const form = e.target;
-    if (form.matches("form[data-confirm]") && !window.confirm(form.getAttribute("data-confirm"))) { e.preventDefault(); return; }
+    if (form.matches("form[data-confirm]") && !form.dataset.confirmado) {
+      e.preventDefault();
+      const quem = e.submitter;
+      confirmar(form).then((sim) => {
+        if (!sim) return;
+        form.dataset.confirmado = "1";
+        form.requestSubmit(quem || undefined);
+        delete form.dataset.confirmado;
+      });
+      return;
+    }
     const btn = form.querySelector('[type="submit"]:not([data-no-lock])');
     if (btn && !e.defaultPrevented) {
       setTimeout(() => { btn.disabled = true; btn.classList.add("opacity-70", "cursor-wait"); }, 0);

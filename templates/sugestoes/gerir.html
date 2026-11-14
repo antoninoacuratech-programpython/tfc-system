@@ -75,7 +75,7 @@
               <button class="sgtf-btn sgtf-btn--ghost px-3 py-2" title="{% if s.estado == 'aberto' %}Fechar{% else %}Reabrir{% endif %}"><span class="material-icons-sharp text-[18px]">{% if s.estado == 'aberto' %}lock{% else %}lock_open{% endif %}</span></button>
             </form>
             {% if not s.escolhido %}
-            <form method="post" action="{% url 'eliminar_sugestao' s.pk %}" data-confirm="Eliminar este tema sugerido?">{% csrf_token %}
+            <form method="post" action="{% url 'eliminar_sugestao' s.pk %}" data-confirm="«{{ s.titulo }}» deixa de aparecer aos estudantes e não pode ser recuperado." data-confirm-titulo="Eliminar sugestão">{% csrf_token %}
               <button class="sgtf-btn sgtf-btn--ghost px-3 py-2 text-red-600" title="Eliminar"><span class="material-icons-sharp text-[18px]">delete</span></button>
             </form>
             {% endif %}

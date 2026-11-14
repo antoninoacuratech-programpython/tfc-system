@@ -69,7 +69,7 @@
                     <td class="px-6 py-4 capitalize">{{ c.periodo }}</td>
                     <td class="px-6 py-4">{{ c.curso.nome }}</td>
                     <td class="px-6 py-4 text-center">
-                        <form method="post" onsubmit="return confirm('Tem certeza que deseja excluir esta data?');">
+                        <form method="post" data-confirm="Esta data de aprovação será eliminada." data-confirm-titulo="Eliminar data">
                             {% csrf_token %}
                             <input type="hidden" name="excluir" value="true">
                             <input type="hidden" name="calendario_id" value="{{ c.id }}">

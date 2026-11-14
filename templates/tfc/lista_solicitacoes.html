@@ -85,7 +85,7 @@
                                     <span class="material-icons-sharp text-sm">picture_as_pdf</span>
                                 </a>
 
-                                <form action="#" method="POST" onsubmit="return confirm('Deseja eliminar esta solicitação?');" class="inline">
+                                <form action="#" method="POST" data-confirm="Esta solicitação de defesa será eliminada." data-confirm-titulo="Eliminar solicitação" class="inline">
                                     {% csrf_token %}
                                     <button type="submit" 
                                             class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all flex items-center justify-center"

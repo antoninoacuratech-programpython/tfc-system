@@ -35,7 +35,7 @@
               <span class="material-icons-sharp text-[18px]">check_circle</span> Escolher este tema
             </summary>
             <form method="post" action="{% url 'escolher_sugestao' s.pk %}" enctype="multipart/form-data" class="space-y-3 p-4"
-                  data-confirm="Confirma a escolha do tema &quot;{{ s.titulo }}&quot;? A proposta segue para o tutor.">
+                  data-confirm="Vai escolher «{{ s.titulo }}». A proposta segue para o tutor e depois para a coordenação." data-confirm-titulo="Escolher este tema?" data-confirm-ok="Sim, escolher">
               {% csrf_token %}
               <div>
                 <label class="sgtf-label" for="tutor_{{ s.pk }}">Tutor que vai orientar</label>

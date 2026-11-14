@@ -134,7 +134,8 @@ def escolher_sugestao(request, pk):
 
     with transaction.atomic():
         sugestao = get_object_or_404(
-            TemaSugerido.objects.select_for_update().select_related("tema"),
+            # of=("self",): o PostgreSQL não deixa bloquear o lado opcional do join
+            TemaSugerido.objects.select_for_update(of=("self",)).select_related("tema"),
             pk=pk, curso_id=user.curso_id, estado="aberto",
         )
         if sugestao.escolhido:
