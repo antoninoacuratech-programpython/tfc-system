@@ -1,0 +1,106 @@
+{% extends base %}
+
+{% block titulo %}Progresso do trabalho{% endblock %}
+{% block titulo_pagina %}Progresso do trabalho{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <a href="{% if pode_editar %}{% url 'progresso_tutor' %}{% else %}{% url 'progresso_geral' %}{% endif %}" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-primary"><span class="material-icons-sharp text-[18px]">arrow_back</span> Voltar</a>
+
+  <div class="sgtf-card space-y-4 p-5 md:p-6">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ tema.estudante.nome }} {{ tema.estudante.sobrenome }} · {{ tema.estudante.curso.nome|default:"" }}</p>
+        <h2 class="mt-1 text-lg font-bold leading-snug text-slate-900">{{ tema.titulo }}</h2>
+        <p class="text-sm text-slate-500">Tutor: {% if tema.tutor_indicado %}{{ tema.tutor_indicado.nome }} {{ tema.tutor_indicado.sobrenome }}{% else %}—{% endif %}</p>
+      </div>
+      {% include "progresso/_estado.html" %}
+    </div>
+    {% include "progresso/_barra.html" %}
+  </div>
+
+  {% if pode_editar and not etapas %}
+    <form method="post" action="{% url 'criar_plano' tema.pk %}" class="sgtf-card space-y-4 p-5 md:p-6">
+      {% csrf_token %}
+      <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">auto_fix_high</span> Criar plano padrão</h3>
+      <p class="text-sm text-slate-500">Cria as 5 etapas habituais ({% for t, d in padrao %}{{ t }}{% if not forloop.last %}, {% endif %}{% endfor %}) com prazos distribuídos até à data final. Depois pode ajustar cada uma.</p>
+      <div class="flex flex-wrap items-end gap-3">
+        <div>
+          <label class="sgtf-label" for="prazo_final">Data final (versão para pré-defesa)</label>
+          <input id="prazo_final" type="date" name="prazo_final" required class="sgtf-input" value="{{ prazo_sugerido|date:'Y-m-d' }}" min="{{ hoje|date:'Y-m-d' }}">
+        </div>
+        <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">playlist_add_check</span> Criar 5 etapas</button>
+      </div>
+      <p class="text-xs text-slate-400">Prefere etapas próprias? Use o formulário «Nova etapa» abaixo.</p>
+    </form>
+  {% elif not etapas %}
+    <div class="sgtf-alert sgtf-alert--info"><span class="material-icons-sharp">hourglass_empty</span><p>O tutor ainda não definiu as etapas deste trabalho.</p></div>
+  {% endif %}
+
+  <ol class="space-y-3">
+    {% for e in etapas %}
+      <li class="sgtf-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="flex min-w-0 items-start gap-3">
+            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold {% if e.estado == 'aprovada' %}bg-green-500 text-white{% else %}bg-slate-100 text-slate-600{% endif %}">{% if e.estado == 'aprovada' %}<span class="material-icons-sharp text-[18px]">check</span>{% else %}{{ forloop.counter }}{% endif %}</span>
+            <div class="min-w-0">
+              <h4 class="font-bold text-slate-900">{{ e.titulo }}</h4>
+              <p class="text-xs text-slate-500">Prazo: {{ e.prazo|date:"d/m/Y" }}{% if e.entregue_em %} · entregue a {{ e.entregue_em|date:"d/m/Y H:i" }}{% endif %}</p>
+            </div>
+          </div>
+          {% include "progresso/_etapa_estado.html" %}
+        </div>
+        {% if e.descricao %}<p class="mt-2 text-sm text-slate-600">{{ e.descricao }}</p>{% endif %}
+        {% if e.ficheiro %}<p class="mt-2 text-sm"><a class="inline-flex items-center gap-1 font-semibold text-primary hover:underline" href="{{ e.ficheiro.url }}" target="_blank" rel="noopener"><span class="material-icons-sharp text-[16px]">attach_file</span> Abrir entrega</a></p>{% endif %}
+        {% if e.comentario_estudante %}<div class="mt-3 rounded-xl bg-slate-50 p-3 text-sm text-slate-700"><b>Nota do estudante:</b> {{ e.comentario_estudante|linebreaksbr }}</div>{% endif %}
+        {% if e.comentario_tutor %}<div class="mt-2 rounded-xl bg-primary-50 p-3 text-sm text-slate-700"><b>Comentário do tutor:</b> {{ e.comentario_tutor|linebreaksbr }}</div>{% endif %}
+
+        {% if pode_editar %}
+          {% if e.estado == "entregue" %}
+            <form method="post" action="{% url 'avaliar_etapa' tema.pk e.pk %}" class="mt-4 space-y-3 rounded-xl border border-sky-200 bg-sky-50/50 p-4">
+              {% csrf_token %}
+              <label class="sgtf-label" for="coment_{{ e.pk }}">Avaliar a entrega</label>
+              <textarea id="coment_{{ e.pk }}" name="comentario" rows="2" class="sgtf-input" placeholder="Comentário para o estudante (obrigatório se pedir revisão)"></textarea>
+              <div class="flex flex-wrap gap-2">
+                <button name="decisao" value="aprovada" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">task_alt</span> Aprovar</button>
+                <button name="decisao" value="revisao" class="sgtf-btn sgtf-btn--ghost text-amber-700"><span class="material-icons-sharp text-[18px]">edit_note</span> Pedir revisão</button>
+              </div>
+            </form>
+          {% endif %}
+          <details class="mt-3">
+            <summary class="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-slate-500 hover:text-primary"><span class="material-icons-sharp text-[18px]">edit</span> Editar etapa</summary>
+            <form method="post" action="{% url 'editar_etapa' tema.pk e.pk %}" class="mt-3 grid gap-3 md:grid-cols-[1fr_180px]">
+              {% csrf_token %}
+              <input name="titulo" required maxlength="150" value="{{ e.titulo }}" class="sgtf-input" aria-label="Título">
+              <input type="date" name="prazo" required value="{{ e.prazo|date:'Y-m-d' }}" class="sgtf-input" aria-label="Prazo">
+              <textarea name="descricao" rows="2" class="sgtf-input md:col-span-2" aria-label="Descrição">{{ e.descricao }}</textarea>
+              <div class="flex flex-wrap gap-2 md:col-span-2">
+                <button class="sgtf-btn sgtf-btn--primary">Guardar</button>
+              </div>
+            </form>
+            {% if e.estado == "pendente" %}
+              <form method="post" action="{% url 'eliminar_etapa' tema.pk e.pk %}" class="mt-2" data-confirm="A etapa «{{ e.titulo }}» será eliminada do plano." data-confirm-titulo="Eliminar etapa">
+                {% csrf_token %}
+                <button class="sgtf-btn sgtf-btn--ghost px-3 py-2 text-red-600"><span class="material-icons-sharp text-[18px]">delete</span> Eliminar</button>
+              </form>
+            {% endif %}
+          </details>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+
+  {% if pode_editar %}
+    <form method="post" action="{% url 'nova_etapa' tema.pk %}" class="sgtf-card space-y-3 p-5 md:p-6">
+      {% csrf_token %}
+      <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">add_circle</span> Nova etapa</h3>
+      <div class="grid gap-3 md:grid-cols-[1fr_180px]">
+        <input name="titulo" required maxlength="150" class="sgtf-input" placeholder="Ex.: Protótipo funcional" aria-label="Título">
+        <input type="date" name="prazo" required min="{{ hoje|date:'Y-m-d' }}" class="sgtf-input" aria-label="Prazo">
+        <textarea name="descricao" rows="2" class="sgtf-input md:col-span-2" placeholder="O que deve ser entregue (opcional)" aria-label="Descrição"></textarea>
+      </div>
+      <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">add</span> Adicionar etapa</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

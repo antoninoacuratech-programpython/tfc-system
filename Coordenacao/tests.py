@@ -379,3 +379,102 @@ class IATests(BaseTestCase):
         r = self.client.get(reverse("minhas_bancas"))
         self.assertContains(r, "Secretário")
         self.assertContains(r, self.tema_existente.titulo)
+
+
+class ProgressoTests(BaseTestCase):
+    def setUp(self):
+        import tempfile
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import ProcessoEtapa, Tema
+        self.td = timedelta
+        self.hoje = timezone.localdate()
+        ProcessoEtapa.objects.create(titulo="TFC 2026", curso=self.curso, coordenador=self.coordenacao,
+                                     data_inicio=self.hoje - timedelta(days=1), data_termino=self.hoje + timedelta(days=30), ativo=True)
+        self.tema = Tema.objects.create(estudante=self.estudante, titulo="Gestão de stock", descricao="x",
+                                        tutor_indicado=self.tutor, status_tutor="aprovado", status_coordenacao="aprovado")
+        self.media = self.settings(MEDIA_ROOT=tempfile.mkdtemp())
+        self.media.enable()
+
+    def tearDown(self):
+        self.media.disable()
+
+    def _plano(self):
+        self.client.force_login(self.tutor)
+        prazo = (self.hoje + self.td(days=100)).isoformat()
+        self.client.post(reverse("criar_plano", args=[self.tema.pk]), {"prazo_final": prazo})
+        self.client.logout()
+        return self.tema.plano
+
+    def test_tutor_cria_plano_padrao_com_prazos_crescentes(self):
+        plano = self._plano()
+        prazos = list(plano.etapas.values_list("prazo", flat=True))
+        self.assertEqual(len(prazos), 5)
+        self.assertEqual(prazos, sorted(prazos))
+        self.assertEqual(prazos[-1], self.hoje + self.td(days=100))
+
+    def test_outro_tutor_nao_altera_etapas(self):
+        outro = Usuario.objects.create_user(email="t2@ispb.ao", password="SenhaForte#2026", nome="T", sobrenome="2",
+                                            telefone="923000001", perfil="tutor", estado_user="activo")
+        self.client.force_login(outro)
+        r = self.client.post(reverse("criar_plano", args=[self.tema.pk]), {"prazo_final": "2099-01-01"})
+        self.assertEqual(r.status_code, 403)
+
+    def test_coordenacao_ve_mas_nao_edita(self):
+        self._plano()
+        self.client.force_login(self.coordenacao)
+        self.assertContains(self.client.get(reverse("progresso_geral")), "Gestão de stock")
+        r = self.client.get(reverse("progresso_tema", args=[self.tema.pk]))
+        self.assertEqual(r.status_code, 200)
+        self.assertNotContains(r, "Adicionar etapa")
+        self.assertEqual(self.client.post(reverse("nova_etapa", args=[self.tema.pk]), {"titulo": "x", "prazo": "2099-01-01"}).status_code, 403)
+
+    def test_entrega_e_aprovacao_atualizam_progresso(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .progresso import resumo
+        plano = self._plano()
+        etapa = plano.etapas.first()
+
+        self.client.force_login(self.estudante)
+        self.assertContains(self.client.get(reverse("meu_progresso")), "Introdução")
+        self.client.post(reverse("entregar_etapa", args=[etapa.pk]),
+                         {"ficheiro": SimpleUploadedFile("intro.pdf", b"%PDF-1.4"), "comentario": "Primeira versão"})
+        etapa.refresh_from_db()
+        self.assertEqual(etapa.estado, "entregue")
+
+        self.client.force_login(self.tutor)
+        self.client.post(reverse("avaliar_etapa", args=[self.tema.pk, etapa.pk]), {"decisao": "aprovada"})
+        self.assertEqual(resumo(plano)["percentagem"], 20)
+
+    def test_estudante_nao_entrega_etapa_de_outro(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        etapa = self._plano().etapas.first()
+        self.client.force_login(self.outro_estudante)
+        r = self.client.post(reverse("entregar_etapa", args=[etapa.pk]), {"ficheiro": SimpleUploadedFile("a.pdf", b"x")})
+        self.assertEqual(r.status_code, 404)
+
+    def test_alertas_nao_se_repetem(self):
+        from .models import EtapaTrabalho, NotificacaoFinal, PlanoTrabalho
+        from .progresso import gerar_alertas
+        plano = PlanoTrabalho.objects.create(tema=self.tema)
+        EtapaTrabalho.objects.create(plano=plano, ordem=1, titulo="Introdução", prazo=self.hoje + self.td(days=2))
+        EtapaTrabalho.objects.create(plano=plano, ordem=2, titulo="Metodologia", prazo=self.hoje - self.td(days=1))
+
+        c = gerar_alertas()
+        self.assertEqual((c["prazo"], c["atraso"]), (1, 1))
+        self.assertEqual(gerar_alertas(), {"prazo": 0, "atraso": 0, "parado": 0})
+        alertas = NotificacaoFinal.objects.filter(titulo__in=["Prazo a terminar", "Etapa em atraso", "Orientando com etapa em atraso"])
+        self.assertEqual(alertas.filter(usuario=self.estudante).count(), 2)
+        self.assertEqual(alertas.filter(usuario=self.tutor).count(), 1)
+
+    def test_estudante_parado_avisa_tutor_e_coordenacao(self):
+        from .models import EtapaTrabalho, NotificacaoFinal, PlanoTrabalho
+        from .progresso import gerar_alertas
+        plano = PlanoTrabalho.objects.create(tema=self.tema)
+        PlanoTrabalho.objects.filter(pk=plano.pk).update(criado_em=plano.criado_em - self.td(days=40))
+        EtapaTrabalho.objects.create(plano=plano, ordem=1, titulo="Introdução", prazo=self.hoje + self.td(days=20))
+
+        self.assertEqual(gerar_alertas()["parado"], 1)
+        self.assertTrue(NotificacaoFinal.objects.filter(usuario=self.coordenacao, titulo="Estudante parado").exists())
+        self.assertTrue(NotificacaoFinal.objects.filter(usuario=self.tutor, titulo="Estudante parado").exists())
+        self.assertEqual(gerar_alertas()["parado"], 0)

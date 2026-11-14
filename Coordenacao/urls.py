@@ -147,5 +147,15 @@ urlpatterns = [
    path('tutor/bancas/', views.minhas_bancas, name='minhas_bancas'),
    path('backups/', views.backups, name='backups'),
    path('backups/criar/', views.criar_backup, name='criar_backup'),
+   path('estudante/progresso/', views.meu_progresso, name='meu_progresso'),
+   path('estudante/progresso/etapas/<int:etapa_id>/entregar/', views.entregar_etapa, name='entregar_etapa'),
+   path('tutor/progresso/', views.progresso_tutor, name='progresso_tutor'),
+   path('progresso/', views.progresso_geral, name='progresso_geral'),
+   path('progresso/<int:tema_id>/', views.progresso_tema, name='progresso_tema'),
+   path('progresso/<int:tema_id>/plano/', views.criar_plano, name='criar_plano'),
+   path('progresso/<int:tema_id>/etapas/nova/', views.guardar_etapa, name='nova_etapa'),
+   path('progresso/<int:tema_id>/etapas/<int:etapa_id>/', views.guardar_etapa, name='editar_etapa'),
+   path('progresso/<int:tema_id>/etapas/<int:etapa_id>/eliminar/', views.eliminar_etapa, name='eliminar_etapa'),
+   path('progresso/<int:tema_id>/etapas/<int:etapa_id>/avaliar/', views.avaliar_etapa, name='avaliar_etapa'),
 ]
 

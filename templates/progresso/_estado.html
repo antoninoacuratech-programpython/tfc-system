@@ -1,0 +1,5 @@
+{% if info.estado == "concluido" %}<span class="rounded-full bg-primary-50 px-2.5 py-0.5 text-xs font-bold text-primary">Concluído</span>
+{% elif info.estado == "parado" %}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-700">Parado há {{ info.dias_sem_atividade }} dias</span>
+{% elif info.estado == "atrasado" %}<span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700">{{ info.atrasadas }} etapa{{ info.atrasadas|pluralize }} em atraso</span>
+{% elif info.estado == "em_dia" %}<span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700">Em dia</span>
+{% else %}<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">Sem plano</span>{% endif %}

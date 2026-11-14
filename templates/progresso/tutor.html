@@ -1,0 +1,23 @@
+{% extends "tutor/base.html" %}
+
+{% block titulo %}Progresso dos orientandos{% endblock %}
+{% block titulo_pagina %}Progresso{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Progresso dos orientandos</h2>
+    <p class="mt-1 text-sm text-slate-500">Defina as etapas e os prazos de cada trabalho e avalie as entregas.</p>
+  </div>
+  {% include "progresso/_resumo.html" %}
+  <div class="space-y-3">
+    {% for l in linhas %}{% include "progresso/_linha.html" %}
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+        <span class="material-icons-sharp text-4xl text-slate-300">timeline</span>
+        Ainda não tem orientandos com tema aprovado.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

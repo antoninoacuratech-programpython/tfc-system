@@ -1,0 +1,31 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Progresso dos TFC{% endblock %}
+{% block titulo_pagina %}Progresso dos TFC{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Progresso dos TFC</h2>
+    <p class="mt-1 text-sm text-slate-500">Situação de todos os trabalhos com tema aprovado. Os parados e atrasados aparecem primeiro.</p>
+  </div>
+  {% include "progresso/_resumo.html" %}
+  <div class="flex flex-wrap gap-2 text-sm">
+    <a href="?" class="rounded-full px-3 py-1 font-semibold {% if not filtro %}bg-primary text-white{% else %}bg-slate-100 text-slate-600{% endif %}">Todos</a>
+    <a href="?estado=parado" class="rounded-full px-3 py-1 font-semibold {% if filtro == 'parado' %}bg-primary text-white{% else %}bg-slate-100 text-slate-600{% endif %}">Parados</a>
+    <a href="?estado=atrasado" class="rounded-full px-3 py-1 font-semibold {% if filtro == 'atrasado' %}bg-primary text-white{% else %}bg-slate-100 text-slate-600{% endif %}">Com atrasos</a>
+    <a href="?estado=sem_plano" class="rounded-full px-3 py-1 font-semibold {% if filtro == 'sem_plano' %}bg-primary text-white{% else %}bg-slate-100 text-slate-600{% endif %}">Sem plano ({{ contagem.sem_plano }})</a>
+    <a href="?estado=em_dia" class="rounded-full px-3 py-1 font-semibold {% if filtro == 'em_dia' %}bg-primary text-white{% else %}bg-slate-100 text-slate-600{% endif %}">Em dia</a>
+    <a href="?estado=concluido" class="rounded-full px-3 py-1 font-semibold {% if filtro == 'concluido' %}bg-primary text-white{% else %}bg-slate-100 text-slate-600{% endif %}">Concluídos</a>
+  </div>
+  <div class="space-y-3">
+    {% for l in linhas %}{% include "progresso/_linha.html" with mostrar_tutor=True %}
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+        <span class="material-icons-sharp text-4xl text-slate-300">timeline</span>
+        Nenhum trabalho nesta situação.
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -147,3 +147,14 @@ from .ia import (  # noqa: F401
     resumo_juri,
     minhas_bancas,
 )
+from .progresso import (  # noqa: F401
+    meu_progresso,
+    entregar_etapa,
+    progresso_tutor,
+    progresso_tema,
+    criar_plano,
+    guardar_etapa,
+    eliminar_etapa,
+    avaliar_etapa,
+    progresso_geral,
+)

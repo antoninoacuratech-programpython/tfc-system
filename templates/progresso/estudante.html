@@ -1,0 +1,73 @@
+{% extends "Estudante/base.html" %}
+
+{% block titulo %}O meu progresso{% endblock %}
+{% block titulo_pagina %}O meu progresso{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">O meu progresso</h2>
+    <p class="mt-1 text-sm text-slate-500">As etapas do TFC definidas pelo seu tutor, com o prazo de cada entrega.</p>
+  </div>
+
+  {% if not tema %}
+    <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+      <span class="material-icons-sharp text-4xl text-slate-300">timeline</span>
+      O acompanhamento começa quando o seu tema for aprovado pelo tutor e pela coordenação.
+    </div>
+  {% else %}
+    <div class="sgtf-card space-y-4 p-5 md:p-6">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">O meu tema</p>
+          <h3 class="mt-1 text-lg font-bold leading-snug text-slate-900">{{ tema.titulo }}</h3>
+          <p class="text-sm text-slate-500">Tutor: {{ tema.tutor_indicado.nome }} {{ tema.tutor_indicado.sobrenome }}</p>
+        </div>
+        {% include "progresso/_estado.html" %}
+      </div>
+      {% include "progresso/_barra.html" %}
+      {% if info.proxima %}
+        <p class="text-sm text-slate-600"><b>Próxima entrega:</b> {{ info.proxima.titulo }} — até {{ info.proxima.prazo|date:"d/m/Y" }}{% if info.proxima.atrasada %} <span class="font-semibold text-red-600">(prazo ultrapassado)</span>{% endif %}</p>
+      {% endif %}
+    </div>
+
+    {% if not etapas %}
+      <div class="sgtf-alert sgtf-alert--info"><span class="material-icons-sharp">hourglass_empty</span><p>O seu tutor ainda não definiu as etapas do trabalho. Quando o fizer, recebe uma notificação.</p></div>
+    {% endif %}
+
+    <ol class="space-y-3">
+      {% for e in etapas %}
+        <li class="sgtf-card p-5">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex min-w-0 items-start gap-3">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-bold {% if e.estado == 'aprovada' %}bg-green-500 text-white{% else %}bg-slate-100 text-slate-600{% endif %}">{% if e.estado == 'aprovada' %}<span class="material-icons-sharp text-[18px]">check</span>{% else %}{{ forloop.counter }}{% endif %}</span>
+              <div class="min-w-0">
+                <h4 class="font-bold text-slate-900">{{ e.titulo }}</h4>
+                <p class="text-xs text-slate-500">Prazo: {{ e.prazo|date:"d/m/Y" }}{% if e.entregue_em %} · entregue a {{ e.entregue_em|date:"d/m/Y H:i" }}{% endif %}</p>
+              </div>
+            </div>
+            {% include "progresso/_etapa_estado.html" %}
+          </div>
+          {% if e.descricao %}<p class="mt-2 text-sm text-slate-600">{{ e.descricao }}</p>{% endif %}
+          {% if e.ficheiro %}<p class="mt-2 text-sm"><a class="inline-flex items-center gap-1 font-semibold text-primary hover:underline" href="{{ e.ficheiro.url }}" target="_blank" rel="noopener"><span class="material-icons-sharp text-[16px]">attach_file</span> Ficheiro entregue</a></p>{% endif %}
+          {% if e.comentario_tutor %}
+            <div class="mt-3 rounded-xl p-3 text-sm {% if e.estado == 'revisao' %}bg-amber-50 text-amber-900{% else %}bg-slate-50 text-slate-700{% endif %}"><b>Comentário do tutor:</b> {{ e.comentario_tutor|linebreaksbr }}</div>
+          {% endif %}
+
+          {% if e.por_entregar %}
+            <details class="mt-4 rounded-xl border border-slate-200" {% if e.pk == info.proxima.pk %}open{% endif %}>
+              <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-primary"><span class="material-icons-sharp text-[18px]">upload_file</span> {% if e.estado == 'revisao' %}Entregar versão corrigida{% else %}Entregar esta etapa{% endif %}</summary>
+              <form method="post" action="{% url 'entregar_etapa' e.pk %}" enctype="multipart/form-data" class="space-y-3 p-4 pt-1">
+                {% csrf_token %}
+                <input type="file" name="ficheiro" required accept=".pdf,.doc,.docx,.odt,.zip,.rar,.pptx" class="block w-full text-sm text-slate-500 file:mr-3 file:rounded-lg file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-primary">
+                <textarea name="comentario" rows="2" class="sgtf-input" placeholder="Nota para o tutor (opcional)"></textarea>
+                <button class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">send</span> Entregar</button>
+              </form>
+            </details>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ol>
+  {% endif %}
+</div>
+{% endblock %}

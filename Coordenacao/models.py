@@ -971,3 +971,56 @@ class ResumoIA(models.Model):
 
     def __str__(self):
         return f"Resumo IA — {self.tema.titulo}"
+
+
+class PlanoTrabalho(models.Model):
+    tema = models.OneToOneField(Tema, on_delete=models.CASCADE, related_name="plano")
+    criado_em = models.DateTimeField(auto_now_add=True)
+    ultimo_alerta_parado = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Plano de trabalho"
+        verbose_name_plural = "Planos de trabalho"
+
+    def __str__(self):
+        return f"Plano — {self.tema.titulo}"
+
+
+class EtapaTrabalho(models.Model):
+    ESTADOS = (
+        ("pendente", "Por entregar"),
+        ("entregue", "Entregue"),
+        ("revisao", "A rever"),
+        ("aprovada", "Aprovada"),
+    )
+
+    plano = models.ForeignKey(PlanoTrabalho, on_delete=models.CASCADE, related_name="etapas")
+    ordem = models.PositiveIntegerField(default=1)
+    titulo = models.CharField(max_length=150)
+    descricao = models.TextField(blank=True)
+    prazo = models.DateField()
+    estado = models.CharField(max_length=10, choices=ESTADOS, default="pendente")
+    ficheiro = models.FileField(upload_to="etapas/", null=True, blank=True)
+    comentario_estudante = models.TextField(blank=True)
+    comentario_tutor = models.TextField(blank=True)
+    entregue_em = models.DateTimeField(null=True, blank=True)
+    avaliada_em = models.DateTimeField(null=True, blank=True)
+    alerta_prazo_enviado = models.BooleanField(default=False)
+    alerta_atraso_enviado = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["ordem", "prazo", "pk"]
+        verbose_name = "Etapa do trabalho"
+        verbose_name_plural = "Etapas do trabalho"
+
+    def __str__(self):
+        return f"{self.ordem}. {self.titulo}"
+
+    @property
+    def por_entregar(self):
+        return self.estado in ("pendente", "revisao")
+
+    @property
+    def atrasada(self):
+        from django.utils import timezone
+        return self.por_entregar and self.prazo < timezone.localdate()

@@ -15,6 +15,7 @@
     <a href="{% url 'dashboard_presidencia' %}" class="sgtf-nav-link"><span class="material-icons-sharp">insights</span> Dashboard geral</a>
     <a href="{% url 'listar_despachos' %}" class="sgtf-nav-link"><span class="material-icons-sharp">draw</span> Despachos</a>
     <a href="{% url 'lista_estudantes' %}" class="sgtf-nav-link"><span class="material-icons-sharp">groups</span> Estudantes</a>
+    <a href="{% url 'progresso_geral' %}" class="sgtf-nav-link"><span class="material-icons-sharp">timeline</span> Progresso dos TFC</a>
   {% endif %}
 
   {% if request.user.perfil == "cordenacao" or request.user.is_superuser %}
@@ -39,6 +40,7 @@
         <a href="{% url 'gerir_sugestoes' %}" class="sgtf-nav-link">Sugestões de temas</a>
         <a href="{% url 'lista_reprovados' %}" class="sgtf-nav-link">Solicitações de temas</a>
         <a href="{% url 'lista_aprovados' %}" class="sgtf-nav-link">Temas aprovados</a>
+        <a href="{% url 'progresso_geral' %}" class="sgtf-nav-link">Progresso dos TFC</a>
         <a href="{% url 'inscricoes_aprovadas_coordenacao' %}" class="sgtf-nav-link">Inscrições aprovadas</a>
         <a href="{% url 'lista_estudantes' %}" class="sgtf-nav-link">Lista de estudantes</a>
       </div>
@@ -60,6 +62,7 @@
   {% if request.user.perfil == "area_cientifica" or request.user.is_superuser %}
     <p class="sgtf-nav-section">Área Científica</p>
     <a href="{% url 'index_area_cientifica' %}" class="sgtf-nav-link"><span class="material-icons-sharp">biotech</span> Início</a>
+    <a href="{% url 'progresso_geral' %}" class="sgtf-nav-link"><span class="material-icons-sharp">timeline</span> Progresso dos TFC</a>
     <div class="sgtf-nav-group" data-nav-group="ac-fichas">
       <button type="button" class="sgtf-nav-link" data-nav-toggle>
         <span class="material-icons-sharp">fact_check</span> Fichas de inscrição

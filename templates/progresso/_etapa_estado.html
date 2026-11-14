@@ -1,0 +1,5 @@
+{% if e.estado == "aprovada" %}<span class="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-bold text-green-700">Aprovada</span>
+{% elif e.estado == "entregue" %}<span class="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-bold text-sky-700">Entregue · aguarda tutor</span>
+{% elif e.atrasada %}<span class="rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-bold text-red-700">{% if e.estado == "revisao" %}A rever · {% endif %}Em atraso</span>
+{% elif e.estado == "revisao" %}<span class="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-bold text-amber-700">A rever</span>
+{% else %}<span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-500">Por entregar</span>{% endif %}
