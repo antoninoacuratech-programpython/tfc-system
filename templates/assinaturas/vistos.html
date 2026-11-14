@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Vistos de declarações{% endblock %}
+{% block titulo_pagina %}Vistos de declarações{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Vistos de declarações</h2>
+    <p class="mt-1 text-sm text-slate-500">Declarações já assinadas pelos orientadores que aguardam o visto do Vice-Presidente para os Assuntos Científicos.</p>
+  </div>
+
+  <div class="space-y-3">
+    {% for d in pendentes %}
+      <div class="sgtf-card p-5">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-bold text-slate-900">{{ d.tema.estudante.nome }} {{ d.tema.estudante.sobrenome }}</p>
+            <p class="text-sm text-slate-500">{{ d.tema.titulo }}</p>
+            <p class="text-xs text-slate-400">{{ d.tema.estudante.curso.nome|default:"" }} · assinada por {{ d.assinante.nome }} {{ d.assinante.sobrenome }} em {{ d.assinado_em|date:"d/m/Y" }}</p>
+          </div>
+          <a href="{% url 'gerar_pdf_declaracao' d.tema.estudante_id %}" target="_blank" rel="noopener" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">picture_as_pdf</span> Ler</a>
+        </div>
+        <details class="mt-4 rounded-xl border border-slate-200">
+          <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-primary"><span class="material-icons-sharp text-[18px]">verified</span> Dar visto</summary>
+          <form method="post" action="{% url 'dar_visto' d.pk %}" enctype="multipart/form-data" class="space-y-4 p-4 pt-1">
+            {% csrf_token %}
+            {% include "assinaturas/_rubrica.html" %}
+            <div>
+              <label class="sgtf-label" for="senha_{{ d.pk }}">Confirme com a sua senha</label>
+              <input id="senha_{{ d.pk }}" type="password" name="senha" required autocomplete="current-password" class="sgtf-input">
+            </div>
+            <button class="sgtf-btn sgtf-btn--primary">Confirmar visto</button>
+          </form>
+        </details>
+      </div>
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+        <span class="material-icons-sharp text-4xl text-slate-300">task_alt</span>
+        Não há declarações à espera de visto.
+      </div>
+    {% endfor %}
+  </div>
+
+  {% if concluidos %}
+    <h3 class="pt-2 text-sm font-bold uppercase tracking-wide text-slate-400">Vistos já dados</h3>
+    <div class="sgtf-card divide-y divide-slate-100">
+      {% for d in concluidos %}
+        <div class="flex flex-wrap items-center justify-between gap-2 p-4 text-sm">
+          <span><b class="text-slate-800">{{ d.tema.estudante.nome }} {{ d.tema.estudante.sobrenome }}</b> <span class="text-slate-400">· {{ d.visto_em|date:"d/m/Y" }}</span></span>
+          <a href="{% url 'gerar_pdf_declaracao' d.tema.estudante_id %}" target="_blank" rel="noopener" class="font-semibold text-primary hover:underline">Abrir PDF</a>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

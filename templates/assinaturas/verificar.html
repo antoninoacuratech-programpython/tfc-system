@@ -1,0 +1,43 @@
+{% extends "layouts/autenticacao.html" %}
+
+{% block titulo %}Verificar documento{% endblock %}
+
+{% block conteudo %}
+<div class="space-y-5 rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+  <div>
+    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Verificar documento assinado</h1>
+    <p class="mt-1 text-sm text-slate-500">Confirme a autenticidade de um documento emitido pelo {{ SISTEMA_NOME }} do {{ INSTITUICAO_SIGLA }}.</p>
+  </div>
+
+  <form method="get" action="{% url 'verificar_documento_form' %}" class="flex gap-2">
+    <input name="codigo" value="{{ codigo }}" placeholder="XXXX-XXXX-XXXX" maxlength="20" required class="sgtf-input font-mono uppercase" aria-label="Código de verificação">
+    <button class="sgtf-btn sgtf-btn--primary shrink-0">Verificar</button>
+  </form>
+
+  {% if codigo %}
+    {% if not documento %}
+      <div class="sgtf-alert sgtf-alert--error"><span class="material-icons-sharp">gpp_bad</span><p>Não existe nenhum documento com o código <b>{{ codigo }}</b>. O documento pode ser falso.</p></div>
+    {% elif not documento.valido %}
+      <div class="sgtf-alert sgtf-alert--warning"><span class="material-icons-sharp">block</span><p>Esta assinatura foi <b>anulada</b> pelo signatário em {{ documento.anulado_em|date:"d/m/Y" }}. O documento já não é válido.</p></div>
+    {% elif not integro %}
+      <div class="sgtf-alert sgtf-alert--error"><span class="material-icons-sharp">gpp_bad</span><p>Os dados do trabalho foram alterados depois da assinatura. Este documento não corresponde ao que foi assinado.</p></div>
+    {% else %}
+      <div class="sgtf-alert sgtf-alert--success"><span class="material-icons-sharp">verified</span><p><b>Documento autêntico.</b> Foi assinado digitalmente no {{ SISTEMA_NOME }} e não foi alterado.</p></div>
+    {% endif %}
+
+    {% if documento %}
+      <dl class="divide-y divide-slate-100 rounded-xl border border-slate-200 text-sm">
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">Documento</dt><dd class="col-span-2 font-semibold text-slate-800">{{ documento.get_tipo_display }}</dd></div>
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">Estudante</dt><dd class="col-span-2 text-slate-800">{{ documento.tema.estudante.nome }} {{ documento.tema.estudante.sobrenome }}</dd></div>
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">Tema</dt><dd class="col-span-2 text-slate-800">{{ documento.tema.titulo }}</dd></div>
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">Assinado por</dt><dd class="col-span-2 text-slate-800">{{ documento.assinante.nome }} {{ documento.assinante.sobrenome }} (orientador)<br><span class="text-xs text-slate-400">{{ documento.assinado_em|date:"d/m/Y H:i" }}</span></dd></div>
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">Visto</dt><dd class="col-span-2 text-slate-800">{% if documento.visto_em %}{{ documento.visto_por.nome }} {{ documento.visto_por.sobrenome }}<br><span class="text-xs text-slate-400">{{ documento.visto_em|date:"d/m/Y H:i" }}</span>{% else %}<span class="text-slate-400">Ainda não dado</span>{% endif %}</dd></div>
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">Código</dt><dd class="col-span-2 font-mono text-slate-800">{{ documento.codigo }}</dd></div>
+        <div class="grid grid-cols-3 gap-2 p-3"><dt class="text-slate-500">SHA-256</dt><dd class="col-span-2 break-all font-mono text-[11px] text-slate-500">{{ documento.impressao }}</dd></div>
+      </dl>
+    {% endif %}
+  {% endif %}
+
+  <a href="{% url 'login' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-primary"><span class="material-icons-sharp text-[18px]">arrow_back</span> Ir para o início de sessão</a>
+</div>
+{% endblock %}

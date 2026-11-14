@@ -1024,3 +1024,51 @@ class EtapaTrabalho(models.Model):
     def atrasada(self):
         from django.utils import timezone
         return self.por_entregar and self.prazo < timezone.localdate()
+
+
+class Ficheiro(models.Model):
+    """Conteúdo dos ficheiros carregados, guardado na base de dados (ver armazenamento.py)."""
+
+    nome = models.CharField(max_length=255, unique=True)
+    conteudo = models.BinaryField()
+    tamanho = models.PositiveIntegerField(default=0)
+    tipo = models.CharField(max_length=100, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["nome"]
+
+    def __str__(self):
+        return self.nome
+
+
+class Rubrica(models.Model):
+    """Imagem da assinatura manuscrita de um utilizador (PNG, já limpo e redimensionado)."""
+
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name="rubrica")
+    imagem = models.BinaryField()
+    atualizada_em = models.DateTimeField(auto_now=True)
+
+
+class DocumentoAssinado(models.Model):
+    TIPOS = (("declaracao_orientador", "Declaração de responsabilidade do orientador"),)
+
+    codigo = models.CharField(max_length=16, unique=True)
+    tipo = models.CharField(max_length=40, choices=TIPOS, default="declaracao_orientador")
+    tema = models.ForeignKey(Tema, on_delete=models.CASCADE, related_name="documentos_assinados")
+    assinante = models.ForeignKey(Usuario, on_delete=models.PROTECT, related_name="documentos_assinados")
+    assinado_em = models.DateTimeField()
+    impressao = models.CharField(max_length=64, help_text="SHA-256 do conteúdo assinado")
+    visto_por = models.ForeignKey(Usuario, on_delete=models.PROTECT, null=True, blank=True, related_name="vistos_dados")
+    visto_em = models.DateTimeField(null=True, blank=True)
+    anulado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-assinado_em"]
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} · {self.codigo}"
+
+    @property
+    def valido(self):
+        return self.anulado_em is None

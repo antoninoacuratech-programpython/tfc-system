@@ -1,26 +1,13 @@
 """Gestão de estudantes, professores e dossiês."""
 
-import io
-import os
-from datetime import date
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
-from django.contrib.staticfiles import finders
 from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.platypus import HRFlowable, Image, Paragraph, SimpleDocTemplate, Spacer, Table
-
-from ..models import Curso, Departamento, Tema, Usuario
+from ..models import Curso, Departamento, Usuario
 from ..permissions import PERFIS_GESTAO, perfil_requerido
 
 
@@ -95,107 +82,6 @@ def alterar_estado_multiplos_usuarios(request):
 
 
 @login_required
-def gerar_pdf_declaracao_orientador(request, usuario_id):
-    try:
-        estudante = get_object_or_404(Usuario, pk=usuario_id, perfil='estudante')
-        
-        tema = Tema.objects.filter(estudante=estudante, status_tutor='aprovado').last()
-        
-        if not tema:
-            messages.error(request, "Não foi encontrado um tema aprovado para este estudante.")
-            return redirect('lista_estudantes_tutor')
-
-        orientador = tema.tutor_indicado
-        nome_curso = str(estudante.curso.nome).upper() if estudante.curso else "ENGENHARIA INFORMÁTICA"
-        
-        nome_depto = "ENGENHARIAS"
-        if hasattr(estudante, 'departamento') and estudante.departamento:
-            nome_depto = str(estudante.departamento.nome).upper()
-        elif hasattr(estudante, 'depart') and estudante.depart:
-            nome_depto = str(estudante.depart.nome).upper()
-
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            buffer, 
-            pagesize=A4, 
-            rightMargin=50, leftMargin=50, topMargin=40, bottomMargin=60
-        )
-        elements = []
-
-        style_inst_bold = ParagraphStyle('InstBold', fontSize=10, fontName='Helvetica-Bold', leading=12, alignment=TA_CENTER)
-        style_dept = ParagraphStyle('Dept', fontSize=9, fontName='Helvetica-Bold', leading=11, alignment=TA_CENTER, textColor=colors.gray)
-        style_titulo = ParagraphStyle('Titulo', fontSize=12, fontName='Helvetica-Bold', alignment=TA_CENTER, spaceBefore=20, spaceAfter=20)
-        style_corpo = ParagraphStyle('Corpo', fontSize=11, fontName='Helvetica', leading=16, alignment=TA_JUSTIFY)
-
-        relative_path = 'imgs/icons/finalispbie.jpg'
-        logo_path = finders.find(relative_path)
-        
-        if logo_path and os.path.exists(logo_path):
-            try:
-                logo_img = Image(logo_path, width=2.2*cm, height=2.2*cm)
-            except:
-                logo_img = Paragraph("<b>ISPB</b>", style_inst_bold)
-        else:
-            logo_img = Paragraph("<b>ISPB</b>", style_inst_bold)
-
-        header_info = [
-            Paragraph("REPÚBLICA DE ANGOLA", style_inst_bold),
-            Paragraph("MINISTÉRIO DO ENSINO SUPERIOR, CIÊNCIA, TECNOLOGIA E INOVAÇÃO", style_inst_bold),
-            Paragraph("INSTITUTO SUPERIOR POLITÉCNICO DO BIÉ", style_inst_bold),
-            Paragraph(f"DEPARTAMENTO DE {nome_depto}", style_dept),
-            Paragraph(f"CURSO DE {nome_curso}", style_dept),
-        ]
-
-        elements.append(Table([[logo_img, header_info]], colWidths=[2.5*cm, 13.5*cm]))
-        elements.append(Spacer(1, 5))
-        elements.append(HRFlowable(width="100%", thickness=1, color=colors.black))
-        
-        elements.append(Paragraph("DECLARAÇÃO DE RESPONSABILIDADE DO (A) ORIENTADOR (A)", style_titulo))
-
-        nome_est_comp = f"{estudante.nome} {estudante.sobrenome}".upper()
-        nome_ori_comp = f"{orientador.nome} {orientador.sobrenome}" if orientador else "_____________________"
-        
-        texto = f"""
-        Para os devidos efeitos, eu, docente do Departamento de {nome_depto.capitalize()}, 
-        orientador (a) do trabalho de Fim de Curso do (a) estudante <b>{nome_est_comp}</b>, 
-        do Instituto Superior Politécnico do Bié, com o tema: <u>{tema.titulo}</u>.
-        <br/><br/>
-        Por este meio confirmar que o trabalho em referência se encontra concluído e que o estudante 
-        está preparado para assumir a sua defesa pública.
-        """
-        elements.append(Paragraph(texto, style_corpo))
-        elements.append(Spacer(1, 20))
-
-        hoje = date.today()
-        meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
-        data_str = f"Cuito, aos {hoje.day} de {meses[hoje.month-1]} de {hoje.year}"
-        elements.append(Paragraph(data_str, ParagraphStyle('Date', alignment=TA_RIGHT, fontSize=11)))
-        
-        elements.append(Spacer(1, 40))
-        assinaturas = [
-            [Paragraph("VISTO<br/>______/_________/20___", style_corpo), ""],
-            [Spacer(1, 30), Spacer(1, 30)],
-            [Paragraph("O Vice-Presidente P/Assuntos Científicos", style_corpo), Paragraph("O orientador (a)", style_corpo)],
-            [Paragraph("_____________________________________", style_inst_bold), Paragraph("_____________________________________", style_inst_bold)],
-            ["", Paragraph(nome_ori_comp, style_inst_bold)]
-        ]
-        elements.append(Table(assinaturas, colWidths=[8*cm, 8*cm]))
-
-        elements.append(Spacer(1, 40))
-        rodape = Paragraph("Rua Padre Fidalgo entre Artur de Paiva e Francisco de Leite Cardoso S/N, Cidade do Cuito-Bié", 
-                           ParagraphStyle('R', fontSize=7, alignment=TA_CENTER, textColor=colors.grey))
-        elements.append(rodape)
-
-        doc.build(elements)
-        buffer.seek(0)
-        return HttpResponse(buffer, content_type='application/pdf')
-
-    except Exception as e:
-        print(f"ERRO: {e}")
-        return HttpResponse(f"Erro ao gerar PDF: {str(e)}", status=500)
-
-
-@login_required
 def lista_estudantes_tutor(request):
     if request.user.perfil != 'tutor':
         return redirect("login")
@@ -206,9 +92,15 @@ def lista_estudantes_tutor(request):
         .distinct()
         .order_by("nome", "sobrenome")
     )
-    return render(request, "tutor/listas_estudantes.html", {
-        "estudantes": estudantes_vinculados
-    })
+    linhas = []
+    for estudante in estudantes_vinculados:
+        temas = [t for t in estudante.temas.all() if t.tutor_indicado_id == request.user.pk]
+        tema = next((t for t in reversed(temas) if t.status_tutor == "aprovado"), temas[-1] if temas else None)
+        documento = None
+        if tema and tema.status_tutor == "aprovado":
+            documento = tema.documentos_assinados.filter(anulado_em__isnull=True).first()
+        linhas.append({"estudante": estudante, "tema": tema, "documento": documento})
+    return render(request, "tutor/listas_estudantes.html", {"linhas": linhas})
 
 
 @perfil_requerido(*PERFIS_GESTAO)

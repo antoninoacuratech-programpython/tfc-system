@@ -478,3 +478,116 @@ class ProgressoTests(BaseTestCase):
         self.assertTrue(NotificacaoFinal.objects.filter(usuario=self.coordenacao, titulo="Estudante parado").exists())
         self.assertTrue(NotificacaoFinal.objects.filter(usuario=self.tutor, titulo="Estudante parado").exists())
         self.assertEqual(gerar_alertas()["parado"], 0)
+
+
+class ArmazenamentoBDTests(BaseTestCase):
+    def setUp(self):
+        from .armazenamento import BaseDadosStorage
+        self.storage = BaseDadosStorage()
+
+    def test_guardar_ler_e_apagar(self):
+        from django.core.files.base import ContentFile
+        nome = self.storage.save("etapas/intro.pdf", ContentFile(b"%PDF-1.4 ola"))
+        self.assertTrue(self.storage.exists(nome))
+        self.assertEqual(self.storage.size(nome), 12)
+        with self.storage.open(nome) as f:
+            self.assertEqual(f.read(), b"%PDF-1.4 ola")
+        outro = self.storage.save("etapas/intro.pdf", ContentFile(b"x"))
+        self.assertNotEqual(nome, outro)
+        self.storage.delete(nome)
+        self.assertFalse(self.storage.exists(nome))
+
+    def test_servir_exige_sessao_e_html_e_descarregado(self):
+        from django.core.files.base import ContentFile
+        pdf = self.storage.save("resumos/a.pdf", ContentFile(b"%PDF"))
+        html = self.storage.save("resumos/b.html", ContentFile(b"<script>alert(1)</script>"))
+        url = self.storage.url(pdf)
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.client.force_login(self.estudante)
+        r = self.client.get(url)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("inline", r["Content-Disposition"])
+        self.assertIn("attachment", self.client.get(self.storage.url(html))["Content-Disposition"])
+
+    def test_filefield_usa_a_base_de_dados(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from .models import Ficheiro
+        with self.settings(STORAGES={"default": {"BACKEND": "Coordenacao.armazenamento.BaseDadosStorage"},
+                                     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"}}):
+            from django.core.files.storage import default_storage
+            nome = default_storage.save("usuarios/foto.png", SimpleUploadedFile("foto.png", b"\x89PNG"))
+            self.assertTrue(Ficheiro.objects.filter(nome=nome, tipo="image/png").exists())
+
+
+class AssinaturaTests(BaseTestCase):
+    SENHA = "SenhaForte#2026"
+
+    def setUp(self):
+        import base64
+        import io
+        from datetime import timedelta
+        from django.utils import timezone
+        from PIL import Image, ImageDraw
+        from .models import ProcessoEtapa, Tema
+        hoje = timezone.localdate()
+        ProcessoEtapa.objects.create(titulo="TFC", curso=self.curso, coordenador=self.coordenacao,
+                                     data_inicio=hoje - timedelta(days=1), data_termino=hoje + timedelta(days=30), ativo=True)
+        self.tema = Tema.objects.create(estudante=self.estudante, titulo="Rede de sensores", descricao="x",
+                                        tutor_indicado=self.tutor, status_tutor="aprovado", status_coordenacao="aprovado")
+        img = Image.new("RGB", (300, 100), "white")
+        ImageDraw.Draw(img).line((20, 70, 120, 20, 200, 80, 280, 30), fill="black", width=4)
+        buf = io.BytesIO()
+        img.save(buf, format="PNG")
+        self.desenho = "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+    def _assinar(self, senha=None):
+        self.client.force_login(self.tutor)
+        return self.client.post(reverse("assinar_declaracao", args=[self.estudante.pk]),
+                                {"senha": senha or self.SENHA, "rubrica_desenho": self.desenho})
+
+    def test_assinar_gera_codigo_e_pdf_verificavel(self):
+        from .models import DocumentoAssinado
+        self._assinar()
+        doc = DocumentoAssinado.objects.get(tema=self.tema)
+        r = self.client.get(reverse("gerar_pdf_declaracao", args=[self.estudante.pk]))
+        self.assertEqual(r["Content-Type"], "application/pdf")
+        self.assertIn(doc.codigo, r["Content-Disposition"])
+        self.client.logout()
+        self.assertContains(self.client.get(reverse("verificar_documento", args=[doc.codigo])), "Documento autêntico")
+
+    def test_senha_errada_nao_assina(self):
+        from .models import DocumentoAssinado
+        self._assinar(senha="errada")
+        self.assertFalse(DocumentoAssinado.objects.exists())
+
+    def test_alterar_tema_depois_de_assinar_invalida(self):
+        from .models import DocumentoAssinado
+        self._assinar()
+        doc = DocumentoAssinado.objects.get()
+        type(self.tema).objects.filter(pk=self.tema.pk).update(titulo="Outro tema")
+        r = self.client.get(reverse("verificar_documento", args=[doc.codigo]))
+        self.assertContains(r, "foram alterados")
+
+    def test_outro_utilizador_nao_ve_nem_assina(self):
+        self.client.force_login(self.outro_estudante)
+        self.assertEqual(self.client.get(reverse("gerar_pdf_declaracao", args=[self.estudante.pk])).status_code, 403)
+        outro_tutor = Usuario.objects.create_user(email="t9@ispb.ao", password=self.SENHA, nome="T", sobrenome="9",
+                                                  telefone="923000009", perfil="tutor", estado_user="activo")
+        self.client.force_login(outro_tutor)
+        self.assertEqual(self.client.post(reverse("assinar_declaracao", args=[self.estudante.pk]), {"senha": self.SENHA}).status_code, 403)
+
+    def test_visto_da_area_cientifica_e_anulacao(self):
+        from .models import DocumentoAssinado
+        self._assinar()
+        doc = DocumentoAssinado.objects.get()
+        self.client.force_login(self.cientifica)
+        self.client.post(reverse("dar_visto", args=[doc.pk]), {"senha": self.SENHA, "rubrica_desenho": self.desenho})
+        doc.refresh_from_db()
+        self.assertEqual(doc.visto_por, self.cientifica)
+
+        self.client.force_login(self.tutor)
+        self.client.post(reverse("anular_assinatura", args=[doc.pk]))
+        self.assertContains(self.client.get(reverse("verificar_documento", args=[doc.codigo])), "anulada")
+
+    def test_codigo_inexistente(self):
+        self.assertContains(self.client.get(reverse("verificar_documento", args=["AAAA-BBBB-CCCC"])), "pode ser falso")

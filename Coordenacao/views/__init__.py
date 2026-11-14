@@ -44,7 +44,6 @@ from .utilizadores import (  # noqa: F401
     eliminar_professor,
     perfil_documental,
     lista_estudantes_tutor,
-    gerar_pdf_declaracao_orientador,
 )
 from .estrutura import (  # noqa: F401
     lista_departamentos,
@@ -157,4 +156,14 @@ from .progresso import (  # noqa: F401
     eliminar_etapa,
     avaliar_etapa,
     progresso_geral,
+)
+from .ficheiros import servir_ficheiro  # noqa: F401
+from .assinaturas import (  # noqa: F401
+    gerar_pdf_declaracao_orientador,
+    assinar_declaracao,
+    anular_assinatura,
+    vistos_declaracoes,
+    dar_visto,
+    minha_rubrica,
+    verificar_documento,
 )

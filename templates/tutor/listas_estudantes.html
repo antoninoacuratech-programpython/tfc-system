@@ -1,111 +1,44 @@
-{% extends 'tutor/base.html' %}
+{% extends "tutor/base.html" %}
+
+{% block titulo %}Os meus estudantes{% endblock %}
+{% block titulo_pagina %}Os meus estudantes{% endblock %}
 
 {% block content %}
+<div class="space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Estudantes sob minha orientação</h2>
+    <p class="mt-1 text-sm text-slate-500">Assine digitalmente a declaração de responsabilidade quando o trabalho estiver pronto para a defesa.</p>
+  </div>
 
-<h2 class="text-2xl font-bold mb-5 px-4 sm:px-0 animate-fadeSlide text-gray-800">
-    Estudantes sob minha Orientação
-</h2>
-
-<div class="bg-white shadow rounded p-4 overflow-x-auto animate-fade">
-
-    <table class="hidden md:table w-full border-collapse animate-fadeSlow">
-        <thead>
-            <tr class="bg-gray-100 border-b border-gray-300">
-                <th class="p-3 text-left text-sm font-semibold text-gray-600">Nome do Estudante</th>
-                <th class="p-3 text-left text-sm font-semibold text-gray-600">Curso</th>
-                <th class="p-3 text-left text-sm font-semibold text-gray-600">Tema do TFC</th>
-                <th class="p-3 text-left text-sm font-semibold text-gray-600 text-center">Ação</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for estudante in estudantes %}
-            {% with tema=estudante.temas.all.0 %}
-            <tr class="border-b hover:bg-gray-50 transition duration-150">
-                
-                <td class="p-3 text-sm text-gray-800 font-medium">
-                    {{ estudante.nome }} {{ estudante.sobrenome }}
-                </td>
-
-                <td class="p-3 text-sm text-gray-600">
-                    {{ estudante.curso.nome|default:"—" }}
-                </td>
-
-                <td class="p-3 text-sm text-gray-800">
-                    {% if tema %}
-                        {{ tema.titulo }}
-                    {% else %}
-                        <span class="text-gray-400 italic">Sem tema submetido</span>
-                    {% endif %}
-                </td>
-
-                <td class="p-3 text-sm text-center">
-                    {% if tema and tema.status_tutor == 'aprovado' %}
-                        <a href="{% url 'gerar_pdf_declaracao' estudante.id %}" 
-                           target="_blank"
-                           class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition shadow-sm text-xs font-semibold">
-                           <i class="fas fa-file-pdf"></i> Gerar Declaração
-                        </a>
-                    {% else %}
-                        <span class="px-3 py-1 bg-gray-100 text-gray-400 rounded-full text-xs italic">
-                            Indisponível (Aguardando Aprovação)
-                        </span>
-                    {% endif %}
-                </td>
-
-            </tr>
-            {% endwith %}
-            {% empty %}
-            <tr>
-                <td colspan="4" class="p-10 text-center text-gray-500 italic">
-                    Nenhum estudante vinculado para orientação no momento.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div class="md:hidden space-y-4 animate-fade">
-        {% for estudante in estudantes %}
-        {% with tema=estudante.temas.all.0 %}
-        <div class="border border-gray-200 rounded-lg p-4 shadow-sm bg-gray-50">
-            <div class="flex flex-col mb-3 border-b border-gray-200 pb-2">
-                <span class="text-lg font-bold text-gray-900">{{ estudante.nome }} {{ estudante.sobrenome }}</span>
-                <span class="text-xs font-medium text-blue-600">{{ estudante.curso.nome|default:"—" }}</span>
-            </div>
-
-            <div class="text-sm mb-4">
-                <strong class="text-gray-600 block text-xs uppercase tracking-wider mb-1">Tema:</strong>
-                <p class="text-gray-800 font-medium">{% if tema %}{{ tema.titulo }}{% else %}—{% endif %}</p>
-            </div>
-
-            {% if tema and tema.status_tutor == 'aprovado' %}
-                <a href="{% url 'gerar_pdf_declaracao' estudante.id %}" 
-                   target="_blank"
-                   class="block w-full text-center py-3 bg-blue-600 text-white rounded-md text-sm font-bold hover:bg-blue-700 transition">
-                   <i class="fas fa-file-pdf mr-2"></i> Gerar Declaração de Responsabilidade
-                </a>
+  <div class="space-y-3">
+    {% for l in linhas %}
+      <div class="sgtf-card flex flex-wrap items-center justify-between gap-4 p-5">
+        <div class="min-w-[16rem] flex-1">
+          <p class="font-bold text-slate-900">{{ l.estudante.nome }} {{ l.estudante.sobrenome }}</p>
+          <p class="text-xs font-medium text-slate-400">{{ l.estudante.curso.nome|default:"—" }}</p>
+          <p class="mt-1 text-sm text-slate-600">{% if l.tema %}{{ l.tema.titulo }}{% else %}<span class="italic text-slate-400">Sem tema submetido</span>{% endif %}</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          {% if l.tema and l.tema.status_tutor == "aprovado" %}
+            {% if l.documento %}
+              <span class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-bold text-green-700"><span class="material-icons-sharp text-[16px]">verified</span> Assinada{% if l.documento.visto_em %} · com visto{% endif %}</span>
+              <a href="{% url 'gerar_pdf_declaracao' l.estudante.pk %}" target="_blank" rel="noopener" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">picture_as_pdf</span> Declaração</a>
+              <a href="{% url 'assinar_declaracao' l.estudante.pk %}" class="sgtf-btn sgtf-btn--ghost px-3" title="Detalhes da assinatura"><span class="material-icons-sharp text-[18px]">more_horiz</span></a>
             {% else %}
-                <div class="text-center py-2 bg-gray-200 text-gray-500 rounded text-xs italic">
-                    Aguardando aprovação do tema para gerar declaração
-                </div>
+              <a href="{% url 'gerar_pdf_declaracao' l.estudante.pk %}" target="_blank" rel="noopener" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">visibility</span> Pré-visualizar</a>
+              <a href="{% url 'assinar_declaracao' l.estudante.pk %}" class="sgtf-btn sgtf-btn--primary"><span class="material-icons-sharp text-[18px]">draw</span> Assinar declaração</a>
             {% endif %}
+          {% else %}
+            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">Declaração disponível após aprovar o tema</span>
+          {% endif %}
         </div>
-        {% endwith %}
-        {% empty %}
-        <div class="text-center py-10">
-            <p class="text-gray-500 italic">Nenhum estudante encontrado.</p>
-        </div>
-        {% endfor %}
-    </div>
+      </div>
+    {% empty %}
+      <div class="sgtf-card flex flex-col items-center gap-2 p-10 text-center text-slate-400">
+        <span class="material-icons-sharp text-4xl text-slate-300">school</span>
+        Nenhum estudante vinculado para orientação no momento.
+      </div>
+    {% endfor %}
+  </div>
 </div>
-
-<style>
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.animate-fade { animation: fadeIn .5s ease-out; }
-.animate-fadeSlow { animation: fadeIn 0.8s ease-out; }
-.animate-fadeSlide { animation: fadeIn .4s ease-out, slideUp .4s ease-out; }
-</style>
-
 {% endblock %}

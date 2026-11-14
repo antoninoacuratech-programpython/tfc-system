@@ -1,0 +1,55 @@
+{% extends "tutor/base.html" %}
+
+{% block titulo %}Assinar declaração{% endblock %}
+{% block titulo_pagina %}Declaração do orientador{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-3xl space-y-5">
+  <a href="{% url 'lista_estudantes_tutor' %}" class="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-primary"><span class="material-icons-sharp text-[18px]">arrow_back</span> Os meus estudantes</a>
+
+  <div class="sgtf-card p-5 md:p-6">
+    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Declaração de responsabilidade do orientador</p>
+    <h2 class="mt-1 text-lg font-bold text-slate-900">{{ estudante.nome }} {{ estudante.sobrenome }}</h2>
+    <p class="text-sm text-slate-600">{{ tema.titulo }}</p>
+    <a href="{% url 'gerar_pdf_declaracao' estudante.pk %}" target="_blank" rel="noopener" class="sgtf-btn sgtf-btn--ghost mt-4"><span class="material-icons-sharp text-[18px]">picture_as_pdf</span> {% if documento %}Abrir declaração assinada{% else %}Pré-visualizar (não assinada){% endif %}</a>
+  </div>
+
+  {% if documento %}
+    <div class="sgtf-card space-y-3 border-green-200 p-5 md:p-6">
+      <div class="flex items-center gap-3">
+        <span class="material-icons-sharp rounded-xl bg-green-50 p-2.5 text-green-600">verified</span>
+        <div>
+          <p class="font-bold text-slate-900">Assinada digitalmente</p>
+          <p class="text-sm text-slate-500">Em {{ documento.assinado_em|date:"d/m/Y H:i" }} · código <b class="font-mono text-slate-800">{{ documento.codigo }}</b></p>
+        </div>
+      </div>
+      <p class="text-sm text-slate-600">
+        {% if documento.visto_em %}Visto da Área Científica dado por {{ documento.visto_por.nome }} {{ documento.visto_por.sobrenome }} em {{ documento.visto_em|date:"d/m/Y" }}.
+        {% else %}A aguardar o visto do Vice-Presidente para os Assuntos Científicos.{% endif %}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <a href="{% url 'verificar_documento' documento.codigo %}" target="_blank" rel="noopener" class="sgtf-btn sgtf-btn--ghost"><span class="material-icons-sharp text-[18px]">qr_code_2</span> Página de verificação</a>
+        <form method="post" action="{% url 'anular_assinatura' documento.pk %}" data-confirm="O código {{ documento.codigo }} deixa de ser válido{% if documento.visto_em %} e o visto da Área Científica perde-se{% endif %}. Depois pode assinar de novo." data-confirm-titulo="Anular assinatura?" data-confirm-ok="Anular" data-confirm-tipo="perigo">
+          {% csrf_token %}
+          <button class="sgtf-btn sgtf-btn--ghost text-red-600"><span class="material-icons-sharp text-[18px]">block</span> Anular assinatura</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <form method="post" enctype="multipart/form-data" class="sgtf-card space-y-5 p-5 md:p-6">
+      {% csrf_token %}
+      <h3 class="flex items-center gap-2 text-base font-bold text-slate-900"><span class="material-icons-sharp text-primary">draw</span> Assinar digitalmente</h3>
+      {% include "assinaturas/_rubrica.html" %}
+      <div>
+        <label class="sgtf-label" for="senha">Confirme com a sua senha</label>
+        <input id="senha" type="password" name="senha" required autocomplete="current-password" class="sgtf-input">
+      </div>
+      <p class="rounded-xl bg-primary-50 p-3 text-xs leading-relaxed text-slate-600">
+        Ao assinar, confirma que o trabalho está concluído e que o estudante está preparado para a defesa pública.
+        O documento recebe um código único e um QR code que permitem a qualquer pessoa confirmar a sua autenticidade.
+      </p>
+      <button class="sgtf-btn sgtf-btn--primary w-full sm:w-auto"><span class="material-icons-sharp text-[18px]">verified</span> Assinar declaração</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -118,11 +118,18 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-# na Render não temos armazenamento externo, por isso é o Django que serve os uploads
 SERVE_MEDIA = env_bool("SERVE_MEDIA", DEBUG)
+# o disco da Render é apagado a cada reinício: com PostgreSQL os uploads ficam na base de dados
+FICHEIROS_NA_BD = env_bool("FICHEIROS_NA_BD", DATABASE_URL.startswith(("postgres://", "postgresql://")))
 
 STORAGES = {
-    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "default": {
+        "BACKEND": (
+            "Coordenacao.armazenamento.BaseDadosStorage"
+            if FICHEIROS_NA_BD
+            else "django.core.files.storage.FileSystemStorage"
+        )
+    },
     "staticfiles": {
         "BACKEND": (
             "django.contrib.staticfiles.storage.StaticFilesStorage"
