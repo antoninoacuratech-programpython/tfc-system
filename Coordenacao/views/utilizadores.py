@@ -5,10 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
-from ..models import Curso, Departamento, Usuario
-from ..permissions import PERFIS_GESTAO, perfil_requerido
+from ..models import Curso, Departamento, PerfilAdicional, Usuario
+from ..permissions import PERFIL_COORDENACAO, PERFIL_PRESIDENTE, PERFIS_GESTAO, perfil_requerido, mudar_para_perfil
 
 
 @perfil_requerido(*PERFIS_GESTAO)
@@ -57,6 +58,8 @@ def add_estudante(request):
                 estado_user="activo",
                 password=senha
             )
+            if request.POST.get("tambem_tutor") and perfil not in ("estudante", "tutor"):
+                PerfilAdicional.objects.get_or_create(usuario=user, perfil="tutor")
             messages.success(request, f"{perfil.capitalize()} adicionado com sucesso!")
             return redirect("add_usuario")
         except Exception as e:
@@ -83,7 +86,7 @@ def alterar_estado_multiplos_usuarios(request):
 
 @login_required
 def lista_estudantes_tutor(request):
-    if request.user.perfil != 'tutor':
+    if request.user.perfil != 'tutor' and not mudar_para_perfil(request, 'tutor'):
         return redirect("login")
     estudantes_vinculados = (
         Usuario.objects.filter(perfil="estudante", temas__tutor_indicado=request.user)
@@ -241,3 +244,46 @@ def eliminar_professor(request, pk):
         messages.error(request, f"Erro ao eliminar: {str(e)}")
         
     return redirect('gerenciar_professores')
+
+
+def _perfis_que_pode_atribuir(user):
+    # a coordenação só acumula a função de tutor; o administrador atribui qualquer perfil de docente
+    if user.is_superuser:
+        return [p for p, _ in Usuario.TIPOS_USUARIO if p != "estudante"]
+    return ["tutor"]
+
+
+@perfil_requerido(PERFIL_COORDENACAO, PERFIL_PRESIDENTE)
+def funcoes_acumuladas(request):
+    from ..templatetags.sgtf import ROTULOS_PERFIL
+
+    atribuiveis = _perfis_que_pode_atribuir(request.user)
+    if request.method == "POST":
+        alvo = get_object_or_404(Usuario.objects.exclude(perfil="estudante"), pk=request.POST.get("usuario"))
+        perfil = request.POST.get("perfil")
+        nome = f"{alvo.nome} {alvo.sobrenome}"
+        if perfil not in atribuiveis or perfil == alvo.perfil:
+            messages.error(request, "Não pode atribuir esse perfil.")
+        elif request.POST.get("acao") == "remover":
+            PerfilAdicional.objects.filter(usuario=alvo, perfil=perfil).delete()
+            messages.success(request, f"{nome} deixou de acumular {ROTULOS_PERFIL.get(perfil, perfil)}.")
+        else:
+            PerfilAdicional.objects.get_or_create(usuario=alvo, perfil=perfil)
+            messages.success(request, f"{nome} passa a acumular {ROTULOS_PERFIL.get(perfil, perfil)}. "
+                                      "Na próxima entrada escolhe o perfil, ou muda no menu com o seu nome.")
+        return redirect(f"{reverse('funcoes_acumuladas')}?q={request.POST.get('q', '')}")
+
+    q = request.GET.get("q", "").strip()
+    docentes = Usuario.objects.exclude(perfil="estudante").prefetch_related("perfis_adicionais").select_related("curso")
+    if q:
+        docentes = docentes.filter(Q(nome__icontains=q) | Q(sobrenome__icontains=q) | Q(email__icontains=q))
+    linhas = []
+    for d in docentes.order_by("nome", "sobrenome")[:200]:
+        extras = {pa.perfil for pa in d.perfis_adicionais.all()}
+        linhas.append({
+            "u": d,
+            "principal": ROTULOS_PERFIL.get(d.perfil, d.perfil),
+            "opcoes": [(p, ROTULOS_PERFIL.get(p, p), p in extras) for p in atribuiveis if p != d.perfil],
+            "extras": [ROTULOS_PERFIL.get(p, p) for p in extras],
+        })
+    return render(request, "admin/funcoes_acumuladas.html", {"linhas": linhas, "q": q})

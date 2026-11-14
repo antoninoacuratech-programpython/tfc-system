@@ -25,7 +25,7 @@ from reportlab.platypus import (
     TableStyle,
 )
 
-from ..models import Curso, ListaPreDefesas, Predefesa, Usuario
+from ..models import Curso, ListaPreDefesas, Predefesa, Usuario, tutores as todos_tutores
 from ..permissions import PERFIS_GESTAO, perfil_requerido
 
 
@@ -75,9 +75,7 @@ def agendar_predefesa(request):
         minhas_predefesas__isnull=False
     )
 
-    tutores_disponiveis = Usuario.objects.filter(
-        perfil='tutor',
-    )
+    tutores_disponiveis = todos_tutores().filter(estado_user='activo').order_by('nome')
 
     context = {
         'estudantes': estudantes_disponiveis,
@@ -415,7 +413,7 @@ def predefesas_por_curso(request, curso_id):
 @perfil_requerido(*PERFIS_GESTAO)
 def editar_predefesa(request, pk):
     predefesa = get_object_or_404(Predefesa, pk=pk)
-    tutores = Usuario.objects.filter(perfil='tutor')
+    tutores = todos_tutores().order_by('nome')
 
     if request.method == 'POST':
         try:

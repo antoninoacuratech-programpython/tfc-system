@@ -7,6 +7,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, render
 
 from ..models import (
+    tutores as todos_tutores,
     Comunicado,
     Despacho,
     InscricaoTFC,
@@ -16,7 +17,7 @@ from ..models import (
     Tema,
     Usuario,
 )
-from ..permissions import PERFIS_GESTAO, perfil_requerido
+from ..permissions import PERFIS_GESTAO, perfil_requerido, mudar_para_perfil
 
 User = get_user_model()
 
@@ -52,7 +53,7 @@ def admink(request):
     else:
         usuarios_qs = User.objects.filter(perfil='estudante')
 
-    tutores = User.objects.filter(perfil='tutor')
+    tutores = todos_tutores()
     lista_temas_reprovados = Tema.objects.exclude(status_final='aprovado')
 
     return render(request, 'admin/index.html', {
@@ -71,7 +72,7 @@ def dashboard_estudante(request):
     user = request.user
     temas = Tema.objects.filter(estudante=user).order_by('-data_envio')
     
-    total_tutor = User.objects.filter(perfil='tutor').count()
+    total_tutor = todos_tutores().count()
     total_estudantes = User.objects.filter(perfil='estudante').count()
 
     total_notificacoes_tfc = NotificacaoTFC.objects.filter(
@@ -89,14 +90,14 @@ def dashboard_estudante(request):
         'nome': user.nome,
         'total_recomendacoes': total_recomendacoes,
         'total_notificacoes_tfc': total_notificacoes_tfc, 
-        'tutores': User.objects.filter(perfil='tutor'),
+        'tutores': todos_tutores(),
         'temas': temas
     })
 
 
 @login_required
 def dashboard_tutor(request):
-    if request.user.perfil != 'tutor':
+    if request.user.perfil != 'tutor' and not mudar_para_perfil(request, 'tutor'):
         messages.error(request, "Acesso negado.")
         return redirect('login')
 

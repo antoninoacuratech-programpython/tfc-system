@@ -15,7 +15,7 @@ from reportlab.lib.units import cm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from ..models import Curso, InscricaoTFC, NotificacaoTFC, Tema
-from ..permissions import PERFIS_GESTAO, perfil_requerido, garantir_acesso_estudante
+from ..permissions import PERFIS_GESTAO, perfil_requerido, garantir_acesso_estudante, mudar_para_perfil
 
 
 @login_required
@@ -345,7 +345,7 @@ def rejeitar_inscricao_tfc(request, inscricao_id):
 
 @perfil_requerido(*PERFIS_GESTAO)
 def lista_inscricoes_aprovadas_coordenacao(request):
-    if request.user.perfil != "cordenacao":
+    if request.user.perfil != 'cordenacao' and not mudar_para_perfil(request, 'cordenacao'):
         messages.error(request, "Acesso restrito.")
         return redirect('admink')
 

@@ -15,6 +15,8 @@ urlpatterns = [
     path('estudante/', views.dashboard_estudante, name='dashboard_estudante'),
     path('estudante/criar-tema/', views.criar_ou_editar_tema, name='criar_ou_editar_tema'),
     path('sair/', views.sair, name='sair'),
+    path('entrar-como/', views.escolher_perfil, name='escolher_perfil'),
+    path('utilizadores/funcoes-acumuladas/', views.funcoes_acumuladas, name='funcoes_acumuladas'),
     path('estudantes/', views.lista_estudantes, name='lista_estudantes'),
     path('estudantes/<int:tema_id>/status/<str:novo_status>/', 
          views.alterar_status_tema, 

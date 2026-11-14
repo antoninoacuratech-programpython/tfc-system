@@ -41,6 +41,11 @@
             </div>
         </div>
 
+        <label id="campoTambemTutor" class="hidden flex items-center gap-3 rounded-xl border border-gray-200 p-3 text-sm text-gray-700">
+            <input type="checkbox" name="tambem_tutor" value="1" class="h-4 w-4 accent-[#1d4ed8]">
+            <span><b>Também é tutor / orientador</b><span class="block text-xs text-gray-500">Poderá orientar trabalhos e fazer parte de bancas, mudando de perfil no menu.</span></span>
+        </label>
+
         <div id="camposCurso" class="hidden">
             <label class="block text-sm font-medium text-gray-700">Curso</label>
             <select name="curso" class="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-xl focus:ring-primary">
@@ -74,6 +79,7 @@
 
     perfil.addEventListener("change", () => {
         camposCurso.classList.toggle("hidden", !["cordenacao", "estudante"].includes(perfil.value));
+        document.getElementById("campoTambemTutor").classList.toggle("hidden", !perfil.value || ["estudante", "tutor"].includes(perfil.value));
     });
 
     function toggleSenha(inputId, eyeId) {

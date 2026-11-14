@@ -1,0 +1,26 @@
+{% extends "layouts/autenticacao.html" %}
+
+{% block titulo %}Entrar como{% endblock %}
+
+{% block conteudo %}
+<div class="space-y-4 rounded-2xl bg-white p-5 shadow-xl sm:p-6">
+  <div>
+    <h1 class="text-xl font-extrabold tracking-tight text-slate-900">Olá, {{ request.user.nome }}</h1>
+    <p class="mt-1 text-sm text-slate-500">Tem mais do que uma função no sistema. Com que perfil quer entrar?</p>
+  </div>
+  <form method="post" class="space-y-2.5">
+    {% csrf_token %}
+    {% for o in opcoes %}
+      <button name="perfil" value="{{ o.perfil }}" class="group flex w-full items-center gap-4 rounded-xl border border-slate-200 p-4 text-left transition hover:border-primary hover:bg-primary-50">
+        <span class="material-icons-sharp rounded-xl bg-slate-100 p-2.5 text-slate-600 group-hover:bg-primary group-hover:text-white">{{ o.icone }}</span>
+        <span class="flex-1">
+          <span class="block font-bold text-slate-900">{{ o.rotulo }}</span>
+          <span class="text-xs text-slate-500">{% if o.principal %}Perfil principal{% if request.user.curso %} · {{ request.user.curso.nome }}{% endif %}{% else %}Função acumulada{% endif %}</span>
+        </span>
+        <span class="material-icons-sharp text-slate-300 group-hover:text-primary">arrow_forward</span>
+      </button>
+    {% endfor %}
+  </form>
+  <p class="text-center text-xs text-slate-400">Pode mudar de perfil a qualquer momento no menu com o seu nome.</p>
+</div>
+{% endblock %}

@@ -109,9 +109,9 @@ def temas_semelhantes(titulo, descricao, excluir_estudante_id=None, limite=5, mi
 
 
 def sugerir_tutores(titulo, descricao, limite=3):
-    from .models import Tema, Usuario
+    from .models import Tema, tutores
 
-    tutores = list(Usuario.objects.filter(perfil="tutor", estado_user="activo"))
+    tutores = list(tutores().filter(estado_user="activo"))
     if not tutores:
         return []
     corpus = _corpus()

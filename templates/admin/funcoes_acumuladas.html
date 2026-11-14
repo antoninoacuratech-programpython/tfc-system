@@ -1,0 +1,47 @@
+{% extends "admin/base.html" %}
+
+{% block titulo %}Funções acumuladas{% endblock %}
+{% block titulo_pagina %}Funções acumuladas{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-5xl space-y-5">
+  <div>
+    <h2 class="text-2xl font-extrabold tracking-tight text-slate-900">Funções acumuladas</h2>
+    <p class="mt-1 text-sm text-slate-500">Para docentes com mais do que uma função, por exemplo um coordenador que também orienta trabalhos. Mantêm uma só conta e escolhem o perfil ao entrar ou no menu com o seu nome.</p>
+  </div>
+
+  <form method="get" class="flex gap-2">
+    <input name="q" value="{{ q }}" class="sgtf-input" placeholder="Procurar por nome ou e-mail" aria-label="Procurar">
+    <button class="sgtf-btn sgtf-btn--primary shrink-0"><span class="material-icons-sharp text-[18px]">search</span> Procurar</button>
+  </form>
+
+  <div class="sgtf-card divide-y divide-slate-100">
+    {% for l in linhas %}
+      <div class="flex flex-wrap items-center justify-between gap-3 p-4">
+        <div class="min-w-[14rem] flex-1">
+          <p class="font-bold text-slate-900">{{ l.u.nome }} {{ l.u.sobrenome }}</p>
+          <p class="text-xs text-slate-500">{{ l.u.email }}{% if l.u.curso %} · {{ l.u.curso.nome }}{% endif %}</p>
+          <p class="mt-1 text-xs"><span class="rounded-full bg-slate-100 px-2 py-0.5 font-bold text-slate-600">{{ l.principal }}</span>{% for e in l.extras %} <span class="rounded-full bg-primary-50 px-2 py-0.5 font-bold text-primary">+ {{ e }}</span>{% endfor %}</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          {% for valor, rotulo, ativo in l.opcoes %}
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="usuario" value="{{ l.u.pk }}">
+              <input type="hidden" name="perfil" value="{{ valor }}">
+              <input type="hidden" name="q" value="{{ q }}">
+              {% if ativo %}
+                <button name="acao" value="remover" class="sgtf-btn sgtf-btn--ghost px-3 py-1.5 text-xs text-red-600" title="Deixar de acumular"><span class="material-icons-sharp text-[16px]">remove_circle</span> {{ rotulo }}</button>
+              {% else %}
+                <button name="acao" value="adicionar" class="sgtf-btn sgtf-btn--ghost px-3 py-1.5 text-xs" title="Acumular esta função"><span class="material-icons-sharp text-[16px]">add_circle</span> {{ rotulo }}</button>
+              {% endif %}
+            </form>
+          {% endfor %}
+        </div>
+      </div>
+    {% empty %}
+      <p class="p-8 text-center text-sm text-slate-400">Nenhum docente encontrado.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

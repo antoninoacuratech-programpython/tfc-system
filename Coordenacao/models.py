@@ -45,6 +45,12 @@ class UsuarioManager(BaseUserManager):
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+def filtro_tutores():
+    """Quem pode orientar ou estar numa banca: perfil tutor ou tutor como perfil adicional."""
+    from django.db.models import Q
+    return Q(perfil="tutor") | Q(pk__in=PerfilAdicional.objects.filter(perfil="tutor").values("usuario_id"))
+
+
 class Usuario(AbstractUser):
     TIPOS_USUARIO = (
         ("cordenacao", "cordenacao"),
@@ -92,6 +98,41 @@ class Usuario(AbstractUser):
     REQUIRED_FIELDS = ["nome", "sobrenome"]
 
     objects = UsuarioManager()
+
+    @property
+    def perfil_principal(self):
+        # durante o pedido o «perfil» é o perfil activo da sessão; o gravado na base é este
+        return getattr(self, "_perfil_principal", None) or self.perfil
+
+    @property
+    def perfis_disponiveis(self):
+        if not hasattr(self, "_cache_perfis"):
+            extras = [p for p in self.perfis_adicionais.values_list("perfil", flat=True)] if self.pk else []
+            self._cache_perfis = list(dict.fromkeys([self.perfil_principal, *extras]))
+        return self._cache_perfis
+
+    def tem_papel(self, perfil):
+        return perfil in self.perfis_disponiveis
+
+    def ativar_perfil(self, perfil):
+        """Troca o perfil activo só neste objecto (a sessão guarda a escolha)."""
+        if perfil not in self.perfis_disponiveis:
+            return False
+        if not hasattr(self, "_perfil_principal"):
+            self._perfil_principal = self.perfil
+        self.perfil = perfil
+        return True
+
+    def save(self, *args, **kwargs):
+        # nunca gravar o perfil activo por cima do principal
+        principal = getattr(self, "_perfil_principal", None)
+        if principal is None or principal == self.perfil:
+            return super().save(*args, **kwargs)
+        ativo, self.perfil = self.perfil, principal
+        try:
+            return super().save(*args, **kwargs)
+        finally:
+            self.perfil = ativo
 
     def obter_todos_documentos(self):
         docs = []
@@ -195,7 +236,7 @@ class Tema(models.Model):
         blank=True,
         null=True,
         related_name='temas_orientados',
-        limit_choices_to={'perfil': 'tutor'}
+        limit_choices_to=filtro_tutores
     )
 
     status_tutor = models.CharField(max_length=15, choices=STATUS_TUTOR, default='pendente')
@@ -264,7 +305,7 @@ class Recomendacao(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        limit_choices_to={'perfil': 'tutor'},
+        limit_choices_to=filtro_tutores,
         related_name='recomendacoes_feitas'
     )
     texto = models.TextField()
@@ -356,21 +397,21 @@ class Predefesa(models.Model):
         'Usuario', 
         on_delete=models.SET_NULL, 
         null=True,
-        limit_choices_to={'perfil': 'tutor'},
+        limit_choices_to=filtro_tutores,
         related_name='atuacoes_secretario'
     )
 
     presidente = models.ForeignKey(
         'Usuario', on_delete=models.CASCADE, 
-        limit_choices_to={'perfil': 'tutor'}, related_name='presidencias'
+        limit_choices_to=filtro_tutores, related_name='presidencias'
     )
     primeiro_vogal = models.ForeignKey(
         'Usuario', on_delete=models.CASCADE, 
-        limit_choices_to={'perfil': 'tutor'}, related_name='vogal1_atuacoes'
+        limit_choices_to=filtro_tutores, related_name='vogal1_atuacoes'
     )
     segundo_vogal = models.ForeignKey(
         'Usuario', on_delete=models.CASCADE, 
-        limit_choices_to={'perfil': 'tutor'}, related_name='vogal2_atuacoes'
+        limit_choices_to=filtro_tutores, related_name='vogal2_atuacoes'
     )
 
     RESULTADOS = (
@@ -1124,3 +1165,24 @@ class DocumentoAssinado(models.Model):
     @property
     def valido(self):
         return self.anulado_em is None
+
+
+
+class PerfilAdicional(models.Model):
+    """Funções acumuladas: p. ex. um coordenador que também orienta trabalhos."""
+
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name="perfis_adicionais")
+    perfil = models.CharField(max_length=20, choices=Usuario.TIPOS_USUARIO)
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("usuario", "perfil")
+        verbose_name = "Perfil adicional"
+        verbose_name_plural = "Perfis adicionais"
+
+    def __str__(self):
+        return f"{self.usuario} · {self.perfil}"
+
+
+def tutores():
+    return Usuario.objects.filter(filtro_tutores())

@@ -99,6 +99,7 @@
     <p class="sgtf-nav-section">Utilizadores</p>
     <a href="{% url 'lista_estudantes' %}" class="sgtf-nav-link"><span class="material-icons-sharp">group</span> Lista geral</a>
     <a href="{% url 'add_estudante' %}" class="sgtf-nav-link"><span class="material-icons-sharp">person_add</span> Adicionar utilizador</a>
+    <a href="{% url 'funcoes_acumuladas' %}" class="sgtf-nav-link"><span class="material-icons-sharp">switch_account</span> Funções acumuladas</a>
   {% endif %}
 
   {% if request.user.is_superuser %}

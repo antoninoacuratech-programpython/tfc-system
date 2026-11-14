@@ -29,11 +29,30 @@ def tem_perfil(user, *perfis):
     return user.is_superuser or user.perfil in perfis
 
 
+def mudar_para_perfil(request, *perfis):
+    """Quem acumula funções e abre uma página de outro perfil (p. ex. por uma notificação) muda para ele."""
+    from django.contrib import messages
+
+    from .middleware import SESSAO_PERFIL
+    from .templatetags.sgtf import ROTULOS_PERFIL
+
+    user = request.user
+    if not user.is_authenticated:
+        return False
+    destino = next((p for p in perfis if p != user.perfil and user.tem_papel(p)), None)
+    if not destino:
+        return False
+    user.ativar_perfil(destino)
+    request.session[SESSAO_PERFIL] = destino
+    messages.info(request, f"Passou para o perfil {ROTULOS_PERFIL.get(destino, destino)}.")
+    return True
+
+
 def perfil_requerido(*perfis):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped(request, *args, **kwargs):
-            if not tem_perfil(request.user, *perfis):
+            if not tem_perfil(request.user, *perfis) and not mudar_para_perfil(request, *perfis):
                 raise PermissionDenied("Não tem permissão para aceder a esta página.")
             return view_func(request, *args, **kwargs)
 

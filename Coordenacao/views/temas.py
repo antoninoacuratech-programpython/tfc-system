@@ -20,9 +20,9 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from ..models import ListaTemasAprovados, ProcessoEtapa, Tema, Usuario
+from ..models import ListaTemasAprovados, ProcessoEtapa, Tema, Usuario, tutores as todos_tutores
 from ..similaridade import temas_semelhantes
-from ..permissions import PERFIL_COORDENACAO, PERFIL_TUTOR, PERFIS_GESTAO, perfil_requerido
+from ..permissions import PERFIL_COORDENACAO, PERFIL_TUTOR, PERFIS_GESTAO, perfil_requerido, mudar_para_perfil
 
 
 @perfil_requerido(*PERFIS_GESTAO)
@@ -87,6 +87,12 @@ def lista_estudantes(request, processo_id=None):
     return render(request, "admin/lista_estudantes.html", context)
 
 
+MENSAGEM_IMPEDIMENTO = (
+    "É o orientador deste tema, por isso não pode dar também o parecer da coordenação. "
+    "O parecer deve ser dado por outro membro da coordenação ou pelo administrador do sistema."
+)
+
+
 @login_required
 def alterar_status_tema(request, tema_id, novo_status):
     if request.user.perfil not in ['tutor', 'cordenacao']:
@@ -102,13 +108,19 @@ def alterar_status_tema(request, tema_id, novo_status):
         return redirect('lista_reprovados') 
 
     if request.user.perfil == 'tutor':
+        if tema.tutor_indicado_id != request.user.pk:
+            messages.error(request, "Só o tutor indicado pode dar o parecer deste tema.")
+            return redirect('dashboard_tutor')
         tema.status_tutor = novo_status
         tema.save()
         messages.success(request, f"Status do tutor atualizado para: {novo_status}")
         return redirect('lista_estudantes') 
 
     if request.user.perfil == 'cordenacao':
-        
+        if tema.tutor_indicado_id == request.user.pk:
+            messages.error(request, MENSAGEM_IMPEDIMENTO)
+            return redirect('lista_reprovados')
+
         tema.status_coordenacao = novo_status
         tema.save()
         
@@ -157,6 +169,14 @@ def alterar_status_multiplos(request):
         return redirect("lista_reprovados")
 
     temas = Tema.objects.filter(id__in=ids)
+
+    # quem orienta o tema não pode dar também o parecer da coordenação
+    proprios = temas.filter(tutor_indicado=request.user)
+    if proprios.exists():
+        messages.warning(request, f"{proprios.count()} tema(s) ignorado(s): {MENSAGEM_IMPEDIMENTO}")
+        temas = temas.exclude(tutor_indicado=request.user)
+        if not temas.exists():
+            return redirect("lista_reprovados")
 
     if acao == "aprovar":
         nao_aprovados = temas.exclude(status_tutor="aprovado")
@@ -210,7 +230,7 @@ def criar_ou_editar_tema(request):
         return redirect("dashboard_estudante")
 
     try:
-        tutor = Usuario.objects.get(id=tutor_id, perfil='tutor')
+        tutor = todos_tutores().get(id=tutor_id)
     except Usuario.DoesNotExist:
         messages.error(request, "Tutor selecionado inválido.")
         return redirect("dashboard_estudante")
@@ -265,12 +285,11 @@ def criar_ou_editar_tema(request):
 
 @login_required
 def alterar_status_tema_tutor(request, tema_id, novo_status):
-    if request.user.perfil not in ['tutor', 'cordenacao']: 
-        messages.error(request, "Acesso negado.")
-        return redirect('dashboard_tutor')
-
     tema = get_object_or_404(Tema, id=tema_id)
-    if request.user.perfil == 'tutor' and tema.tutor_indicado != request.user:
+    # o parecer do tutor é só do tutor indicado (se também for coordenador, passa ao perfil de tutor)
+    if tema.tutor_indicado_id != request.user.pk or (
+        request.user.perfil != 'tutor' and not mudar_para_perfil(request, 'tutor')
+    ):
         messages.error(request, "Você não pode alterar status de temas que não são seus.")
         return redirect('dashboard_tutor')
 
@@ -339,17 +358,21 @@ def lista_todos_temas_geral(request):
 
 @login_required
 def adicionar_orientador(request, tema_id):
-    if request.user.perfil != 'cordenacao':
+    if request.user.perfil != 'cordenacao' and not mudar_para_perfil(request, 'cordenacao'):
         messages.error(request, "Acesso negado. Apenas a coordenação pode atribuir orientadores.")
         return redirect('admink')
 
     tema = get_object_or_404(Tema, id=tema_id)
-    tutores = Usuario.objects.filter(perfil='tutor', estado_user='activo')
+    tutores = todos_tutores().filter(estado_user='activo')
 
     if request.method == 'POST':
         tutor_id = request.POST.get('tutor')
         if tutor_id:
-            tutor = get_object_or_404(Usuario, id=tutor_id)
+            tutor = get_object_or_404(todos_tutores(), id=tutor_id)
+            if tutor.pk == request.user.pk:
+                messages.error(request, "Não pode atribuir-se a si próprio como orientador e aprovar o tema. "
+                                        "Peça a outro membro da coordenação ou ao administrador.")
+                return redirect('adicionar_orientador', tema_id=tema.id)
             
             tema.tutor_indicado = tutor
             tema.status_tutor = 'aprovado'

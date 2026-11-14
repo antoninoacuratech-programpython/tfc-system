@@ -10,7 +10,19 @@ from django.core.validators import validate_email
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 
+from ..middleware import SESSAO_PERFIL
 from ..models import Curso, Departamento, Usuario
+from ..templatetags.sgtf import ROTULOS_PERFIL
+
+ICONES_PERFIL = {
+    "cordenacao": "admin_panel_settings",
+    "tutor": "school",
+    "presidente": "account_balance",
+    "area_cientifica": "biotech",
+    "area_etica": "balance",
+    "dac": "apartment",
+    "estudante": "person",
+}
 
 PAGINA_INICIAL_POR_PERFIL = {
     "cordenacao": "admink",
@@ -52,14 +64,35 @@ def login_view(request):
             messages.error(request, "O seu perfil não tem acesso a nenhum painel. Contacte a coordenação.")
         else:
             auth_login(request, user)
+            request.session.pop(SESSAO_PERFIL, None)
             destino = request.POST.get("next") or request.GET.get("next")
             if destino and url_has_allowed_host_and_scheme(
                 destino, allowed_hosts={request.get_host()}, require_https=request.is_secure()
             ):
                 return redirect(destino)
+            if len(user.perfis_disponiveis) > 1:
+                return redirect("escolher_perfil")
             return redirect(pagina_inicial(user))
 
     return render(request, "usuarios/index.html", {"next": request.GET.get("next", "")})
+
+
+@login_required
+def escolher_perfil(request):
+    user = request.user
+    disponiveis = user.perfis_disponiveis
+    if request.method == "POST":
+        perfil = request.POST.get("perfil")
+        if perfil in disponiveis:
+            user.ativar_perfil(perfil)
+            request.session[SESSAO_PERFIL] = perfil
+            return redirect(pagina_inicial(user) or "login")
+        messages.error(request, "Perfil inválido.")
+    if len(disponiveis) < 2:
+        return redirect(pagina_inicial(user) or "login")
+    opcoes = [{"perfil": p, "rotulo": ROTULOS_PERFIL.get(p, p), "icone": ICONES_PERFIL.get(p, "badge"),
+               "principal": p == user.perfil_principal} for p in disponiveis]
+    return render(request, "usuarios/escolher_perfil.html", {"opcoes": opcoes})
 
 
 def sair(request):

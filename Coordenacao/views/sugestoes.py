@@ -7,7 +7,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from ..models import Curso, NotificacaoFinal, ProcessoEtapa, Tema, TemaSugerido, Usuario
+from ..models import Curso, NotificacaoFinal, ProcessoEtapa, Tema, TemaSugerido, tutores
 from ..permissions import PERFIL_COORDENACAO, PERFIL_ESTUDANTE, perfil_requerido
 
 
@@ -29,7 +29,7 @@ def _guardar(request, sugestao):
     descricao = request.POST.get("descricao", "").strip()
     curso = _cursos_permitidos(request.user).filter(pk=request.POST.get("curso")).first()
     tutor_id = request.POST.get("tutor_sugerido") or None
-    tutor = Usuario.objects.filter(pk=tutor_id, perfil="tutor").first() if tutor_id else None
+    tutor = tutores().filter(pk=tutor_id).first() if tutor_id else None
 
     if not titulo or not descricao or not curso:
         messages.error(request, "Preencha o título, a descrição e o curso.")
@@ -56,7 +56,7 @@ def gerir_sugestoes(request):
     return render(request, "sugestoes/gerir.html", {
         "sugestoes": sugestoes,
         "cursos": _cursos_permitidos(request.user),
-        "tutores": Usuario.objects.filter(perfil="tutor", estado_user="activo").order_by("nome"),
+        "tutores": tutores().filter(estado_user="activo").order_by("nome"),
         "total_abertas": sum(1 for s in sugestoes if s.disponivel),
         "total_escolhidas": sum(1 for s in sugestoes if s.escolhido),
     })
@@ -72,7 +72,7 @@ def editar_sugestao(request, pk):
     return render(request, "sugestoes/editar.html", {
         "s": sugestao,
         "cursos": _cursos_permitidos(request.user),
-        "tutores": Usuario.objects.filter(perfil="tutor", estado_user="activo").order_by("nome"),
+        "tutores": tutores().filter(estado_user="activo").order_by("nome"),
     })
 
 
@@ -111,7 +111,7 @@ def sugestoes_estudante(request):
     tema_atual = Tema.objects.filter(estudante=user).first()
     return render(request, "sugestoes/estudante.html", {
         "sugestoes": sugestoes,
-        "tutores": Usuario.objects.filter(perfil="tutor", estado_user="activo").order_by("nome"),
+        "tutores": tutores().filter(estado_user="activo").order_by("nome"),
         "tema_atual": tema_atual,
         "pode_escolher": not tema_atual or tema_atual.status_coordenacao == "rejeitado",
         "processo": _processo_aberto(user.curso) if user.curso_id else None,
@@ -127,7 +127,7 @@ def escolher_sugestao(request, pk):
         messages.error(request, "O período de submissão de temas do seu curso não está aberto.")
         return redirect("sugestoes_estudante")
 
-    tutor = Usuario.objects.filter(pk=request.POST.get("tutor_indicado"), perfil="tutor").first()
+    tutor = tutores().filter(pk=request.POST.get("tutor_indicado") or 0).first()
     if not tutor:
         messages.error(request, "Escolha o tutor que vai orientar o trabalho.")
         return redirect("sugestoes_estudante")

@@ -4,6 +4,7 @@ from .autenticacao import (  # noqa: F401
     sair,
     cadastro,
     atualizar_perfil,
+    escolher_perfil,
 )
 from .dashboards import (  # noqa: F401
     admink,
@@ -179,3 +180,4 @@ from .processo_estudante import (  # noqa: F401
     processo_estudante_zip,
     perfil_documental,
 )
+from .utilizadores import funcoes_acumuladas  # noqa: F401

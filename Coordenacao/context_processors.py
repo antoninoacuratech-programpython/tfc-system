@@ -13,6 +13,17 @@ def notificacoes_usuario(request):
     return {"notificacoes_sistema": [], "total_notificacoes": 0}
 
 
+def perfis(request):
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return {}
+    from .templatetags.sgtf import ROTULOS_PERFIL
+    disponiveis = user.perfis_disponiveis
+    if len(disponiveis) < 2:
+        return {}
+    return {"outros_perfis": [(p, ROTULOS_PERFIL.get(p, p)) for p in disponiveis if p != user.perfil]}
+
+
 def instituicao(request):
     return {
         "INSTITUICAO_NOME": settings.INSTITUICAO_NOME,

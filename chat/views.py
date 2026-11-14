@@ -5,6 +5,7 @@ from Coordenacao.models import Usuario
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from Coordenacao.models import Usuario, Tema
+from Coordenacao.permissions import mudar_para_perfil
 
 
 @login_required
@@ -40,7 +41,7 @@ def enviar_mensagem(request, user_id):
 
 @login_required
 def tutor_chat_estudantes(request):
-    if request.user.perfil != 'tutor':
+    if request.user.perfil != 'tutor' and not mudar_para_perfil(request, 'tutor'):
         return JsonResponse({"erro": "Acesso negado"}, status=403)
     estudantes = Usuario.objects.filter(
         temas__tutor_indicado=request.user
@@ -52,7 +53,7 @@ def tutor_chat_estudantes(request):
 
 @login_required
 def chat_tutor(request, estudante_id):
-    if request.user.perfil != 'tutor':
+    if request.user.perfil != 'tutor' and not mudar_para_perfil(request, 'tutor'):
         return JsonResponse({"erro": "Acesso negado"}, status=403)
 
     aluno = get_object_or_404(Usuario, id=estudante_id)

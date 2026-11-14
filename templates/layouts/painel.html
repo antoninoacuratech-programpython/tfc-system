@@ -112,6 +112,14 @@
               <p class="truncate text-sm font-semibold text-slate-800">{{ request.user.nome }} {{ request.user.sobrenome }}</p>
               <p class="truncate text-xs text-slate-500">{{ request.user.email }}</p>
             </div>
+            {% if outros_perfis %}
+              <form method="post" action="{% url 'escolher_perfil' %}" class="border-b border-slate-100 py-1">
+                {% csrf_token %}
+                {% for valor, rotulo in outros_perfis %}
+                  <button name="perfil" value="{{ valor }}" class="sgtf-dropdown__item w-full text-left font-semibold text-primary"><span class="material-icons-sharp">swap_horiz</span> Mudar para {{ rotulo }}</button>
+                {% endfor %}
+              </form>
+            {% endif %}
             <a href="{% url 'atualizar_perfil' %}" class="sgtf-dropdown__item"><span class="material-icons-sharp">person</span> O meu perfil</a>
             <a href="{% url 'listar_notificacoes' %}" class="sgtf-dropdown__item"><span class="material-icons-sharp">notifications</span> Notificações</a>
             <a href="{% url 'sair' %}" class="sgtf-dropdown__item text-red-600"><span class="material-icons-sharp">logout</span> Terminar sessão</a>

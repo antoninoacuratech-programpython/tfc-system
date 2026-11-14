@@ -766,3 +766,68 @@ class ProcessoEstudanteTests(BaseTestCase):
         self.client.force_login(self.coordenacao)
         r = self.client.get(reverse("dossie_estudante", args=[self.estudante.pk]))
         self.assertRedirects(r, reverse("processo_estudante", args=[self.estudante.pk]))
+
+
+
+class PerfisAcumuladosTests(BaseTestCase):
+    SENHA = "SenhaForte#2026"
+
+    def setUp(self):
+        from .models import PerfilAdicional
+        PerfilAdicional.objects.create(usuario=self.coordenacao, perfil="tutor")
+
+    def _entrar(self, user):
+        return self.client.post(reverse("login"), {"username": user.email, "senha": self.SENHA})
+
+    def test_login_pede_o_perfil_so_a_quem_acumula(self):
+        self.assertRedirects(self._entrar(self.coordenacao), reverse("escolher_perfil"))
+        self.client.logout()
+        r = self._entrar(self.tutor)
+        self.assertRedirects(r, reverse("dashboard_tutor"), fetch_redirect_response=False)
+
+    def test_escolher_tutor_e_trocar_sem_sair(self):
+        self._entrar(self.coordenacao)
+        r = self.client.post(reverse("escolher_perfil"), {"perfil": "tutor"})
+        self.assertRedirects(r, reverse("dashboard_tutor"), fetch_redirect_response=False)
+        self.assertEqual(self.client.get(reverse("progresso_tutor")).status_code, 200)
+        # página da coordenação: muda sozinho de perfil em vez de recusar
+        r = self.client.get(reverse("progresso_geral"))
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.client.session["perfil_ativo"], "cordenacao")
+
+    def test_perfil_activo_nunca_e_gravado(self):
+        self._entrar(self.coordenacao)
+        self.client.post(reverse("escolher_perfil"), {"perfil": "tutor"})
+        self.client.post(reverse("atualizar_perfil"), {"nome": "Novo", "sobrenome": "Nome", "telefone": "923111111"})
+        self.coordenacao.refresh_from_db()
+        self.assertEqual(self.coordenacao.perfil, "cordenacao")
+
+    def test_coordenador_tutor_aparece_nas_listas_de_tutores(self):
+        from .models import tutores
+        self.assertIn(self.coordenacao, tutores())
+        self.assertNotIn(self.cientifica, tutores())
+
+    def test_impedimento_no_parecer_da_coordenacao(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from .models import ProcessoEtapa, Tema
+        hoje = timezone.localdate()
+        ProcessoEtapa.objects.create(titulo="TFC", curso=self.curso, coordenador=self.coordenacao,
+                                     data_inicio=hoje - timedelta(days=1), data_termino=hoje + timedelta(days=30), ativo=True)
+        tema = Tema.objects.create(estudante=self.estudante, titulo="T", descricao="x", tutor_indicado=self.coordenacao,
+                                   status_tutor="aprovado")
+        self.client.force_login(self.coordenacao)
+        self.client.get(reverse("alterar_status_tema", args=[tema.pk, "aprovado"]))
+        tema.refresh_from_db()
+        self.assertEqual(tema.status_coordenacao, "pendente")
+
+    def test_funcoes_acumuladas_coordenacao_so_atribui_tutor(self):
+        from .models import PerfilAdicional
+        self.client.force_login(self.coordenacao)
+        url = reverse("funcoes_acumuladas")
+        self.client.post(url, {"usuario": self.presidente.pk, "perfil": "tutor", "acao": "adicionar"})
+        self.assertTrue(PerfilAdicional.objects.filter(usuario=self.presidente, perfil="tutor").exists())
+        self.client.post(url, {"usuario": self.tutor.pk, "perfil": "area_cientifica", "acao": "adicionar"})
+        self.assertFalse(PerfilAdicional.objects.filter(usuario=self.tutor, perfil="area_cientifica").exists())
+        self.client.post(url, {"usuario": self.presidente.pk, "perfil": "tutor", "acao": "remover"})
+        self.assertFalse(PerfilAdicional.objects.filter(usuario=self.presidente).exists())
